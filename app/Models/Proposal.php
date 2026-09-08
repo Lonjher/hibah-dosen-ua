@@ -1,0 +1,80 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Attributes\Guarded;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+
+/**
+ * @property int $id
+ * @property int $user_id
+ * @property int|null $reviewer_id
+ * @property string $title
+ * @property string $summary
+ * @property string $keywords
+ * @property bool $is_research
+ * @property string $status_proposal
+ * @property int $period_id
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @method BelongsTo<ResearchScheme> researchScheme()
+ * @method BelongsTo<User> author()
+ * @method BelongsTo<User> reviewer()
+ * @method BelongsTo<Period> period()
+ * @method HasOne<BudgetProposal> budgetProposal()
+ * @method HasOne<ProgressReport> progressReport()
+ * @method HasOne<FinalReport> finalReport()
+ * @method HasOne<Output> output()
+ * @method HasOne<ReviewerNote> reviewerNotes()
+ */
+
+#[Guarded(['id'])]
+class Proposal extends Model
+{
+    public function researchScheme(): BelongsTo
+    {
+        return $this->belongsTo(ResearchScheme::class);
+    }
+
+    public function author(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function reviewer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reviewer_id');
+    }
+
+    public function period(): BelongsTo
+    {
+        return $this->belongsTo(Period::class);
+    }
+
+    public function budgetProposal(): HasOne
+    {
+        return $this->hasOne(BudgetProposal::class);
+    }
+
+    public function progressReport(): HasOne
+    {
+        return $this->hasOne(ProgressReport::class);
+    }
+
+    public function finalReport(): HasOne
+    {
+        return $this->hasOne(FinalReport::class);
+    }
+
+    public function output(): HasOne
+    {
+        return $this->hasOne(Output::class);
+    }
+
+    public function reviewerNotes(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(ReviewerNote::class);
+    }
+}

@@ -1,0 +1,59 @@
+Penelitian
+
+1. Proposal
+Judul
+Ringkasan
+Keyword
+Anggaran Foreign
+Review_Proposal Foreign
+
+2. Laporan Kemajuan
+Ringkasan Text
+Keyword Text
+laporan kemajuan pdf
+ppt
+Review
+
+3. Laporan Akhir
+Ringkasan Text
+Keyword Text
+laporan akhir pdf
+ppt
+hasil luaran pdf/word
+bukti submit img
+Review
+
+4. Luaran
+Nama jurnal
+Link jurnal
+Edisi
+Volume
+Tingkat
+Review
+
+
+
+
+
+======== | TABLE FOREIGN |========
+
+- Anggaran
+	id_angggaran
+	proposal_id
+	item_name			Text
+	amount				Text
+
+- Review
+	id_review
+	proposal_id
+    reviewer_id
+	Komentar 			Text
+	Hasil 				boolean
+	Rekomendasi (not implemented)
+
+
+- Ada grafik laporan dana penelitian per tahun, PkM per tahun, internal dan eksternal
+
+- Tambahkan SK Penelitian dan Pengabdian di setiap Proposal yang sudah diterima oleh Admin
+- Tambakan Skema Penelitian dan Pengabdian, lengkap dengan batasan anggarannya
+- Tambahkan Hibah Eksternal (Penelitian yang Didanai dan Tidak Didanai) - Hanya mengumpulkan Data (Tidak ada proses didalamnya) -> Nanti digunakan untuk menampilkan grafik penelitian yang dilakukan (Internal dan Eksternal) per tahun di Dashboard (User)
