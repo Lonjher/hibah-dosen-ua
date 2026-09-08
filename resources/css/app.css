@@ -43,8 +43,8 @@
     --color-zinc-900: #171717;
     --color-zinc-950: #0a0a0a;
 
-    --color-accent: var(--color-neutral-800);
-    --color-accent-content: var(--color-neutral-800);
+    --color-accent: var(--color-emerald-600);
+    --color-accent-content: var(--color-emerald-600);
     --color-accent-foreground: var(--color-white);
 
     /* ================= Warna dari tailwind.config lama ================= */
@@ -204,9 +204,9 @@
 
 @layer theme {
     .dark {
-        --color-accent: var(--color-white);
-        --color-accent-content: var(--color-white);
-        --color-accent-foreground: var(--color-neutral-800);
+        --color-accent: var(--color-emerald-500);
+        --color-accent-content: var(--color-emerald-400);
+        --color-accent-foreground: var(--color-white);
     }
 }
 
@@ -309,6 +309,18 @@ select:focus[data-flux-control] {
         -webkit-background-clip: text;
         background-clip: text;
         color: transparent;
+    }
+    [data-flux-button] {
+        font-size: 0.75rem; /* text-xs */
+        line-height: 1rem;
+    }
+    [data-flux-button].bg-red-500,
+    [data-flux-button].dark\:bg-red-600 {
+        background-color: var(--color-rose-500) !important;
+    }
+    [data-flux-button].bg-red-500:hover,
+    [data-flux-button].dark\:bg-red-600:hover {
+        background-color: var(--color-rose-600) !important;
     }
 }
 

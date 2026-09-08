@@ -14,7 +14,7 @@ new class extends Component {
         <div
             class="absolute top-0 right-0 w-80 h-full bg-gradient-to-l from-primary/10 via-primary/5 to-transparent pointer-events-none">
         </div>
-        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md relative z-10">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md relative">
             <div class="flex flex-col gap-space-2xs">
                 <div class="flex items-center gap-space-xs">
                     <span
@@ -25,7 +25,7 @@ new class extends Component {
                         Annuqayah</span>
                 </div>
                 <h1 class="font-title-md text-[16px] text-on-surface font-bold leading-snug">
-                    Selamat Datang, Dr. M. Kholilurrahman, M.Pd.
+                    Selamat Datang, {{ auth()->user()->full_name }}
                 </h1>
                 <p class="font-body-sm text-[12px] text-on-surface-variant max-w-2xl leading-relaxed">
                     Pantau status hibah kompetitif, pelaporan monev termin 1,
@@ -34,7 +34,7 @@ new class extends Component {
                 </p>
             </div>
             <!-- Monev Countdown & Fast Action Buttons -->
-            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-space-sm">
+            <div class="flex flex-col sm:flex-row items-end sm:items-center gap-space-sm">
                 <div
                     class="flex items-center gap-space-xs bg-surface-container-high/90 px-space-sm py-space-2xs rounded-xl shadow-xs">
                     <div

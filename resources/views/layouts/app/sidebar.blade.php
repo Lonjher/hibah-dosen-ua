@@ -27,7 +27,7 @@
             class="fixed inset-0 z-40 bg-zinc-950/50 lg:hidden" style="display: none;"></div>
 
         {{-- ======================= SIDEBAR KIRI ======================= --}}
-        <aside x-data="{ usersOpen: false }" :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+        <aside x-data="{ usersOpen: true }" :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
             class="fixed inset-y-0 left-0 z-50 w-48 flex flex-col justify-between bg-white/70 backdrop-blur-md border-r border-white/80 shadow-xs select-none transition-transform duration-200 ease-in-out lg:translate-x-0 dark:bg-zinc-900/70 dark:border-zinc-800">
             <div class="flex flex-col h-full overflow-y-auto">
 
@@ -55,29 +55,15 @@
                 <div class="flex flex-col p-2 gap-1.5 flex-1">
 
                     {{-- Dashboard --}}
-                    <a href="{{ route('dashboard') }}" wire:navigate
-                        class="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 font-title-sm text-[11px] font-semibold border-l-2 border-emerald-500 transition-all dark:text-emerald-300">
-                        <flux:icon.squares-2x2 class="size-4 text-emerald-500 shrink-0" />
-                        <span>Dashboard</span>
-                    </a>
+                    <x-sidebar-link href="dashboard" title="Dashboard" icon="squares-2x2" />
 
                     {{-- Group Administrator --}}
                     <div class="flex flex-col gap-0.5">
                         <span
                             class="px-2 py-1 font-label-sm text-[9px] uppercase tracking-wider text-outline font-bold dark:text-zinc-500">Administrator</span>
 
-                        <a href="#"
-                            class="flex items-center gap-2 px-2 py-1.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low/50 font-title-sm text-[11px] font-medium transition-all group dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-800/50">
-                            <flux:icon.calendar-days
-                                class="size-4 text-outline group-hover:text-emerald-500 transition-colors shrink-0" />
-                            <span>Periode</span>
-                        </a>
-                        <a href="#"
-                            class="flex items-center gap-2 px-2 py-1.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low/50 font-title-sm text-[11px] font-medium transition-all group dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-800/50">
-                            <flux:icon.rectangle-group
-                                class="size-4 text-outline group-hover:text-emerald-500 transition-colors shrink-0" />
-                            <span>Skema</span>
-                        </a>
+                        <x-sidebar-link href="admin.manage-periods" title="Periods" icon="calendar-days" />
+                        <x-sidebar-link href="admin.manage-schemes" title="Schemes" icon="rectangle-group" />
 
                         <div class="flex flex-col">
                             <button type="button" x-on:click="usersOpen = !usersOpen"
@@ -96,25 +82,10 @@
                                 x-transition:enter-end="opacity-100 translate-y-0"
                                 x-transition:leave="transition ease-in duration-100"
                                 x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
-                                class="flex flex-col pl-4 gap-0.5 border-l border-white/80 ml-3.5 my-0.5 dark:border-zinc-800">
-                                <a href="#"
-                                    class="flex items-center gap-2 px-2 py-1.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low/50 font-title-sm text-[11px] font-medium transition-all group dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-800/50">
-                                    <flux:icon.shield-check
-                                        class="size-3.5 text-outline group-hover:text-emerald-500 transition-colors shrink-0" />
-                                    <span>Admin</span>
-                                </a>
-                                <a href="#"
-                                    class="flex items-center gap-2 px-2 py-1.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low/50 font-title-sm text-[11px] font-medium transition-all group dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-800/50">
-                                    <flux:icon.clipboard-document-check
-                                        class="size-3.5 text-outline group-hover:text-emerald-500 transition-colors shrink-0" />
-                                    <span>Reviewers</span>
-                                </a>
-                                <a href="#"
-                                    class="flex items-center gap-2 px-2 py-1.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low/50 font-title-sm text-[11px] font-medium transition-all group dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-800/50">
-                                    <flux:icon.user-circle
-                                        class="size-3.5 text-outline group-hover:text-emerald-500 transition-colors shrink-0" />
-                                    <span>User</span>
-                                </a>
+                                class="flex flex-col gap-0.5 border-l border-white/80 ml-3.5 my-0.5 dark:border-zinc-800">
+                                <x-sidebar-link href="admin.manage-admins" title="Admins" icon="shield-check" />
+                                <x-sidebar-link href="admin.manage-reviewers" title="Reviewers" icon="clipboard-document-check" />
+                                <x-sidebar-link href="admin.manage-users" title="Users" icon="user-circle" />
                             </div>
                         </div>
                     </div>
