@@ -21,6 +21,13 @@ use Illuminate\Support\Carbon;
 #[Guarded(['id'])]
 class Period extends Model
 {
+    protected function casts(): array
+    {
+        return [
+            'open_from' => 'date',
+            'open_to' => 'datetime',
+        ];
+    }
     public function proposals(): HasMany
     {
         return $this->hasMany(Proposal::class);

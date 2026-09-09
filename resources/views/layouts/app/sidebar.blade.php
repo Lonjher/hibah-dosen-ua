@@ -95,12 +95,7 @@
                         <span
                             class="px-2 py-1 font-label-sm text-[9px] uppercase tracking-wider text-outline font-bold dark:text-zinc-500">Internal
                             Data</span>
-                        <a href="#"
-                            class="flex items-center gap-2 px-2 py-1.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low/50 font-title-sm text-[11px] font-medium transition-all group dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-800/50">
-                            <flux:icon.beaker
-                                class="size-4 text-outline group-hover:text-emerald-500 transition-colors shrink-0" />
-                            <span>Research</span>
-                        </a>
+                        <x-sidebar-link href="admin.internal.manage-researches" title="Research" icon="beaker" />
                         <a href="#"
                             class="flex items-center gap-2 px-2 py-1.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low/50 font-title-sm text-[11px] font-medium transition-all group dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-800/50">
                             <flux:icon.hand-raised
@@ -193,12 +188,7 @@
                             placeholder="Cari usulan, skema, luaran..." type="text" />
                     </div>
                     <div class="flex items-center gap-1">
-                        <div
-                            class="hidden md:flex items-center gap-1 bg-surface-container px-2 py-0.5 rounded-md shadow-xs dark:bg-zinc-800">
-                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                            <span class="font-label-sm text-[10px] text-on-surface font-semibold dark:text-zinc-200">TA
-                                2025/2026 Gel. I</span>
-                        </div>
+                        <livewire:period-badge/>
 
                         {{-- Toggle Dark Mode --}}
                         <button type="button"

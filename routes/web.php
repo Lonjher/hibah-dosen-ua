@@ -12,6 +12,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::livewire('admin.manage-admins', 'admin/manage-admins')->name('admin.manage-admins');
     Route::livewire('admin.manage-reviewers', 'admin/manage-reviewers')->name('admin.manage-reviewers');
     Route::livewire('admin.manage-users', 'admin/manage-users')->name('admin.manage-users');
+    Route::livewire('admin.internal.manage-researches', 'admin/internal/manage-researches')->name('admin.internal.manage-researches');
 });
 
 require __DIR__ . '/settings.php';
