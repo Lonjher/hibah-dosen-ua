@@ -15,4 +15,4 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::livewire('admin.internal.manage-researches', 'admin/internal/manage-researches')->name('admin.internal.manage-researches');
 });
 
-require __DIR__ . '/settings.php';
+require __DIR__.'/settings.php';

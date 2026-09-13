@@ -125,7 +125,7 @@ new class extends Component {
     <div
         class="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl rounded-2xl border border-white/80 dark:border-zinc-800 shadow-sm overflow-hidden">
         <div class="overflow-x-auto">
-            <table class="w-full min-w-[800px] text-xs">
+            <table class="w-full min-w-200 text-xs">
                 <thead
                     class="bg-emerald-50/50 dark:bg-emerald-900/20 text-left text-[11px] uppercase tracking-wider text-slate-600 dark:text-slate-300">
                     <tr>

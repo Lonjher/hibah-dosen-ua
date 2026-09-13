@@ -15,9 +15,9 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $open_to
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ *
  * @method HasMany<Proposal> proposals()
  */
-
 #[Guarded(['id'])]
 class Period extends Model
 {
@@ -28,6 +28,7 @@ class Period extends Model
             'open_to' => 'datetime',
         ];
     }
+
     public function proposals(): HasMany
     {
         return $this->hasMany(Proposal::class);
