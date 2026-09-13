@@ -9,6 +9,7 @@ use Livewire\WithPagination;
 new #[Title('Manage Periods')] class extends Component {
     use WithPagination;
 
+    public $search;
     public $periode = '';
     public $is_active = false;
     public $open_from = '';
@@ -23,12 +24,18 @@ new #[Title('Manage Periods')] class extends Component {
         'is_active' => 'boolean',
     ];
 
-    public function render()
+    public function with()
     {
-        $periods = Period::orderByDesc('open_from')->paginate(10);
-        return $this->view([
+        $periods = null;
+        if ($this->search) {
+            $periods = Period::where('periode', 'like', '%' . $this->search . '%')
+                ->latest()->paginate(10);
+        } else {
+            $periods = Period::orderByDesc('open_from')->paginate(10);
+        }
+        return [
             'periods' => $periods,
-        ]);
+        ];
     }
 
     public function create()
@@ -104,25 +111,55 @@ new #[Title('Manage Periods')] class extends Component {
 ?>
 <div class="p-4 sm:p-6">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-        <div class="flex items-start gap-2">
-            <flux:icon.calendar-days class="size-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-1" />
-            <div>
-                <h2 class="font-serif text-xl font-bold text-slate-900 dark:text-white">Kelola Periode Hibah</h2>
-                <p class="text-xs text-slate-500 dark:text-slate-400">Atur periode pengajuan hibah penelitian dan
-                    pengabdian.</p>
-            </div>
-        </div>
+        <x-dashboard-header icon="calendar-days" title="Kelola Periode Hibah"
+            leading="Atur periode pengajuan hibah penelitian dan pengabdian." />
         <flux:button icon="plus" wire:click="create" variant="primary" size="sm" class="shrink-0 text-xs">Tambah
             Periode</flux:button>
     </div>
 
-    <!-- Tabel Periode -->
+    {{-- Tabel Periode + Search terintegrasi --}}
     <div
         class="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl rounded-2xl border border-white/80 dark:border-zinc-800 shadow-sm overflow-hidden">
+
+        {{-- ═══════════ Header: Info Record + Search ═══════════ --}}
+        <div
+            class="flex flex-col sm:flex-row sm:items-center sm:justify-between
+               gap-3 p-4 border-b border-slate-100 dark:border-zinc-800">
+
+            {{-- Info jumlah record --}}
+            <div class="flex items-center gap-2 text-[11px] text-slate-500 dark:text-zinc-400 min-w-0">
+                @if ($periods->total() > 0)
+                    <span class="truncate">
+                        Menampilkan
+                        <span class="font-semibold text-slate-700 dark:text-zinc-200">
+                            {{ $periods->firstItem() }}–{{ $periods->lastItem() }}
+                        </span>
+                        dari
+                        <span class="font-semibold text-slate-700 dark:text-zinc-200">
+                            {{ $periods->total() }}
+                        </span>
+                    </span>
+                @else
+                    <span
+                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md
+                           bg-slate-100 text-slate-500 font-semibold
+                           dark:bg-zinc-800 dark:text-zinc-400">
+                        <flux:icon.list-bullet class="size-3" />
+                        Tidak ada periode
+                    </span>
+                @endif
+            </div>
+
+            {{-- Search input (component tetap, tidak diubah) --}}
+            <x-input-search name="q" wire:model.live="search" id="search-periode" placeholder="Cari periode..." class="!flex w-full" />
+        </div>
+
+        {{-- ═══════════ Tabel ═══════════ --}}
         <div class="overflow-x-auto">
-            <table class="w-full min-w-[760px] text-xs">
+            <table class="w-full min-w-190 text-xs">
                 <thead
-                    class="bg-emerald-50/50 dark:bg-emerald-900/20 text-left text-[11px] uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                    class="bg-emerald-50/50 dark:bg-emerald-900/20 text-left text-[11px]
+                       uppercase tracking-wider text-slate-600 dark:text-slate-300">
                     <tr>
                         <th class="px-4 py-3 font-semibold">Periode</th>
                         <th class="px-4 py-3 font-semibold">Status</th>
@@ -131,44 +168,67 @@ new #[Title('Manage Periods')] class extends Component {
                         <th class="px-4 py-3 font-semibold text-right">Aksi</th>
                     </tr>
                 </thead>
+
                 <tbody class="divide-y divide-slate-100 dark:divide-zinc-800">
-                    @forelse($periods as $period)
+                    @forelse ($periods as $period)
                         <tr class="hover:bg-emerald-50/30 dark:hover:bg-zinc-800/50 transition-colors">
                             <td class="px-4 py-3 font-medium text-slate-900 dark:text-zinc-100">
                                 {{ $period->periode }}
                             </td>
+
                             <td class="px-4 py-3">
                                 @if ($period->is_active)
                                     <span
-                                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[11px] font-semibold dark:bg-emerald-900/40 dark:text-emerald-300">
+                                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full
+                                           bg-emerald-100 text-emerald-700 text-[11px] font-semibold
+                                           dark:bg-emerald-900/40 dark:text-emerald-300">
                                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                                         Aktif
                                     </span>
                                 @else
                                     <span
-                                        class="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 text-[11px] font-medium dark:bg-zinc-800 dark:text-zinc-400">
+                                        class="inline-flex items-center px-2 py-0.5 rounded-full
+                                           bg-slate-100 text-slate-500 text-[11px] font-medium
+                                           dark:bg-zinc-800 dark:text-zinc-400">
                                         Nonaktif
                                     </span>
                                 @endif
                             </td>
+
                             <td class="px-4 py-3 text-slate-600 dark:text-slate-300">
-                                {{ $period->open_from?->format('d M Y H:i') ?? '—' }}</td>
+                                {{ $period->open_from?->format('d M Y H:i') ?? '—' }}
+                            </td>
+
                             <td class="px-4 py-3 text-slate-600 dark:text-slate-300">
-                                {{ $period->open_to?->format('d M Y H:i') ?? '—' }}</td>
+                                {{ $period->open_to?->format('d M Y H:i') ?? '—' }}
+                            </td>
+
                             <td class="px-4 py-3 text-right whitespace-nowrap">
-                                <div class="flex items-center justify-end gap-1">
-                                    @if (!$period->is_active)
-                                        <flux:button size="sm" icon="check-circle"
-                                            wire:click="setActive({{ $period->id }})" title="Aktifkan"
-                                            class="text-emerald-600 hover:bg-emerald-100 dark:hover:bg-emerald-900/30" />
-                                    @endif
-                                    <flux:button size="sm" icon="pencil-square"
-                                        wire:click="edit({{ $period->id }})"
-                                        class="text-slate-500 hover:bg-slate-100 dark:hover:bg-zinc-800" />
-                                    <flux:button size="sm" icon="trash" wire:click="delete({{ $period->id }})"
-                                        wire:confirm="Yakin ingin menghapus periode ini?"
-                                        class="text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-900/30" />
-                                </div>
+                                <flux:dropdown position="bottom" align="end">
+                                    <flux:button size="xs" variant="ghost" icon="ellipsis-horizontal"
+                                        title="Menu aksi"
+                                        class="rounded-lg text-slate-500 hover:bg-slate-100 dark:text-zinc-400 dark:hover:bg-zinc-700/60" />
+                                    <flux:menu>
+                                        @if (!$period->is_active)
+                                            <flux:menu.item icon="check-circle"
+                                                wire:click="setActive({{ $period->id }})">
+                                                Aktifkan
+                                            </flux:menu.item>
+                                        @endif
+
+                                        <flux:menu.item icon="pencil-square" wire:click="edit({{ $period->id }})">
+                                            Edit
+                                        </flux:menu.item>
+
+                                        <flux:menu.separator />
+
+                                        <flux:menu.item variant="danger" icon="trash"
+                                            wire:click="delete({{ $period->id }})"
+                                            wire:confirm="Yakin ingin menghapus periode ini?">
+                                            Hapus
+                                        </flux:menu.item>
+                                    </flux:menu>
+                                </flux:dropdown>
                             </td>
                         </tr>
                     @empty
@@ -184,6 +244,8 @@ new #[Title('Manage Periods')] class extends Component {
                 </tbody>
             </table>
         </div>
+
+        {{-- ═══════════ Pagination ═══════════ --}}
         @if ($periods->hasPages())
             <div class="px-4 py-3 border-t border-slate-100 dark:border-zinc-800">
                 {{ $periods->links() }}

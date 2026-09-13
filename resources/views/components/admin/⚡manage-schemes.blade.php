@@ -115,13 +115,7 @@ new class extends Component
 
 <div class="p-4 sm:p-6">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-        <div class="flex items-start gap-2">
-            <flux:icon.rectangle-group class="size-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-1" />
-            <div>
-                <h2 class="font-serif text-xl font-bold text-slate-900 dark:text-white">Kelola Skema Hibah</h2>
-                <p class="text-xs text-slate-500 dark:text-slate-400">Atur skema penelitian dan pengabdian yang tersedia.</p>
-            </div>
-        </div>
+        <x-dashboard-header icon="rectangle-group" title="Kelola Skema Hibah" leading="Atur skema penelitian dan pengabdian yang tersedia." />
         <flux:button icon="plus" wire:click="create" variant="primary" size="sm" class="shrink-0">Tambah Skema</flux:button>
     </div>
 

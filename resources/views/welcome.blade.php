@@ -20,12 +20,29 @@
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
-    {{-- Font: Instrument Sans untuk body, Lora untuk heading --}}
+    {{-- Font: DM Sans untuk body, Manrope untuk heading --}}
     <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700|lora:400,500,600,700&display=swap"
+    <link href="https://fonts.bunny.net/css?family=dm-sans:400,500,600,700|manrope:400,500,600,700,800&display=swap"
         rel="stylesheet" />
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    {{-- Override font family: heading = Manrope, body = DM Sans --}}
+    <style>
+        :root {
+            --font-heading: 'Manrope', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            --font-body: 'DM Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .font-heading {
+            font-family: var(--font-heading);
+        }
+
+        body,
+        .font-body {
+            font-family: var(--font-body);
+        }
+    </style>
 </head>
 
 <body x-data="{ dark: document.documentElement.classList.contains('dark'), mobileOpen: false, scrolled: false }" x-init="window.addEventListener('scroll', () => scrolled = window.scrollY > 10)"
@@ -162,7 +179,7 @@
                         </div>
 
                         <h1
-                            class="font-serif text-slate-900 dark:text-white font-bold tracking-tight text-left text-lg leading-[1.4] md:text-4xl md:leading-[1.4]">
+                            class="font-heading text-slate-900 dark:text-white font-bold tracking-tight text-left text-lg leading-[1.4] md:text-4xl md:leading-[1.4]">
                             Portal Terpadu Hibah Penelitian &amp; Pengabdian Dosen Universitas Annuqayah
                         </h1>
 
@@ -291,7 +308,7 @@
                                     class="text-slate-400 dark:text-slate-500 font-medium uppercase tracking-wider text-xs">Judul
                                     Penelitian Fundamental</span>
                                 <p
-                                    class="font-serif text-slate-800 dark:text-slate-200 font-semibold leading-snug text-sm">
+                                    class="font-heading text-slate-800 dark:text-slate-200 font-semibold leading-snug text-sm">
                                     Model Konservasi Ekologi Pesisir Madura Timur Berbasis Nilai Kearifan Pesantren
                                     Annuqayah
                                 </p>
@@ -395,7 +412,7 @@
                             </svg>
                             <span class="font-bold tracking-wider uppercase text-xs">DATA &amp; METRIK KINERJA</span>
                         </div>
-                        <h2 class="font-serif text-slate-900 dark:text-white font-bold text-lg leading-[1.4]">
+                        <h2 class="font-heading text-slate-900 dark:text-white font-bold text-lg leading-[1.4]">
                             Statistik &amp; Capaian Hibah Litabmas Universitas Annuqayah
                         </h2>
                         <p class="text-slate-500 dark:text-slate-400 font-normal mt-0.5 text-sm">
@@ -512,7 +529,7 @@
                         class="lg:col-span-8 p-4 rounded-2xl bg-white/75 backdrop-blur-xl border border-white/90 shadow-sm flex flex-col justify-between dark:bg-slate-800/75 dark:border-slate-700 reveal-up">
                         <div class="flex items-center justify-between mb-3">
                             <div>
-                                <h3 class="font-serif text-slate-900 dark:text-white font-bold text-base">Distribusi
+                                <h3 class="font-heading text-slate-900 dark:text-white font-bold text-base">Distribusi
                                     Skema Pendanaan (2022 - 2025)</h3>
                                 <p class="text-slate-500 dark:text-slate-400 font-normal text-xs">Perbandingan jumlah
                                     judul berdasarkan klaster hibah internal LPPM Annuqayah</p>
@@ -543,7 +560,7 @@
                     <div
                         class="lg:col-span-4 p-4 rounded-2xl bg-white/75 backdrop-blur-xl border border-white/90 shadow-sm flex flex-col justify-between dark:bg-slate-800/75 dark:border-slate-700 reveal-up">
                         <div>
-                            <h3 class="font-serif text-slate-900 dark:text-white font-bold text-base">Monitoring
+                            <h3 class="font-heading text-slate-900 dark:text-white font-bold text-base">Monitoring
                                 &amp; Evaluasi (Monev)</h3>
                             <p class="text-slate-500 dark:text-slate-400 font-normal text-xs">Progres serapan target
                                 riset tahun 2024/2025</p>
@@ -602,7 +619,7 @@
                         </svg>
                         <span class="font-bold tracking-wider uppercase text-xs">EKOSISTEM DIGITAL</span>
                     </div>
-                    <h2 class="font-serif text-slate-900 dark:text-white font-bold text-lg leading-[1.4]">
+                    <h2 class="font-heading text-slate-900 dark:text-white font-bold text-lg leading-[1.4]">
                         Fitur &amp; Layanan Terintegrasi SIM-LITABMAS LPPM UA
                     </h2>
                     <p class="text-slate-500 dark:text-slate-400 font-normal mt-0.5 text-sm">
@@ -705,7 +722,7 @@
                                 </svg>
                                 <span class="font-bold tracking-wider uppercase text-xs">SIKLUS TAHUNAN</span>
                             </div>
-                            <h2 class="font-serif text-slate-900 dark:text-white font-bold text-lg leading-[1.4]">
+                            <h2 class="font-heading text-slate-900 dark:text-white font-bold text-lg leading-[1.4]">
                                 Tahapan &amp; Alur Pengajuan Hibah Riset &amp; Pengabdian 2025</h2>
                         </div>
                         <div class="mt-2 md:mt-0">
@@ -807,7 +824,7 @@
                         </svg>
                         <span class="font-bold tracking-wider uppercase text-xs">DOKUMEN MUTU RESMI</span>
                     </div>
-                    <h2 class="font-serif text-slate-900 dark:text-white font-bold text-lg leading-[1.4]">Pusat
+                    <h2 class="font-heading text-slate-900 dark:text-white font-bold text-lg leading-[1.4]">Pusat
                         Unduhan Format Proposal &amp; Panduan Hibah Internal</h2>
                     <p class="text-slate-500 dark:text-slate-400 font-normal mt-0.5 text-sm">Gunakan berkas template
                         resmi yang telah diverifikasi LPPM Universitas Annuqayah untuk kelancaran administrasi usulan.
@@ -887,7 +904,7 @@
                                 </svg>
                                 <span class="font-bold tracking-wider uppercase text-xs">TANYA JAWAB</span>
                             </div>
-                            <h2 class="font-serif text-slate-900 dark:text-white font-bold text-lg leading-[1.4]">
+                            <h2 class="font-heading text-slate-900 dark:text-white font-bold text-lg leading-[1.4]">
                                 Pertanyaan yang Sering Diajukan (FAQ)</h2>
                         </div>
                         @php

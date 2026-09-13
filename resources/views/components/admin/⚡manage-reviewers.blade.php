@@ -22,9 +22,9 @@ new class extends Component {
     protected $rules = [
         'full_name' => 'required|string|max:255',
         'email' => 'required|email|max:255|unique:users,email',
-        'nidn' => 'nullable|string|max:30',
-        'phone_number' => 'nullable|string|max:20',
-        'password' => 'nullable|string|min:8',
+        'nidn' => 'required|string|max:30',
+        'phone_number' => 'required|string|max:20',
+        'password' => 'required|string|min:8',
     ];
 
     public function render()
@@ -59,15 +59,15 @@ new class extends Component {
         $this->rules['email'] = Rule::unique('users', 'email')->ignore($this->editingId);
         $this->validate();
 
-        $reviewerRole = Role::where('code', 'REVIEWER')->firstOrFail();
+        $reviewerRole = Role::where('role_code', 'REVIEWER')->firstOrFail();
 
         if ($this->editingId) {
             $reviewer = User::findOrFail($this->editingId);
             $reviewer->update([
                 'full_name' => $this->full_name,
                 'email' => $this->email,
-                'nidn' => $this->nidn ?: null,
-                'phone_number' => $this->phone_number ?: null,
+                'nidn' => $this->nidn,
+                'phone_number' => $this->phone_number,
                 'role_id' => $reviewerRole->id,
             ]);
             if ($this->password) {
@@ -78,8 +78,8 @@ new class extends Component {
             User::create([
                 'full_name' => $this->full_name,
                 'email' => $this->email,
-                'nidn' => $this->nidn ?: null,
-                'phone_number' => $this->phone_number ?: null,
+                'nidn' => $this->nidn,
+                'phone_number' => $this->phone_number,
                 'password' => Hash::make($this->password),
                 'role_id' => $reviewerRole->id,
             ]);
@@ -110,13 +110,7 @@ new class extends Component {
 
 <div class="p-4 sm:p-6">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-        <div class="flex items-start gap-2">
-            <flux:icon.clipboard-document-check class="size-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-1" />
-            <div>
-                <h2 class="font-serif text-xl font-bold text-slate-900 dark:text-white">Kelola Reviewer</h2>
-                <p class="text-xs text-slate-500 dark:text-slate-400">Manajemen akun pengguna dengan peran reviewer.</p>
-            </div>
-        </div>
+        <x-dashboard-header icon="clipboard-document-check" title="Kelola Reviewer" leading="Manajemen akun pengguna dengan peran reviewer." />
         <flux:button icon="plus" wire:click="create" variant="primary" size="sm" class="shrink-0">Tambah Reviewer
         </flux:button>
     </div>
@@ -151,9 +145,9 @@ new class extends Component {
                                 </div>
                             </td>
                             <td class="px-4 py-3 text-slate-600 dark:text-slate-300">{{ $reviewer->email }}</td>
-                            <td class="px-4 py-3 text-slate-600 dark:text-slate-300">{{ $reviewer->nidn ?: '—' }}</td>
+                            <td class="px-4 py-3 text-slate-600 dark:text-slate-300">{{ $reviewer->nidn }}</td>
                             <td class="px-4 py-3 text-slate-600 dark:text-slate-300">
-                                {{ $reviewer->phone_number ?: '—' }}</td>
+                                {{ $reviewer->phone_number }}</td>
                             <td class="px-4 py-3 text-center">
                                 <span
                                     class="inline-flex items-center justify-center rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-700 dark:bg-zinc-800 dark:text-zinc-300">
@@ -161,14 +155,24 @@ new class extends Component {
                                 </span>
                             </td>
                             <td class="px-4 py-3 text-right whitespace-nowrap">
-                                <div class="flex items-center justify-end gap-1">
-                                    <flux:button size="sm" icon="pencil-square"
-                                        wire:click="edit({{ $reviewer->id }})"
-                                        class="text-slate-500 hover:bg-slate-100 dark:hover:bg-zinc-800" />
-                                    <flux:button size="sm" icon="trash" wire:click="delete({{ $reviewer->id }})"
-                                        wire:confirm="Yakin ingin menghapus reviewer ini?"
-                                        class="text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-900/30" />
-                                </div>
+                                <flux:dropdown position="bottom" align="end">
+                                    <flux:button size="xs" variant="ghost" icon="ellipsis-horizontal"
+                                        title="Menu aksi"
+                                        class="rounded-lg text-slate-500 hover:bg-slate-100 dark:text-zinc-400 dark:hover:bg-zinc-700/60" />
+                                    <flux:menu>
+                                        <flux:menu.item icon="pencil-square" wire:click="edit({{ $reviewer->id }})">
+                                            Edit
+                                        </flux:menu.item>
+
+                                        <flux:menu.separator />
+
+                                        <flux:menu.item variant="danger" icon="trash"
+                                            wire:click="delete({{ $reviewer->id }})"
+                                            wire:confirm="Yakin ingin menghapus Reviewer ini?">
+                                            Hapus
+                                        </flux:menu.item>
+                                    </flux:menu>
+                                </flux:dropdown>
                             </td>
                         </tr>
                     @empty
@@ -194,7 +198,7 @@ new class extends Component {
 
     <!-- Modal Form -->
     <flux:modal wire:model="showModal" :title="$editingId ? 'Edit Reviewer' : 'Tambah Reviewer'"
-        description="Lengkapi data akun reviewer." size="lg">
+        description="Lengkapi data akun dan profil reviewer." size="lg">
         <form wire:submit="save" class="space-y-4">
             <div>
                 <flux:label for="full_name">Nama Lengkap</flux:label>
@@ -214,7 +218,7 @@ new class extends Component {
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                     <flux:label for="nidn">NIDN</flux:label>
-                    <flux:input wire:model="nidn" id="nidn" placeholder="Opsional" size="sm" />
+                    <flux:input wire:model="nidn" id="nidn" placeholder="xxxx.." size="sm" />
                     @error('nidn')
                         <p class="mt-1 text-xs text-rose-500">{{ $message }}</p>
                     @enderror
@@ -226,6 +230,34 @@ new class extends Component {
                         <p class="mt-1 text-xs text-rose-500">{{ $message }}</p>
                     @enderror
                 </div>
+            </div>
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                    <flux:label for="birthday">Tanggal Lahir</flux:label>
+                    <flux:input type="date" wire:model="birthday" id="birthday" size="sm" />
+                    @error('birthday')
+                        <p class="mt-1 text-xs text-rose-500">{{ $message }}</p>
+                    @enderror
+                </div>
+                <div>
+                    <flux:label for="gender">Jenis Kelamin</flux:label>
+                    <flux:select wire:model="gender" id="gender" size="sm">
+                        <option value="">Pilih...</option>
+                        <option value="laki-laki">Laki-laki</option>
+                        <option value="perempuan">Perempuan</option>
+                    </flux:select>
+                    @error('gender')
+                        <p class="mt-1 text-xs text-rose-500">{{ $message }}</p>
+                    @enderror
+                </div>
+            </div>
+            <div>
+                <flux:label for="address">Alamat</flux:label>
+                <flux:textarea wire:model="address" id="address" rows="2" placeholder="Alamat domisili..."
+                    size="sm" />
+                @error('address')
+                    <p class="mt-1 text-xs text-rose-500">{{ $message }}</p>
+                @enderror
             </div>
             <div>
                 <flux:label for="password">{{ $editingId ? 'Password Baru (opsional)' : 'Password' }}</flux:label>

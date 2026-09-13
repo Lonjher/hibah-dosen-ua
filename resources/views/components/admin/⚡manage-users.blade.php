@@ -25,12 +25,12 @@ new class extends Component {
     protected $rules = [
         'full_name' => 'required|string|max:255',
         'email' => 'required|email|max:255|unique:users,email',
-        'nidn' => 'nullable|string|max:30',
-        'phone_number' => 'nullable|string|max:20',
-        'birthday' => 'nullable|date',
-        'gender' => 'nullable|in:laki-laki,perempuan',
-        'address' => 'nullable|string|max:500',
-        'password' => 'nullable|string|min:8',
+        'nidn' => 'required|string|max:30',
+        'phone_number' => 'required|string|max:20',
+        'birthday' => 'required|date',
+        'gender' => 'required|in:laki-laki,perempuan',
+        'address' => 'required|string|max:500',
+        'password' => 'required|string|min:8',
     ];
 
     public function render()
@@ -68,7 +68,7 @@ new class extends Component {
         $this->rules['email'] = Rule::unique('users', 'email')->ignore($this->editingId);
         $this->validate();
 
-        $userRole = Role::where('code', 'USER')->firstOrFail();
+        $userRole = Role::where('role_code', 'USER')->firstOrFail();
 
         $data = [
             'full_name' => $this->full_name,
@@ -118,13 +118,7 @@ new class extends Component {
 
 <div class="p-4 sm:p-6">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-        <div class="flex items-start gap-2">
-            <flux:icon.users class="size-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-1" />
-            <div>
-                <h2 class="font-serif text-xl font-bold text-slate-900 dark:text-white">Kelola Users</h2>
-                <p class="text-xs text-slate-500 dark:text-slate-400">Manajemen pengguna dengan peran user/dosen.</p>
-            </div>
-        </div>
+        <x-dashboard-header icon="users" title="Kelola Users" leading="Manajemen pengguna dengan peran user/dosen." />
         <flux:button icon="plus" wire:click="create" variant="primary" size="sm" class="shrink-0">Tambah User
         </flux:button>
     </div>
@@ -171,14 +165,24 @@ new class extends Component {
                                 </span>
                             </td>
                             <td class="px-4 py-3 text-right whitespace-nowrap">
-                                <div class="flex items-center justify-end gap-1">
-                                    <flux:button size="sm" icon="pencil-square"
-                                        wire:click="edit({{ $user->id }})"
-                                        class="text-slate-500 hover:bg-slate-100 dark:hover:bg-zinc-800" />
-                                    <flux:button size="sm" icon="trash" wire:click="delete({{ $user->id }})"
-                                        wire:confirm="Yakin ingin menghapus user ini?"
-                                        class="text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-900/30" />
-                                </div>
+                                <flux:dropdown position="bottom" align="end">
+                                    <flux:button size="xs" variant="ghost" icon="ellipsis-horizontal"
+                                        title="Menu aksi"
+                                        class="rounded-lg text-slate-500 hover:bg-slate-100 dark:text-zinc-400 dark:hover:bg-zinc-700/60" />
+                                    <flux:menu>
+                                        <flux:menu.item icon="pencil-square" wire:click="edit({{ $user->id }})">
+                                            Edit
+                                        </flux:menu.item>
+
+                                        <flux:menu.separator />
+
+                                        <flux:menu.item variant="danger" icon="trash"
+                                            wire:click="delete({{ $user->id }})"
+                                            wire:confirm="Yakin ingin menghapus User ini?">
+                                            Hapus
+                                        </flux:menu.item>
+                                    </flux:menu>
+                                </flux:dropdown>
                             </td>
                         </tr>
                     @empty
@@ -223,7 +227,7 @@ new class extends Component {
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                     <flux:label for="nidn">NIDN</flux:label>
-                    <flux:input wire:model="nidn" id="nidn" placeholder="Opsional" size="sm" />
+                    <flux:input wire:model="nidn" id="nidn" placeholder="xxxx.." size="sm" />
                     @error('nidn')
                         <p class="mt-1 text-xs text-rose-500">{{ $message }}</p>
                     @enderror

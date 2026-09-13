@@ -1,3 +1,5 @@
+@import url("https://fonts.bunny.net/css?family=dm-sans:400,500,600,700|manrope:400,500,600,700,800&display=swap");
+
 @import "tailwindcss";
 @import "../../vendor/livewire/flux/dist/flux.css";
 
@@ -9,26 +11,41 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-    /* ================= Font Families ================= */
-    --font-sans:
-        "Manrope", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
-        "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-    --font-serif: "Newsreader", ui-serif, Georgia, "Times New Roman", serif;
+    /* ================= Font Families =================
+       Manrope  → Heading (judul, display, headline, title, label)
+       DM Sans  → Body / leading (paragraf, body text, deskripsi)
+       ================================================= */
 
-    /* Font kustom untuk class seperti font-title-sm, font-body-md, dll. */
-    --font-label-md: "Manrope", sans-serif;
-    --font-body-lg: "Manrope", sans-serif;
-    --font-body-sm: "Manrope", sans-serif;
-    --font-label-sm: "Manrope", sans-serif;
-    --font-title-md: "Manrope", sans-serif;
-    --font-headline-sm: "Newsreader", serif;
-    --font-headline-lg: "Newsreader", serif;
-    --font-body-md: "Manrope", sans-serif;
+    /* Default body & UI = DM Sans */
+    --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif,
+        "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+
+    /* Heading = Manrope (utilitas: .font-heading) */
+    --font-heading: "Manrope", ui-sans-serif, system-ui, sans-serif;
+
+    /* Body eksplisit = DM Sans (utilitas: .font-body) */
+    --font-body: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+
+    /* Backward-compat: --font-serif lama (Newsreader) diarahkan ke Manrope
+       agar sisa class .font-serif tidak jatuh ke fallback serif generik */
+    --font-serif: "Manrope", ui-sans-serif, system-ui, sans-serif;
+
+    /* ---- Font kustom: HEADING → Manrope ---- */
+    --font-display-sm: "Manrope", sans-serif;
+    --font-display-lg: "Manrope", sans-serif;
+    --font-headline-sm: "Manrope", sans-serif;
+    --font-headline-md: "Manrope", sans-serif;
+    --font-headline-lg: "Manrope", sans-serif;
+    --font-headline-lg-mobile: "Manrope", sans-serif;
     --font-title-sm: "Manrope", sans-serif;
-    --font-headline-md: "Newsreader", serif;
-    --font-display-sm: "Newsreader", serif;
-    --font-display-lg: "Newsreader", serif;
-    --font-headline-lg-mobile: "Newsreader", serif;
+    --font-title-md: "Manrope", sans-serif;
+
+    /* ---- Font kustom: BODY & LABEL → DM Sans ---- */
+    --font-body-lg: "DM Sans", sans-serif;
+    --font-body-md: "DM Sans", sans-serif;
+    --font-body-sm: "DM Sans", sans-serif;
+    --font-label-sm: "DM Sans", sans-serif;
+    --font-label-md: "DM Sans", sans-serif;
 
     /* ================= Warna dasar zinc (tetap) ================= */
     --color-zinc-50: #fafafa;
@@ -218,6 +235,16 @@
     ::file-selector-button {
         border-color: var(--color-gray-200, currentColor);
     }
+
+    /* Default body memakai DM Sans */
+    body {
+        font-family: var(--font-body);
+    }
+
+    /* Heading HTML native default ke Manrope */
+    h1, h2, h3, h4, h5, h6 {
+        font-family: var(--font-heading);
+    }
 }
 
 [data-flux-field]:not(ui-radio, ui-checkbox) {
@@ -310,6 +337,7 @@ select:focus[data-flux-control] {
         background-clip: text;
         color: transparent;
     }
+
     [data-flux-button] {
         font-size: 0.75rem; /* text-xs */
         line-height: 1rem;
@@ -325,9 +353,9 @@ select:focus[data-flux-control] {
 }
 
 @layer utilities {
-    .font-body {
-        font-family: var(--font-body, var(--font-sans));
-    }
+    /* Catatan: .font-heading dan .font-body sekarang di-generate otomatis
+       oleh Tailwind v4 dari @theme (--font-heading & --font-body).
+       Tidak perlu didefinisikan manual lagi. */
 
     .animate-float {
         animation: welcome-float 7s ease-in-out infinite;
