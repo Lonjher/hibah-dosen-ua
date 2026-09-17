@@ -73,13 +73,13 @@ new class extends Component {
     {
         $this->resetPage();
     }
+
     public function updatingStatusFilter(): void
     {
         $this->resetPage();
     }
 
     // ═══════════════ Modal — open / close ═══════════════
-
     public function create(): void
     {
         $this->resetForm();
@@ -115,7 +115,7 @@ new class extends Component {
     public function viewDetails(int $id): void
     {
         $proposal = Proposal::query()
-            ->with(['researchScheme', 'period', 'reviewer', 'author', 'budgetProposal'])
+            ->with(['researchScheme', 'period', 'reviewer', 'author', 'budgetProposal', 'adminNotes' => fn($q) => $q->latest()])
             ->where('user_id', Auth::id())
             ->findOrFail($id);
 
@@ -129,11 +129,22 @@ new class extends Component {
             )
             ->values()
             ->all();
+         $notes = $proposal->adminNotes
+            ->map(
+                fn($note) => [
+                    'comment' => $note->comment ?? '',
+                    'recommendation' => $note->recommendation ?? '',
+                    'createdAt' => $note->created_at?->format('d M Y, H:i') ?? '—',
+                    'relative' => $note->created_at?->diffForHumans() ?? '',
+                ],
+            )
+            ->values()
+            ->all();
 
         $budgetTotal = (int) collect($budgetItems)->sum('amount');
         $budgetLimit = (int) ($proposal->researchScheme->budget_limit ?? 0);
 
-        $this->dispatch('view-details', title: $proposal->title, scheme: $proposal->researchScheme?->scheme_name ?? '—', period: $proposal->period?->periode ?? '—', status: $meta['label'], statusClass: $meta['class'], is_research: (bool) $proposal->is_research, keywords: array_filter(array_map('trim', explode(',', $proposal->keywords ?? ''))), summary: $proposal->summary ?? '', reviewer: $proposal->reviewer?->full_name, owner: $proposal->author?->full_name ?? Auth::user()->full_name, budgetItems: $budgetItems, budgetLimit: $budgetLimit, budgetTotal: $budgetTotal, budgetRemaining: $budgetLimit - $budgetTotal, budgetPercent: $budgetLimit > 0 ? round(($budgetTotal / $budgetLimit) * 100, 1) : 0, createdAt: $proposal->created_at?->format('d M Y, H:i') ?? '—', updatedAt: $proposal->updated_at?->format('d M Y, H:i') ?? '—');
+        $this->dispatch('view-details', title: $proposal->title, scheme: $proposal->researchScheme?->scheme_name ?? '—', period: $proposal->period?->periode ?? '—', status: $meta['label'], statusClass: $meta['class'], is_research: (bool) $proposal->is_research, keywords: array_filter(array_map('trim', explode(',', $proposal->keywords ?? ''))), summary: $proposal->summary ?? '', reviewer: $proposal->reviewer?->full_name, owner: $proposal->author?->full_name ?? Auth::user()->full_name, budgetItems: $budgetItems, budgetLimit: $budgetLimit, budgetTotal: $budgetTotal, budgetRemaining: $budgetLimit - $budgetTotal, budgetPercent: $budgetLimit > 0 ? round(($budgetTotal / $budgetLimit) * 100, 1) : 0, createdAt: $proposal->created_at?->format('d M Y, H:i') ?? '—', updatedAt: $proposal->updated_at?->format('d M Y, H:i') ?? '—', adminNotes: $notes);
     }
 
     // ═══════════════ Step navigation ═══════════════

@@ -2,58 +2,49 @@
     'width' => 'sm:max-w-2xl',
 ])
 
-<div
-    x-data="{
-        show: false,
-        data: {
-            title: '',
-            scheme: '',
-            period: '',
-            status: '',
-            statusClass: '',
-            is_research: true,
-            keywords: [],
-            summary: '',
-            reviewer: null,
-            owner: null,
-            budgetItems: [],
-            budgetLimit: 0,
-            budgetTotal: 0,
-            budgetRemaining: 0,
-            budgetPercent: 0,
-            createdAt: '',
-            updatedAt: '',
-        },
+<div x-data="{
+    show: false,
+    data: {
+        title: '',
+        scheme: '',
+        period: '',
+        status: '',
+        statusClass: '',
+        is_research: true,
+        keywords: [],
+        summary: '',
+        reviewer: null,
+        owner: null,
+        budgetItems: [],
+        budgetLimit: 0,
+        budgetTotal: 0,
+        budgetRemaining: 0,
+        budgetPercent: 0,
+        createdAt: '',
+        updatedAt: '',
+        adminNotes: [],
+    },
 
-        open(detail = {}) {
-            this.data = Object.assign(this.data, detail);
-            this.show = true;
-        },
+    open(detail = {}) {
+        this.data = Object.assign(this.data, detail);
+        this.show = true;
+    },
 
-        close() {
-            this.show = false;
-        },
+    close() {
+        this.show = false;
+    },
 
-        formatRupiah(val) {
-            return 'Rp ' + new Intl.NumberFormat('id-ID').format(val || 0);
-        }
-    }"
-    x-on:view-details.window="open($event.detail)"
-    x-on:keydown.escape.window="close()"
-    x-show="show"
-    x-transition:enter="transition ease-out duration-200"
-    x-transition:enter-start="opacity-0"
-    x-transition:enter-end="opacity-100"
-    x-transition:leave="transition ease-in duration-150"
-    x-transition:leave-start="opacity-100"
-    x-transition:leave-end="opacity-0"
-    x-cloak
+    formatRupiah(val) {
+        return 'Rp ' + new Intl.NumberFormat('id-ID').format(val || 0);
+    }
+}" x-on:view-details.window="open($event.detail)" x-on:keydown.escape.window="close()"
+    x-show="show" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0"
+    x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150"
+    x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" x-cloak
     class="fixed inset-0 z-50 flex items-end sm:items-center justify-center
            p-0 sm:p-4 bg-inverse-surface/40 backdrop-blur-sm">
 
-    <div
-        x-on:click.away="close()"
-        x-transition:enter="transition ease-out duration-200"
+    <div x-on:click.away="close()" x-transition:enter="transition ease-out duration-200"
         x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
         x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
         x-transition:leave="transition ease-in duration-150"
@@ -66,7 +57,8 @@
                border border-outline-variant/50 dark:border-zinc-700">
 
         {{-- ── Header ── --}}
-        <div class="shrink-0 px-5 sm:px-6 py-4
+        <div
+            class="shrink-0 px-5 sm:px-6 py-4
                     border-b border-outline-variant/40 dark:border-zinc-800
                     rounded-t-2xl sm:rounded-t-xl">
 
@@ -76,9 +68,9 @@
                         <span
                             class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md
                                    text-[10px] font-bold uppercase tracking-wider"
-                            :class="data.is_research
-                                ? 'bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-fixed-dim'
-                                : 'bg-secondary/10 text-secondary dark:bg-secondary/20 dark:text-secondary-fixed-dim'">
+                            :class="data.is_research ?
+                                'bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-fixed-dim' :
+                                'bg-secondary/10 text-secondary dark:bg-secondary/20 dark:text-secondary-fixed-dim'">
                             <flux:icon.beaker x-show="data.is_research" class="size-3" />
                             <flux:icon.hand-raised x-show="!data.is_research" class="size-3" />
                             <span x-text="data.is_research ? 'Research' : 'Dedication'"></span>
@@ -88,8 +80,7 @@
                         <span
                             class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full
                                    text-[10px] font-semibold whitespace-nowrap"
-                            :class="data.statusClass"
-                            x-text="data.status"></span>
+                            :class="data.statusClass" x-text="data.status"></span>
                     </div>
 
                     <h3 class="font-heading text-base sm:text-lg font-semibold
@@ -113,10 +104,12 @@
             {{-- Meta grid: Scheme, Period, Reviewer, Owner --}}
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
 
-                <div class="p-3 rounded-xl
+                <div
+                    class="p-3 rounded-xl
                             border border-outline-variant/60 dark:border-zinc-700
                             bg-surface-container-low dark:bg-zinc-800/40">
-                    <div class="flex items-center gap-1.5 text-[10px] uppercase tracking-wider
+                    <div
+                        class="flex items-center gap-1.5 text-[10px] uppercase tracking-wider
                                 text-outline dark:text-zinc-400 font-semibold">
                         <flux:icon.rectangle-group class="size-3" />
                         Scheme
@@ -126,10 +119,12 @@
                         x-text="data.scheme || '—'"></p>
                 </div>
 
-                <div class="p-3 rounded-xl
+                <div
+                    class="p-3 rounded-xl
                             border border-outline-variant/60 dark:border-zinc-700
                             bg-surface-container-low dark:bg-zinc-800/40">
-                    <div class="flex items-center gap-1.5 text-[10px] uppercase tracking-wider
+                    <div
+                        class="flex items-center gap-1.5 text-[10px] uppercase tracking-wider
                                 text-outline dark:text-zinc-400 font-semibold">
                         <flux:icon.calendar-days class="size-3" />
                         Period
@@ -139,10 +134,12 @@
                         x-text="data.period || '—'"></p>
                 </div>
 
-                <div class="p-3 rounded-xl
+                <div
+                    class="p-3 rounded-xl
                             border border-outline-variant/60 dark:border-zinc-700
                             bg-surface-container-low dark:bg-zinc-800/40">
-                    <div class="flex items-center gap-1.5 text-[10px] uppercase tracking-wider
+                    <div
+                        class="flex items-center gap-1.5 text-[10px] uppercase tracking-wider
                                 text-outline dark:text-zinc-400 font-semibold">
                         <flux:icon.user-circle class="size-3" />
                         Owner
@@ -152,10 +149,12 @@
                         x-text="data.owner || '—'"></p>
                 </div>
 
-                <div class="p-3 rounded-xl
+                <div
+                    class="p-3 rounded-xl
                             border border-outline-variant/60 dark:border-zinc-700
                             bg-surface-container-low dark:bg-zinc-800/40">
-                    <div class="flex items-center gap-1.5 text-[10px] uppercase tracking-wider
+                    <div
+                        class="flex items-center gap-1.5 text-[10px] uppercase tracking-wider
                                 text-outline dark:text-zinc-400 font-semibold">
                         <flux:icon.user-group class="size-3" />
                         Reviewer
@@ -173,7 +172,8 @@
                         </div>
                     </template>
                     <template x-if="!data.reviewer">
-                        <p class="mt-1 text-sm italic
+                        <p
+                            class="mt-1 text-sm italic
                                   text-outline dark:text-zinc-500">
                             Not assigned
                         </p>
@@ -183,7 +183,8 @@
 
             {{-- Keywords --}}
             <div>
-                <h4 class="font-heading text-[11px] uppercase tracking-wider font-semibold
+                <h4
+                    class="font-heading text-[11px] uppercase tracking-wider font-semibold
                            text-outline dark:text-zinc-400 mb-2">
                     Keywords
                 </h4>
@@ -207,11 +208,13 @@
 
             {{-- Summary --}}
             <div>
-                <h4 class="font-heading text-[11px] uppercase tracking-wider font-semibold
+                <h4
+                    class="font-heading text-[11px] uppercase tracking-wider font-semibold
                            text-outline dark:text-zinc-400 mb-2">
                     Summary
                 </h4>
-                <div class="p-3 rounded-xl
+                <div
+                    class="p-3 rounded-xl
                             bg-surface-container-low dark:bg-zinc-800/40
                             border border-outline-variant/60 dark:border-zinc-700">
                     <p class="text-sm leading-relaxed whitespace-pre-line
@@ -223,11 +226,13 @@
             {{-- Budget section --}}
             <div>
                 <div class="flex items-center justify-between mb-2">
-                    <h4 class="font-heading text-[11px] uppercase tracking-wider font-semibold
+                    <h4
+                        class="font-heading text-[11px] uppercase tracking-wider font-semibold
                                text-outline dark:text-zinc-400">
                         Budget Allocation
                     </h4>
-                    <span class="text-[10px] font-mono
+                    <span
+                        class="text-[10px] font-mono
                                  text-on-surface-variant dark:text-zinc-400">
                         <span x-text="data.budgetItems.length"></span>
                         <span x-text="data.budgetItems.length === 1 ? 'item' : 'items'"></span>
@@ -236,10 +241,12 @@
 
                 {{-- Summary strip --}}
                 <div class="grid grid-cols-3 gap-2 mb-3">
-                    <div class="p-2.5 rounded-lg
+                    <div
+                        class="p-2.5 rounded-lg
                                 bg-surface-container-low dark:bg-zinc-800/40
                                 border border-outline-variant/60 dark:border-zinc-700">
-                        <div class="text-[9px] uppercase tracking-wider font-semibold
+                        <div
+                            class="text-[9px] uppercase tracking-wider font-semibold
                                     text-outline dark:text-zinc-500">
                             Limit
                         </div>
@@ -247,10 +254,12 @@
                                   text-on-surface dark:text-zinc-100"
                             x-text="formatRupiah(data.budgetLimit)"></p>
                     </div>
-                    <div class="p-2.5 rounded-lg
+                    <div
+                        class="p-2.5 rounded-lg
                                 bg-surface-container-low dark:bg-zinc-800/40
                                 border border-outline-variant/60 dark:border-zinc-700">
-                        <div class="text-[9px] uppercase tracking-wider font-semibold
+                        <div
+                            class="text-[9px] uppercase tracking-wider font-semibold
                                     text-outline dark:text-zinc-500">
                             Allocated
                         </div>
@@ -259,26 +268,27 @@
                             x-text="formatRupiah(data.budgetTotal)"></p>
                     </div>
                     <div class="p-2.5 rounded-lg border"
-                        :class="data.budgetRemaining < 0
-                            ? 'bg-error-container/40 dark:bg-rose-900/20 border-error/30 dark:border-rose-800'
-                            : 'bg-primary/5 dark:bg-emerald-900/20 border-primary/30 dark:border-emerald-800'">
+                        :class="data.budgetRemaining < 0 ?
+                            'bg-error-container/40 dark:bg-rose-900/20 border-error/30 dark:border-rose-800' :
+                            'bg-primary/5 dark:bg-emerald-900/20 border-primary/30 dark:border-emerald-800'">
                         <div class="text-[9px] uppercase tracking-wider font-semibold"
-                            :class="data.budgetRemaining < 0
-                                ? 'text-error dark:text-rose-400'
-                                : 'text-primary dark:text-primary-fixed-dim'">
+                            :class="data.budgetRemaining < 0 ?
+                                'text-error dark:text-rose-400' :
+                                'text-primary dark:text-primary-fixed-dim'">
                             Remaining
                         </div>
                         <p class="mt-0.5 text-[12px] font-bold font-mono tabular-nums"
-                            :class="data.budgetRemaining < 0
-                                ? 'text-error dark:text-rose-400'
-                                : 'text-primary dark:text-primary-fixed-dim'"
+                            :class="data.budgetRemaining < 0 ?
+                                'text-error dark:text-rose-400' :
+                                'text-primary dark:text-primary-fixed-dim'"
                             x-text="formatRupiah(data.budgetRemaining)"></p>
                     </div>
                 </div>
 
                 {{-- Progress bar --}}
                 <div class="mb-3">
-                    <div class="w-full h-1.5 rounded-full overflow-hidden
+                    <div
+                        class="w-full h-1.5 rounded-full overflow-hidden
                                 bg-surface-container-high dark:bg-zinc-800">
                         <div class="h-full rounded-full transition-all duration-300
                                     bg-gradient-to-r from-primary to-primary-container"
@@ -287,7 +297,8 @@
                 </div>
 
                 {{-- Items list --}}
-                <div class="rounded-xl
+                <div
+                    class="rounded-xl
                             border border-outline-variant/60 dark:border-zinc-700
                             overflow-hidden">
                     <div class="overflow-x-auto">
@@ -304,7 +315,8 @@
                             </thead>
                             <tbody class="divide-y divide-outline-variant/40 dark:divide-zinc-800">
                                 <template x-for="(item, i) in data.budgetItems" :key="i">
-                                    <tr class="hover:bg-surface-container-low/60 dark:hover:bg-zinc-800/30
+                                    <tr
+                                        class="hover:bg-surface-container-low/60 dark:hover:bg-zinc-800/30
                                                transition-colors">
                                         <td class="px-3 py-2 font-mono text-[11px]
                                                    text-outline dark:text-zinc-500"
@@ -324,7 +336,8 @@
                                             <div class="flex flex-col items-center gap-1">
                                                 <flux:icon.receipt-percent
                                                     class="size-6 text-outline-variant dark:text-zinc-700" />
-                                                <span class="text-[11px]
+                                                <span
+                                                    class="text-[11px]
                                                              text-outline dark:text-zinc-500">
                                                     No budget items
                                                 </span>
@@ -355,8 +368,92 @@
                 </div>
             </div>
 
+            {{-- ═════════ Admin Notes Timeline ═════════ --}}
+            <template x-if="data.adminNotes.length > 0">
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <h4
+                            class="font-heading text-[11px] uppercase tracking-wider font-semibold
+                       text-outline dark:text-zinc-400">
+                            Admin Notes
+                        </h4>
+                        <span
+                            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md
+                         bg-amber-100 text-amber-700 text-[10px] font-bold
+                         dark:bg-amber-900/40 dark:text-amber-300">
+                            <flux:icon.pencil-square class="size-3" />
+                            <span x-text="data.adminNotes.length"></span>
+                            <span x-text="data.adminNotes.length === 1 ? 'note' : 'notes'"></span>
+                        </span>
+                    </div>
+
+                    <div class="flex flex-col gap-2">
+                        <template x-for="(note, i) in data.adminNotes" :key="i">
+                            <div
+                                class="relative pl-4
+                            border-l-2 border-amber-300/60 dark:border-amber-700/60">
+                                {{-- Dot --}}
+                                <div
+                                    class="absolute -left-[5px] top-3
+                                w-2 h-2 rounded-full
+                                bg-amber-500
+                                ring-2 ring-surface-container-lowest dark:ring-zinc-900">
+                                </div>
+
+                                <div
+                                    class="p-3 rounded-xl
+                                bg-amber-50/60 dark:bg-amber-900/15
+                                border border-amber-200/70 dark:border-amber-800/60">
+                                    {{-- Timestamp --}}
+                                    <div class="flex items-center justify-between gap-2 mb-1.5">
+                                        <div class="flex items-center gap-1.5">
+                                            <flux:icon.clock class="size-3 text-amber-600 dark:text-amber-400" />
+                                            <span
+                                                class="text-[10px] font-mono font-semibold
+                                             text-amber-700 dark:text-amber-400"
+                                                x-text="note.createdAt"></span>
+                                        </div>
+                                        <span class="text-[10px] text-amber-600/80 dark:text-amber-400/70"
+                                            x-text="note.relative"></span>
+                                    </div>
+
+                                    {{-- Comment --}}
+                                    <template x-if="note.comment">
+                                        <p class="text-sm leading-relaxed whitespace-pre-line
+                                      text-on-surface dark:text-zinc-100"
+                                            x-text="note.comment"></p>
+                                    </template>
+
+                                    {{-- Recommendation --}}
+                                    <template x-if="note.recommendation">
+                                        <div
+                                            class="mt-2 pt-2
+                                        border-t border-amber-200/70 dark:border-amber-800/50">
+                                            <div class="flex items-center gap-1.5 mb-1">
+                                                <flux:icon.light-bulb
+                                                    class="size-3
+                                                                text-amber-600 dark:text-amber-400" />
+                                                <span
+                                                    class="text-[10px] uppercase tracking-wider font-bold
+                                                 text-amber-700 dark:text-amber-400">
+                                                    Recommendation
+                                                </span>
+                                            </div>
+                                            <p class="text-[12px] leading-relaxed whitespace-pre-line
+                                          text-on-surface-variant dark:text-zinc-400"
+                                                x-text="note.recommendation"></p>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </template>
+
             {{-- Timeline footer --}}
-            <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5
+            <div
+                class="flex flex-wrap items-center gap-x-4 gap-y-1.5
                         pt-3 border-t border-outline-variant/40 dark:border-zinc-800
                         text-[11px] text-outline dark:text-zinc-500">
                 <div class="flex items-center gap-1.5">
@@ -375,7 +472,8 @@
         </div>
 
         {{-- ── Footer ── --}}
-        <div class="shrink-0 flex justify-end gap-2
+        <div
+            class="shrink-0 flex justify-end gap-2
                     px-5 sm:px-6 py-4
                     border-t border-outline-variant/40 dark:border-zinc-700
                     bg-surface-container-lowest dark:bg-zinc-900

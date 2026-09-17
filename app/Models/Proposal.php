@@ -30,7 +30,8 @@ use Illuminate\Support\Carbon;
  * @method HasOne<ProgressReport> progressReport()
  * @method HasOne<FinalReport> finalReport()
  * @method HasOne<Output> output()
- * @method HasOne<ReviewerNote> reviewerNotes()
+ * @method HasMany<AdminNotes> adminNotes()
+ * @method HasMany<ReviewerNote> reviewerNotes()
  */
 #[Guarded(['id'])]
 class Proposal extends Model
@@ -73,6 +74,11 @@ class Proposal extends Model
     public function output(): HasOne
     {
         return $this->hasOne(Output::class);
+    }
+
+    public function adminNotes(): HasMany
+    {
+        return $this->hasMany(AdminNotes::class);
     }
 
     public function reviewerNotes(): HasMany
