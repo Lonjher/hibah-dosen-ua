@@ -55,9 +55,9 @@ class Proposal extends Model
         return $this->belongsTo(Period::class);
     }
 
-    public function budgetProposal(): HasOne
+    public function budgetProposal(): HasMany
     {
-        return $this->hasOne(BudgetProposal::class);
+        return $this->hasMany(BudgetProposal::class);
     }
 
     public function progressReport(): HasOne

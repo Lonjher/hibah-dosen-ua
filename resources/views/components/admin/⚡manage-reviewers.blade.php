@@ -114,8 +114,6 @@ new class extends Component {
         <flux:button icon="plus" wire:click="create" variant="primary" size="sm" class="shrink-0">Tambah Reviewer
         </flux:button>
     </div>
-
-    <!-- Tabel Reviewer -->
     <div
         class="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl rounded-2xl border border-white/80 dark:border-zinc-800 shadow-sm overflow-hidden">
         <div class="overflow-x-auto">

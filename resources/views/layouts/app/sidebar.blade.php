@@ -83,72 +83,88 @@
                     {{-- Dashboard --}}
                     <x-sidebar-link href="dashboard" title="Dashboard" icon="squares-2x2" />
 
-                    {{-- Group Administrator --}}
-                    <div class="flex flex-col gap-0.5">
-                        <span
-                            class="px-2 py-1 font-body text-[9px] uppercase tracking-wider text-outline font-bold dark:text-zinc-500">Administrator</span>
+                    @can('superadminOrAdmin')
+                        {{-- Group Administrator --}}
+                        <div class="flex flex-col gap-0.5">
+                            <span
+                                class="px-2 py-1 font-body text-[9px] uppercase tracking-wider text-outline font-bold dark:text-zinc-500">Administrator</span>
 
-                        <x-sidebar-link href="admin.manage-periods" title="Periods" icon="calendar-days" />
-                        <x-sidebar-link href="admin.manage-schemes" title="Schemes" icon="rectangle-group" />
+                            <x-sidebar-link href="admin.manage-periods" title="Periods" icon="calendar-days" />
+                            <x-sidebar-link href="admin.manage-schemes" title="Schemes" icon="rectangle-group" />
 
-                        <div class="flex flex-col">
-                            <button type="button" x-on:click="usersOpen = !usersOpen"
-                                class="w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low/50 font-heading text-[11px] font-medium transition-all group dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-800/50">
-                                <div class="flex items-center gap-2">
-                                    <flux:icon.users
-                                        class="size-4 text-outline group-hover:text-emerald-500 transition-colors shrink-0 dark:group-hover:text-emerald-400" />
-                                    <span>Users</span>
+                            <div class="flex flex-col">
+                                <button type="button" x-on:click="usersOpen = !usersOpen"
+                                    class="w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low/50 font-heading text-[11px] font-medium transition-all group dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-800/50">
+                                    <div class="flex items-center gap-2">
+                                        <flux:icon.users
+                                            class="size-4 text-outline group-hover:text-emerald-500 transition-colors shrink-0 dark:group-hover:text-emerald-400" />
+                                        <span>Users</span>
+                                    </div>
+                                    <flux:icon.chevron-down
+                                        class="size-3.5 text-outline transition-transform duration-200 shrink-0 dark:text-zinc-500"
+                                        x-bind:class="usersOpen && 'rotate-180'" />
+                                </button>
+                                <div x-show="usersOpen" x-transition:enter="transition ease-out duration-150"
+                                    x-transition:enter-start="opacity-0 -translate-y-1"
+                                    x-transition:enter-end="opacity-100 translate-y-0"
+                                    x-transition:leave="transition ease-in duration-100"
+                                    x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                                    class="flex flex-col gap-0.5 border-l border-white/80 ml-3.5 my-0.5 dark:border-zinc-800">
+                                    <x-sidebar-link href="admin.manage-admins" title="Admins" icon="shield-check" />
+                                    <x-sidebar-link href="admin.manage-reviewers" title="Reviewers"
+                                        icon="clipboard-document-check" />
+                                    <x-sidebar-link href="admin.manage-users" title="Users" icon="user-circle" />
                                 </div>
-                                <flux:icon.chevron-down
-                                    class="size-3.5 text-outline transition-transform duration-200 shrink-0 dark:text-zinc-500"
-                                    x-bind:class="usersOpen && 'rotate-180'" />
-                            </button>
-                            <div x-show="usersOpen" x-transition:enter="transition ease-out duration-150"
-                                x-transition:enter-start="opacity-0 -translate-y-1"
-                                x-transition:enter-end="opacity-100 translate-y-0"
-                                x-transition:leave="transition ease-in duration-100"
-                                x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
-                                class="flex flex-col gap-0.5 border-l border-white/80 ml-3.5 my-0.5 dark:border-zinc-800">
-                                <x-sidebar-link href="admin.manage-admins" title="Admins" icon="shield-check" />
-                                <x-sidebar-link href="admin.manage-reviewers" title="Reviewers"
-                                    icon="clipboard-document-check" />
-                                <x-sidebar-link href="admin.manage-users" title="Users" icon="user-circle" />
                             </div>
                         </div>
-                    </div>
+                        {{-- Group Internal Data --}}
+                        <div class="flex flex-col gap-0.5">
+                            <span
+                                class="px-2 py-1 font-body text-[9px] uppercase tracking-wider text-outline font-bold dark:text-zinc-500">Internal
+                                Data</span>
+                            <x-sidebar-link href="admin.internal.manage-researches" title="Research" icon="beaker" />
+                            <a href="#"
+                                class="flex items-center gap-2 px-2 py-1.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low/50 font-heading text-[11px] font-medium transition-all group dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-800/50">
+                                <flux:icon.hand-raised
+                                    class="size-4 text-outline group-hover:text-emerald-500 transition-colors shrink-0 dark:group-hover:text-emerald-400" />
+                                <span>Dedication</span>
+                            </a>
+                        </div>
 
-                    {{-- Group Internal Data --}}
-                    <div class="flex flex-col gap-0.5">
-                        <span
-                            class="px-2 py-1 font-body text-[9px] uppercase tracking-wider text-outline font-bold dark:text-zinc-500">Internal
-                            Data</span>
-                        <x-sidebar-link href="admin.internal.manage-researches" title="Research" icon="beaker" />
-                        <a href="#"
-                            class="flex items-center gap-2 px-2 py-1.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low/50 font-heading text-[11px] font-medium transition-all group dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-800/50">
-                            <flux:icon.hand-raised
-                                class="size-4 text-outline group-hover:text-emerald-500 transition-colors shrink-0 dark:group-hover:text-emerald-400" />
-                            <span>Dedication</span>
-                        </a>
-                    </div>
-
-                    {{-- Group External Data --}}
-                    <div class="flex flex-col gap-0.5">
-                        <span
-                            class="px-2 py-1 font-body text-[9px] uppercase tracking-wider text-outline font-bold dark:text-zinc-500">External
-                            Data</span>
-                        <a href="#"
-                            class="flex items-center gap-2 px-2 py-1.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low/50 font-heading text-[11px] font-medium transition-all group dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-800/50">
-                            <flux:icon.globe-alt
-                                class="size-4 text-outline group-hover:text-emerald-500 transition-colors shrink-0 dark:group-hover:text-emerald-400" />
-                            <span>Research</span>
-                        </a>
-                        <a href="#"
-                            class="flex items-center gap-2 px-2 py-1.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low/50 font-heading text-[11px] font-medium transition-all group dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-800/50">
-                            <flux:icon.gift
-                                class="size-4 text-outline group-hover:text-emerald-500 transition-colors shrink-0 dark:group-hover:text-emerald-400" />
-                            <span>Dedication</span>
-                        </a>
-                    </div>
+                        {{-- Group External Data --}}
+                        <div class="flex flex-col gap-0.5">
+                            <span
+                                class="px-2 py-1 font-body text-[9px] uppercase tracking-wider text-outline font-bold dark:text-zinc-500">External
+                                Data</span>
+                            <a href="#"
+                                class="flex items-center gap-2 px-2 py-1.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low/50 font-heading text-[11px] font-medium transition-all group dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-800/50">
+                                <flux:icon.globe-alt
+                                    class="size-4 text-outline group-hover:text-emerald-500 transition-colors shrink-0 dark:group-hover:text-emerald-400" />
+                                <span>Research</span>
+                            </a>
+                            <a href="#"
+                                class="flex items-center gap-2 px-2 py-1.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low/50 font-heading text-[11px] font-medium transition-all group dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-800/50">
+                                <flux:icon.gift
+                                    class="size-4 text-outline group-hover:text-emerald-500 transition-colors shrink-0 dark:group-hover:text-emerald-400" />
+                                <span>Dedication</span>
+                            </a>
+                        </div>
+                    @endcan
+                    @can('user')
+                        {{-- Group Internal Data --}}
+                        <div class="flex flex-col gap-0.5">
+                            <span
+                                class="px-2 py-1 font-body text-[9px] uppercase tracking-wider text-outline font-bold dark:text-zinc-500">Internal
+                                Data</span>
+                            <x-sidebar-link href="user.internal.manage-researches" title="Research" icon="beaker" />
+                            <a href="#"
+                                class="flex items-center gap-2 px-2 py-1.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low/50 font-heading text-[11px] font-medium transition-all group dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-800/50">
+                                <flux:icon.hand-raised
+                                    class="size-4 text-outline group-hover:text-emerald-500 transition-colors shrink-0 dark:group-hover:text-emerald-400" />
+                                <span>Dedication</span>
+                            </a>
+                        </div>
+                    @endcan
                 </div>
 
                 {{-- User Profile --}}
