@@ -5,17 +5,18 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Guarded;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
  * @property int $proposal_id
  * @property string $item_name
  * @property int $amount
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ *
  * @method BelongsTo<Proposal> proposal()
  */
-
 #[Guarded(['id'])]
 class BudgetProposal extends Model
 {

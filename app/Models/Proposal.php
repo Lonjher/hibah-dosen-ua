@@ -5,7 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Guarded;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -17,8 +19,9 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property bool $is_research
  * @property string $status_proposal
  * @property int $period_id
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ *
  * @method BelongsTo<ResearchScheme> researchScheme()
  * @method BelongsTo<User> author()
  * @method BelongsTo<User> reviewer()
@@ -27,9 +30,9 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @method HasOne<ProgressReport> progressReport()
  * @method HasOne<FinalReport> finalReport()
  * @method HasOne<Output> output()
- * @method HasOne<ReviewerNote> reviewerNotes()
+ * @method HasMany<AdminNotes> adminNotes()
+ * @method HasMany<ReviewerNote> reviewerNotes()
  */
-
 #[Guarded(['id'])]
 class Proposal extends Model
 {
@@ -53,9 +56,9 @@ class Proposal extends Model
         return $this->belongsTo(Period::class);
     }
 
-    public function budgetProposal(): HasOne
+    public function budgetProposal(): HasMany
     {
-        return $this->hasOne(BudgetProposal::class);
+        return $this->hasMany(BudgetProposal::class);
     }
 
     public function progressReport(): HasOne
@@ -73,7 +76,12 @@ class Proposal extends Model
         return $this->hasOne(Output::class);
     }
 
-    public function reviewerNotes(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function adminNotes(): HasMany
+    {
+        return $this->hasMany(AdminNotes::class);
+    }
+
+    public function reviewerNotes(): HasMany
     {
         return $this->hasMany(ReviewerNote::class);
     }
