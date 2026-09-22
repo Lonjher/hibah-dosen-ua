@@ -15,6 +15,9 @@ new class extends Component {
     public $email = '';
     public $nidn = '';
     public $phone_number = '';
+    public $birthday = '';
+    public $gender = '';
+    public $address = '';
     public $password = '';
     public $editingId = null;
     public $showModal = false;
@@ -24,6 +27,9 @@ new class extends Component {
         'email' => 'required|email|max:255|unique:users,email',
         'nidn' => 'required|string|max:30',
         'phone_number' => 'required|string|max:20',
+        'birthday' => 'required|date',
+        'gender' => 'required',
+        'address' => 'required',
         'password' => 'required|string|min:8',
     ];
 
@@ -50,6 +56,9 @@ new class extends Component {
         $this->email = $reviewer->email;
         $this->nidn = $reviewer->nidn ?? '';
         $this->phone_number = $reviewer->phone_number ?? '';
+        $this->birthday = $reviewer->birthday ?? '';
+        $this->gender = $reviewer->gender ?? '';
+        $this->address = $reviewer->address ?? '';
         $this->password = '';
         $this->showModal = true;
     }
@@ -68,6 +77,9 @@ new class extends Component {
                 'email' => $this->email,
                 'nidn' => $this->nidn,
                 'phone_number' => $this->phone_number,
+                'birthday' => $this->birthday,
+                'gender' => $this->gender,
+                'address' => $this->address,
                 'role_id' => $reviewerRole->id,
             ]);
             if ($this->password) {
@@ -80,6 +92,9 @@ new class extends Component {
                 'email' => $this->email,
                 'nidn' => $this->nidn,
                 'phone_number' => $this->phone_number,
+                'birthday' => $this->birthday,
+                'gender' => $this->gender,
+                'address' => $this->address,
                 'password' => Hash::make($this->password),
                 'role_id' => $reviewerRole->id,
             ]);

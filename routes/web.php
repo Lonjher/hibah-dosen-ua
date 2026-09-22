@@ -16,6 +16,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::livewire('admin/internal/manage-researches', 'admin.internal.manage-researches')->name('admin.internal.manage-researches');
     });
 
+    Route::middleware('can:reviewer')->group(function(){
+        Route::livewire('reviewer/review-proposal', 'reviewers.review-proposal')->name('reviewer.review-proposal');
+    });
+
     Route::middleware('can:user')->group(function(){
         Route::livewire('user/internal/manage-researches', 'user.internal.manage-researches')->name('user.internal.manage-researches');
         Route::livewire('user/internal/manage-dedications', 'user.internal.manage-dedications')->name('user.internal.manage-dedications');

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
+use phpDocumentor\Reflection\Types\Boolean;
 
 /**
  * @property int $id
@@ -32,6 +33,7 @@ use Illuminate\Support\Carbon;
  * @method HasOne<Output> output()
  * @method HasMany<AdminNotes> adminNotes()
  * @method HasMany<ReviewerNote> reviewerNotes()
+ * @method bool canDownloadLoA()
  */
 #[Guarded(['id'])]
 class Proposal extends Model
@@ -84,5 +86,20 @@ class Proposal extends Model
     public function reviewerNotes(): HasMany
     {
         return $this->hasMany(ReviewerNote::class);
+    }
+
+    public function latestReviewerNote()
+    {
+        return $this->hasOne(ReviewerNote::class)->latestOfMany();
+    }
+
+    public function canDownloadLoA(): bool
+    {
+        return in_array($this->status_proposal, [
+            'submitted',
+            'under_review',
+            'reviewer_revision',
+            'accepted',
+        ]);
     }
 }

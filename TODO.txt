@@ -54,6 +54,6 @@ Review
 
 - Ada grafik laporan dana penelitian per tahun, PkM per tahun, internal dan eksternal
 
-- Tambahkan SK Penelitian dan Pengabdian di setiap Proposal yang sudah diterima oleh Admin
-- Tambakan Skema Penelitian dan Pengabdian, lengkap dengan batasan anggarannya
+- Tambahkan SK Penelitian dan Pengabdian di setiap Proposal yang sudah diterima oleh Admin ✅
+- Tambakan Skema Penelitian dan Pengabdian, lengkap dengan batasan anggarannya ✅
 - Tambahkan Hibah Eksternal (Penelitian yang Didanai dan Tidak Didanai) - Hanya mengumpulkan Data (Tidak ada proses didalamnya) -> Nanti digunakan untuk menampilkan grafik penelitian yang dilakukan (Internal dan Eksternal) per tahun di Dashboard (User)

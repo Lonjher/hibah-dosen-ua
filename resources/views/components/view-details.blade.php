@@ -23,6 +23,7 @@
         createdAt: '',
         updatedAt: '',
         adminNotes: [],
+        reviewerNotes: [],
     },
 
     open(detail = {}) {
@@ -441,6 +442,94 @@
                                             </div>
                                             <p class="text-[12px] leading-relaxed whitespace-pre-line
                                           text-on-surface-variant dark:text-zinc-400"
+                                                x-text="note.recommendation"></p>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </template>
+
+            {{-- ═════════ Reviewer Notes Timeline ═════════ --}}
+            <template x-if="data.reviewerNotes.length > 0">
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="font-heading text-[11px] uppercase tracking-wider font-semibold
+                                text-outline dark:text-zinc-400">
+                            Reviewer Notes
+                        </h4>
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md
+                                    bg-violet-100 text-violet-700 text-[10px] font-bold
+                                    dark:bg-violet-900/40 dark:text-violet-300">
+                            <flux:icon.clipboard-document-check class="size-3" />
+                            <span x-text="data.reviewerNotes.length"></span>
+                            <span x-text="data.reviewerNotes.length === 1 ? 'note' : 'notes'"></span>
+                        </span>
+                    </div>
+
+                    <div class="flex flex-col gap-2">
+                        <template x-for="(note, i) in data.reviewerNotes" :key="i">
+                            <div class="relative pl-4 border-l-2"
+                                :class="note.isApproved
+                                    ? 'border-emerald-300/60 dark:border-emerald-700/60'
+                                    : 'border-amber-300/60 dark:border-amber-700/60'">
+
+                                {{-- Dot --}}
+                                <div class="absolute -left-[5px] top-3 w-2 h-2 rounded-full
+                                            ring-2 ring-surface-container-lowest dark:ring-zinc-900"
+                                    :class="note.isApproved ? 'bg-emerald-500' : 'bg-amber-500'"></div>
+
+                                <div class="p-3 rounded-xl border"
+                                    :class="note.isApproved
+                                        ? 'bg-emerald-50/60 dark:bg-emerald-900/15 border-emerald-200/70 dark:border-emerald-800/60'
+                                        : 'bg-amber-50/60 dark:bg-amber-900/15 border-amber-200/70 dark:border-amber-800/60'">
+
+                                    {{-- Header --}}
+                                    <div class="flex items-center justify-between gap-2 mb-1.5">
+                                        <div class="flex items-center gap-2">
+                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full
+                                                        text-[10px] font-bold uppercase tracking-wider"
+                                                :class="note.isApproved
+                                                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
+                                                    : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'">
+                                                <flux:icon.check-circle x-show="note.isApproved" class="size-3" />
+                                                <flux:icon.pencil-square x-show="!note.isApproved" class="size-3" />
+                                                <span x-text="note.isApproved ? 'Approved' : 'Revision Requested'"></span>
+                                            </span>
+                                        </div>
+                                        <span class="text-[10px] text-outline dark:text-zinc-500 font-mono"
+                                            x-text="note.createdAt"></span>
+                                    </div>
+
+                                    {{-- Comment --}}
+                                    <template x-if="note.comment">
+                                        <p class="text-sm leading-relaxed whitespace-pre-line
+                                                text-on-surface dark:text-zinc-100"
+                                            x-text="note.comment"></p>
+                                    </template>
+
+                                    {{-- Recommendation --}}
+                                    <template x-if="note.recommendation">
+                                        <div class="mt-2 pt-2 border-t"
+                                            x-bind:class="note.isApproved
+                                                ? 'border-emerald-200/70 dark:border-emerald-800/50'
+                                                : 'border-amber-200/70 dark:border-amber-800/50'">
+                                            <div class="flex items-center gap-1.5 mb-1">
+                                                <flux:icon.light-bulb class="size-3"
+                                                    x-bind:class="note.isApproved
+                                                        ? 'text-emerald-600 dark:text-emerald-400'
+                                                        : 'text-amber-600 dark:text-amber-400'" />
+                                                <span class="text-[10px] uppercase tracking-wider font-bold"
+                                                    x-bind:class="note.isApproved
+                                                        ? 'text-emerald-700 dark:text-emerald-400'
+                                                        : 'text-amber-700 dark:text-amber-400'">
+                                                    Recommendation
+                                                </span>
+                                            </div>
+                                            <p class="text-[12px] leading-relaxed whitespace-pre-line
+                                                    text-on-surface-variant dark:text-zinc-400"
                                                 x-text="note.recommendation"></p>
                                         </div>
                                     </template>

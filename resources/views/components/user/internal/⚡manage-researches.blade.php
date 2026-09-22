@@ -115,36 +115,77 @@ new class extends Component {
     public function viewDetails(int $id): void
     {
         $proposal = Proposal::query()
-            ->with(['researchScheme', 'period', 'reviewer', 'author', 'budgetProposal', 'adminNotes' => fn($q) => $q->latest()])
+            ->with([
+                'researchScheme',
+                'period',
+                'reviewer',
+                'author',
+                'budgetProposal',
+                'adminNotes'    => fn ($q) => $q->latest(),
+                'reviewerNotes' => fn ($q) => $q->latest(),   // ← tambahkan ini
+            ])
             ->where('user_id', Auth::id())
             ->findOrFail($id);
 
         $meta = $this->statusMeta($proposal->status_proposal);
+
+        // Budget items
         $budgetItems = $proposal->budgetProposal
-            ->map(
-                fn($i) => [
-                    'item_name' => $i->item_name,
-                    'amount' => (int) $i->amount,
-                ],
-            )
+            ->map(fn ($i) => [
+                'item_name' => $i->item_name,
+                'amount'    => (int) $i->amount,
+            ])
             ->values()
             ->all();
-         $notes = $proposal->adminNotes
-            ->map(
-                fn($note) => [
-                    'comment' => $note->comment ?? '',
-                    'recommendation' => $note->recommendation ?? '',
-                    'createdAt' => $note->created_at?->format('d M Y, H:i') ?? '—',
-                    'relative' => $note->created_at?->diffForHumans() ?? '',
-                ],
-            )
+
+        // Admin notes
+        $adminNotes = $proposal->adminNotes
+            ->map(fn ($note) => [
+                'comment'        => $note->comment ?? '',
+                'recommendation' => $note->recommendation ?? '',
+                'createdAt'      => $note->created_at?->format('d M Y, H:i') ?? '—',
+                'relative'       => $note->created_at?->diffForHumans() ?? '',
+            ])
+            ->values()
+            ->all();
+
+        // ── Reviewer notes (BARU) ──
+        $reviewerNotes = $proposal->reviewerNotes
+            ->map(fn ($note) => [
+                'comment'        => $note->comment ?? '',
+                'recommendation' => $note->recommendation ?? '',
+                'isApproved'     => (bool) $note->is_approved,
+                'createdAt'      => $note->created_at?->format('d M Y, H:i') ?? '—',
+                'relative'       => $note->created_at?->diffForHumans() ?? '',
+            ])
             ->values()
             ->all();
 
         $budgetTotal = (int) collect($budgetItems)->sum('amount');
         $budgetLimit = (int) ($proposal->researchScheme->budget_limit ?? 0);
 
-        $this->dispatch('view-details', title: $proposal->title, scheme: $proposal->researchScheme?->scheme_name ?? '—', period: $proposal->period?->periode ?? '—', status: $meta['label'], statusClass: $meta['class'], is_research: (bool) $proposal->is_research, keywords: array_filter(array_map('trim', explode(',', $proposal->keywords ?? ''))), summary: $proposal->summary ?? '', reviewer: $proposal->reviewer?->full_name, owner: $proposal->author?->full_name ?? Auth::user()->full_name, budgetItems: $budgetItems, budgetLimit: $budgetLimit, budgetTotal: $budgetTotal, budgetRemaining: $budgetLimit - $budgetTotal, budgetPercent: $budgetLimit > 0 ? round(($budgetTotal / $budgetLimit) * 100, 1) : 0, createdAt: $proposal->created_at?->format('d M Y, H:i') ?? '—', updatedAt: $proposal->updated_at?->format('d M Y, H:i') ?? '—', adminNotes: $notes);
+        $this->dispatch(
+            'view-details',
+            title:           $proposal->title,
+            scheme:          $proposal->researchScheme?->scheme_name ?? '—',
+            period:          $proposal->period?->periode ?? '—',
+            status:          $meta['label'],
+            statusClass:     $meta['class'],
+            is_research:     (bool) $proposal->is_research,
+            keywords:        array_filter(array_map('trim', explode(',', $proposal->keywords ?? ''))),
+            summary:         $proposal->summary ?? '',
+            reviewer:        $proposal->reviewer?->full_name,
+            owner:           $proposal->author?->full_name ?? Auth::user()->full_name,
+            budgetItems:     $budgetItems,
+            budgetLimit:     $budgetLimit,
+            budgetTotal:     $budgetTotal,
+            budgetRemaining: $budgetLimit - $budgetTotal,
+            budgetPercent:   $budgetLimit > 0 ? round(($budgetTotal / $budgetLimit) * 100, 1) : 0,
+            createdAt:       $proposal->created_at?->format('d M Y, H:i') ?? '—',
+            updatedAt:       $proposal->updated_at?->format('d M Y, H:i') ?? '—',
+            adminNotes:      $adminNotes,
+            reviewerNotes:   $reviewerNotes,   // ← kirim ke view-details
+        );
     }
 
     // ═══════════════ Step navigation ═══════════════
@@ -309,7 +350,7 @@ new class extends Component {
 
     public function canEdit(string $status): bool
     {
-        return in_array($status, ['draft', 'admin_revision']);
+        return in_array($status, ['draft', 'admin_revision', 'reviewer_revision']);
     }
 
     public function canDelete(string $status): bool
@@ -510,7 +551,7 @@ new class extends Component {
                                 <div class="flex flex-col gap-1 min-w-0">
                                     <span class="font-medium text-slate-900 dark:text-zinc-100 truncate"
                                         title="{{ $proposal->title }}">
-                                        {{ $proposal->title }}
+                                        {{ Str::limit($proposal->title, 40) }}
                                     </span>
                                     <span class="text-[11px] text-slate-500 dark:text-zinc-400 truncate">
                                         {{ $proposal->researchScheme?->scheme_name ?? '—' }}
@@ -529,10 +570,10 @@ new class extends Component {
                                             class="w-6 h-6 rounded-full bg-violet-100 text-violet-700
                                                    flex items-center justify-center text-[10px] font-bold
                                                    dark:bg-violet-900/40 dark:text-violet-300">
-                                            {{ strtoupper(substr($proposal->reviewer->name, 0, 1)) }}
+                                            {{ strtoupper(substr($proposal->reviewer->full_name, 0, 1)) }}
                                         </div>
                                         <span class="truncate max-w-[140px]">
-                                            {{ $proposal->reviewer->name }}
+                                            {{ $proposal->reviewer->full_name }}
                                         </span>
                                     </div>
                                 @else
@@ -562,6 +603,12 @@ new class extends Component {
                                         <flux:menu.item icon="eye" wire:click="viewDetails({{ $proposal->id }})">
                                             View Details
                                         </flux:menu.item>
+
+                                        @if ($proposal->canDownloadLoA())
+                                            <flux:menu.item icon="printer" wire:click="viewDetails({{ $proposal->id }})">
+                                                Get LoA
+                                            </flux:menu.item>
+                                        @endif
 
                                         @if ($this->canEdit($proposal->status_proposal))
                                             <flux:menu.item icon="pencil-square"

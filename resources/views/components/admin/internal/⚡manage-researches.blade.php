@@ -33,6 +33,14 @@ new class extends Component {
     public string $comment = '';
     public string $recommendation = '';
 
+    // Assign Reviewer
+    public bool $showAssignReviewerModal = false;
+    public ?int $assigningId = null;
+    public string $assigningTitle = '';
+    public string $assigningOwner = '';
+    public ?int $new_reviewer_id = null;
+    public string $reviewer_note = '';
+
     // ═══════════════ Validation ═══════════════
     protected function rules(): array
     {
@@ -51,7 +59,6 @@ new class extends Component {
         $this->resetPage();
     }
 
-    // ═══════════════ Manage modal ═══════════════]
     public function manage(int $id): void
     {
         $proposal = Proposal::query()
@@ -100,7 +107,6 @@ new class extends Component {
         $this->reset(['managingId', 'managingTitle', 'managingOwner', 'managingScheme', 'status_proposal', 'reviewer_id']);
     }
 
-    // ═══════════════ Quick actions ═══════════════
     public function quickSetStatus(int $id, string $status): void
     {
         if (!in_array($status, ['admin_revision', 'submitted', 'under_review', 'accepted', 'rejected'])) {
@@ -129,14 +135,7 @@ new class extends Component {
     public function viewDetails(int $id): void
     {
         $proposal = Proposal::query()
-            ->with([
-                'researchScheme',
-                'period',
-                'reviewer',
-                'author',
-                'budgetProposal',
-                'adminNotes' => fn($q) => $q->latest(),
-            ])
+            ->with(['researchScheme', 'period', 'reviewer', 'author', 'budgetProposal', 'adminNotes' => fn($q) => $q->latest()])
             ->where('is_research', true)
             ->findOrFail($id);
 
@@ -229,30 +228,41 @@ new class extends Component {
 
         // Reviewer list — adjust relation name if needed
         $reviewers = User::query()->whereHas('role', fn($q) => $q->where('role_code', 'REVIEWER'))->orderBy('full_name')->get();
+        $reviewerOptions = User::query()
+            ->whereHas('role', fn($q) => $q->where('role_code', 'REVIEWER'))
+            ->orderBy('full_name')
+            ->get()
+            ->map(
+                fn($r) => [
+                    'id' => $r->id,
+                    'name' => $r->full_name,
+                    'nidn' => $r->nidn ?? null,
+                ],
+            )
+            ->values()
+            ->take(5);
 
         return [
             'proposals' => $query->paginate(10),
             'reviewers' => $reviewers,
-
             'statusCounts' => Proposal::where('is_research', true)->selectRaw('status_proposal, count(*) as total')->groupBy('status_proposal')->pluck('total', 'status_proposal'),
-
             'totalCount' => Proposal::where('is_research', true)->count(),
+            'reviewerOptions' => $reviewerOptions,
         ];
     }
 
-    // ═══════════════ Quick actions ═══════════════
-    public function accept(int $id): void
+    public function submitProposal(int $id): void
     {
         $proposal = Proposal::where('is_research', true)->findOrFail($id);
 
         $proposal->update([
-            'status_proposal' => 'accepted',
+            'status_proposal' => 'submitted',
         ]);
 
-        Flux::toast(text: 'Proposal accepted.', variant: 'success');
+        Flux::toast(text: 'Proposal submitted.', variant: 'success');
     }
 
-    public function reject(int $id): void
+    public function rejectProposal(int $id): void
     {
         $proposal = Proposal::where('is_research', true)->findOrFail($id);
 
@@ -264,8 +274,7 @@ new class extends Component {
         Flux::toast(text: 'Proposal rejected.', variant: 'success');
     }
 
-    // ═══════════════ Revise modal ═══════════════
-    public function revise(int $id): void
+    public function reviseProposal(int $id): void
     {
         $proposal = Proposal::where('is_research', true)->findOrFail($id);
 
@@ -319,6 +328,65 @@ new class extends Component {
     {
         $this->showReviseModal = false;
         $this->reset(['revisingId', 'revisingTitle', 'comment', 'recommendation']);
+        $this->resetErrorBag();
+        $this->resetValidation();
+    }
+
+    // ═══════════════ Assign Reviewer ═══════════════
+    public function openAssignReviewer(int $id): void
+    {
+        $proposal = Proposal::query()
+            ->with(['author', 'reviewer'])
+            ->where('is_research', true)
+            ->findOrFail($id);
+
+        if ($proposal->status_proposal !== 'submitted') {
+            Flux::toast(text: 'Reviewer can only be assigned to submitted proposals.', variant: 'danger');
+            return;
+        }
+
+        $this->assigningId = $proposal->id;
+        $this->assigningTitle = $proposal->title;
+        $this->assigningOwner = $proposal->author?->full_name ?? '—';
+        $this->new_reviewer_id = $proposal->reviewer_id;
+
+        $this->resetErrorBag();
+        $this->resetValidation();
+        $this->showAssignReviewerModal = true;
+    }
+
+    public function assignReviewer(): void
+    {
+        $this->validate(
+            [
+                'new_reviewer_id' => ['required', 'exists:users,id'],
+            ],
+            [
+                'new_reviewer_id.required' => 'Please select a reviewer.',
+            ],
+        );
+
+        if (!$this->assigningId) {
+            return;
+        }
+
+        $proposal = Proposal::where('is_research', true)->findOrFail($this->assigningId);
+
+        $proposal->update([
+            'reviewer_id' => $this->new_reviewer_id,
+            'status_proposal' => 'under_review',
+        ]);
+
+        Flux::toast(text: 'Reviewer assigned successfully. Proposal is now under review.', variant: 'success');
+
+        $this->showAssignReviewerModal = false;
+        $this->reset(['assigningId', 'assigningTitle', 'assigningOwner', 'new_reviewer_id']);
+    }
+
+    public function cancelAssignReviewer(): void
+    {
+        $this->showAssignReviewerModal = false;
+        $this->reset(['assigningId', 'assigningTitle', 'assigningOwner', 'new_reviewer_id']);
         $this->resetErrorBag();
         $this->resetValidation();
     }
@@ -447,7 +515,7 @@ new class extends Component {
                                 <div class="flex flex-col gap-1 min-w-0">
                                     <span class="font-medium text-slate-900 dark:text-zinc-100 truncate"
                                         title="{{ $proposal->title }}">
-                                        {{ $proposal->title }}
+                                        {{ Str::limit($proposal->title, 40) }}
                                     </span>
                                     <span class="text-[11px] text-slate-500 dark:text-zinc-400 truncate">
                                         {{ $proposal->researchScheme?->scheme_name ?? '—' }}
@@ -530,34 +598,43 @@ new class extends Component {
                                             View Details
                                         </flux:menu.item>
 
-                                        <flux:menu.item icon="adjustments-horizontal"
+                                        {{-- <flux:menu.item icon="adjustments-horizontal"
                                             wire:click="manage({{ $proposal->id }})">
                                             Manage Status
+                                        </flux:menu.item> --}}
+
+                                        {{-- <flux:menu.separator /> --}}
+
+                                        @if ($proposal->status_proposal === 'submitted')
+                                            <flux:menu.item icon="user-plus"
+                                                wire:click="openAssignReviewer({{ $proposal->id }})"
+                                                class="text-violet-600 dark:text-violet-400
+                                                    hover:bg-violet-50! dark:hover:bg-violet-900/30!">
+                                                Assign Reviewer
+                                            </flux:menu.item>
+                                        @endif
+                                        {{-- Submit --}}
+                                        <flux:menu.item icon="check-circle"
+                                            wire:click="submitProposal({{ $proposal->id }})"
+                                            wire:confirm="Submit this proposal? This will notify the author."
+                                            class="text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50! dark:hover:bg-emerald-900/30!">
+                                            Submit
                                         </flux:menu.item>
 
-                                            <flux:menu.separator />
+                                        {{-- Revise --}}
+                                        <flux:menu.item icon="pencil-square"
+                                            wire:click="reviseProposal({{ $proposal->id }})"
+                                            class="text-amber-600 dark:text-amber-400 hover:bg-amber-50! dark:hover:bg-amber-900/30!">
+                                            Request Revision
+                                        </flux:menu.item>
 
-                                            {{-- Accept --}}
-                                            <flux:menu.item icon="check-circle"
-                                                wire:click="accept({{ $proposal->id }})"
-                                                wire:confirm="Accept this proposal? This will notify the author."
-                                                class="text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50! dark:hover:bg-emerald-900/30!">
-                                                Accept
-                                            </flux:menu.item>
-
-                                            {{-- Revise --}}
-                                            <flux:menu.item icon="pencil-square"
-                                                wire:click="revise({{ $proposal->id }})"
-                                                class="text-amber-600 dark:text-amber-400 hover:bg-amber-50! dark:hover:bg-amber-900/30!">
-                                                Request Revision
-                                            </flux:menu.item>
-
-                                            {{-- Reject --}}
-                                            <flux:menu.item icon="x-circle" wire:click="reject({{ $proposal->id }})"
-                                                wire:confirm="Reject this proposal? This action can be changed later."
-                                                class="text-rose-600 dark:text-rose-400 hover:bg-rose-50! dark:hover:bg-rose-900/30!">
-                                                Reject
-                                            </flux:menu.item>
+                                        {{-- Reject --}}
+                                        <flux:menu.item icon="x-circle"
+                                            wire:click="rejectProposal({{ $proposal->id }})"
+                                            wire:confirm="Reject this proposal? This action can be changed later."
+                                            class="text-rose-600 dark:text-rose-400 hover:bg-rose-50! dark:hover:bg-rose-900/30!">
+                                            Reject
+                                        </flux:menu.item>
 
                                         {{-- Delete --}}
                                         <flux:menu.separator />
@@ -969,6 +1046,276 @@ new class extends Component {
                                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                             </svg>
                             Sending...
+                        </span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- Reviewer picker --}}
+    <div x-data="{
+        search: '',
+        reviewers: @js($reviewerOptions),
+        selected: null,
+
+        init() {
+            $wire.$watch('showAssignReviewerModal', (val) => {
+                if (val) {
+                    const initialId = $wire.new_reviewer_id;
+                    this.selected = initialId ?
+                        this.reviewers.find(r => r.id === initialId) || null :
+                        null;
+                    this.search = '';
+                    this.$nextTick(() => {
+                        if (!this.selected) this.$refs.searchInput?.focus();
+                    });
+                }
+            });
+        },
+
+        get filtered() {
+            if (!this.search.trim()) return this.reviewers;
+            const q = this.search.toLowerCase();
+            return this.reviewers.filter(r =>
+                r.name.toLowerCase().includes(q) ||
+                (r.nidn && String(r.nidn).toLowerCase().includes(q))
+            );
+        },
+
+        select(r) {
+            console.log(r);
+            this.selected = r;
+            this.search = '';
+            $wire.set('new_reviewer_id', r.id);
+        },
+
+        clear() {
+            this.selected = null;
+            this.search = '';
+            $wire.set('new_reviewer_id', null);
+            this.$nextTick(() => this.$refs.searchInput?.focus());
+        }
+    }" x-show="$wire.showAssignReviewerModal"
+        x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+        x-on:keydown.escape.window="if (selected) clear(); else $wire.cancelAssignReviewer()" x-cloak
+        class="fixed inset-0 z-50 flex items-end sm:items-center justify-center
+           p-0 sm:p-4 bg-inverse-surface/40 backdrop-blur-sm">
+
+        <div x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+            x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+            x-transition:leave="transition ease-in duration-150"
+            x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+            x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+            @click.away="! selected && $wire.cancelAssignReviewer()"
+            class="bg-surface-container-lowest dark:bg-zinc-900 shadow-lg
+               w-full sm:max-w-md
+               rounded-t-2xl sm:rounded-xl
+               max-h-[92vh] sm:max-h-[90vh] flex flex-col
+               border border-outline-variant/50 dark:border-zinc-700">
+
+            {{-- ── Header (compact) ── --}}
+            <div
+                class="shrink-0
+                    bg-gradient-to-r from-violet-600 to-violet-500
+                    px-5 py-3.5
+                    rounded-t-2xl sm:rounded-t-xl">
+                <div class="flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-2 min-w-0 flex-1">
+                        <div
+                            class="w-7 h-7 rounded-lg
+                                bg-white/20 flex items-center justify-center shrink-0">
+                            <flux:icon.user-plus class="size-4 text-white" />
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <h3 class="font-heading text-[15px] font-semibold text-white leading-tight truncate">
+                                Assign Reviewer
+                            </h3>
+                            <p class="text-[10px] text-white/70 truncate" title="{{ $assigningTitle }}">
+                                {{ $assigningOwner }} · {{ $assigningTitle }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <button type="button" wire:click="cancelAssignReviewer"
+                        class="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center
+                           text-white/80 hover:text-white hover:bg-white/10
+                           transition-colors">
+                        <flux:icon.x-mark class="size-4" />
+                    </button>
+                </div>
+            </div>
+
+            {{-- ── Body ── --}}
+            <form wire:submit.prevent="assignReviewer" class="flex-1 flex flex-col overflow-hidden">
+
+                <div class="flex-1 overflow-y-auto p-5 space-y-3">
+
+                    {{-- Input search / chip selected --}}
+                    <div class="relative">
+
+                        {{-- Selected chip --}}
+                        <template x-if="selected">
+                            <div
+                                class="flex items-center justify-between gap-2 px-3 py-2.5 rounded-lg
+                                    border border-violet-300 dark:border-violet-700
+                                    bg-violet-50 dark:bg-violet-900/20">
+                                <div class="flex items-center gap-2.5 min-w-0">
+                                    <div class="w-8 h-8 rounded-full
+                                            bg-violet-600 text-white
+                                            flex items-center justify-center
+                                            text-[11px] font-bold shrink-0"
+                                        x-text="selected.name.charAt(0).toUpperCase()"></div>
+                                    <div class="flex flex-col min-w-0">
+                                        <span
+                                            class="text-sm font-medium truncate
+                                                 text-on-surface dark:text-zinc-100"
+                                            x-text="selected.name"></span>
+                                        <template x-if="selected.nidn">
+                                            <span
+                                                class="text-[10px] text-violet-700/70 dark:text-violet-400/70
+                                                     font-mono truncate"
+                                                x-text="'NIDN ' + selected.nidn"></span>
+                                        </template>
+                                    </div>
+                                </div>
+                                <button type="button" @click="clear()" title="Change reviewer"
+                                    class="shrink-0 w-7 h-7 rounded-md
+                                       flex items-center justify-center
+                                       text-violet-600 hover:bg-violet-100
+                                       dark:text-violet-400 dark:hover:bg-violet-900/40
+                                       transition-colors">
+                                    <flux:icon.arrow-path class="size-3.5" />
+                                </button>
+                            </div>
+                        </template>
+
+                        {{-- Search input --}}
+                        <template x-if="!selected">
+                            <div class="relative">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                    <flux:icon.magnifying-glass class="size-4 text-outline dark:text-zinc-500" />
+                                </div>
+                                <input type="text" x-ref="searchInput" x-model="search"
+                                    placeholder="Type a name or NIDN..."
+                                    class="w-full pl-10 pr-3 py-2.5 rounded-lg shadow-sm
+                                       border-outline-variant dark:border-zinc-600
+                                       bg-surface-container-lowest dark:bg-zinc-800
+                                       text-on-surface dark:text-zinc-100
+                                       placeholder:text-outline dark:placeholder-zinc-500
+                                       focus:border-violet-500 focus:ring-violet-500
+                                       sm:text-sm" />
+                            </div>
+                        </template>
+
+                        {{-- Suggestions list — selalu tampil saat belum pilih --}}
+                        <div x-show="!selected" x-transition:enter="transition ease-out duration-150"
+                            x-transition:enter-start="opacity-0 -translate-y-1"
+                            x-transition:enter-end="opacity-100 translate-y-0"
+                            class="mt-1 max-h-56 overflow-y-auto
+                               bg-white dark:bg-zinc-900
+                               border border-outline-variant/60 dark:border-zinc-700
+                               rounded-lg shadow-sm py-1">
+
+                            {{-- Empty state --}}
+                            <template x-if="filtered.length === 0">
+                                <div class="px-3 py-6 text-center">
+                                    <flux:icon.user-circle
+                                        class="size-6 mx-auto text-outline-variant dark:text-zinc-700" />
+                                    <p class="mt-1 text-[11px] text-outline dark:text-zinc-500"
+                                        x-text="reviewers.length === 0
+                                        ? 'No reviewers available'
+                                        : 'No matches for \'' + search + '\''">
+                                    </p>
+                                </div>
+                            </template>
+
+                            {{-- Items --}}
+                            <template x-for="r in filtered" :key="r.id">
+                                <button type="button" @click="select(r)"
+                                    class="w-full flex items-center gap-2.5 px-3 py-2
+                                       text-left transition-colors
+                                       hover:bg-violet-50 dark:hover:bg-violet-900/20
+                                       focus:bg-violet-50 dark:focus:bg-violet-900/20
+                                       focus:outline-none">
+                                    <div class="w-7 h-7 rounded-full
+                                            bg-violet-100 text-violet-700
+                                            dark:bg-violet-900/40 dark:text-violet-300
+                                            flex items-center justify-center
+                                            text-[11px] font-bold shrink-0"
+                                        x-text="r.name.charAt(0).toUpperCase()"></div>
+                                    <div class="flex flex-col min-w-0 flex-1">
+                                        <span
+                                            class="text-sm font-medium truncate
+                                                 text-on-surface dark:text-zinc-100"
+                                            x-text="r.name"></span>
+                                        <template x-if="r.nidn">
+                                            <span
+                                                class="text-[10px] text-outline dark:text-zinc-500
+                                                     font-mono truncate"
+                                                x-text="'NIDN ' + r.nidn"></span>
+                                        </template>
+                                    </div>
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+
+                    {{-- Error --}}
+                    @error('new_reviewer_id')
+                        <p class="text-error text-xs flex items-center gap-1">
+                            <flux:icon.exclamation-circle class="size-3.5 shrink-0" />
+                            {{ $message }}
+                        </p>
+                    @enderror
+                </div>
+
+                {{-- ── Footer ── --}}
+                <div
+                    class="shrink-0 flex flex-col-reverse sm:flex-row sm:justify-end gap-2
+                        px-5 py-3.5
+                        border-t border-outline-variant/40 dark:border-zinc-700
+                        bg-surface-container-lowest dark:bg-zinc-900
+                        rounded-b-2xl sm:rounded-b-xl">
+
+                    <button type="button" wire:click="cancelAssignReviewer"
+                        class="w-full sm:w-auto px-4 py-2 text-sm font-medium rounded-md
+                           text-on-surface-variant dark:text-zinc-300
+                           bg-surface-container-lowest dark:bg-zinc-800
+                           border border-outline-variant dark:border-zinc-600
+                           hover:bg-surface-container-low dark:hover:bg-zinc-700
+                           focus:outline-none focus:ring-2 focus:ring-primary
+                           transition-colors duration-150">
+                        Cancel
+                    </button>
+
+                    <button type="submit" wire:loading.attr="disabled" wire:target="assignReviewer"
+                        :disabled="!selected"
+                        class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5
+                           px-5 py-2 text-sm font-medium
+                           text-white rounded-md
+                           bg-gradient-to-r from-violet-600 to-violet-500
+                           hover:from-violet-700 hover:to-violet-600
+                           focus:outline-none focus:ring-2 focus:ring-violet-500
+                           transition-all duration-200
+                           disabled:opacity-50 disabled:cursor-not-allowed
+                           disabled:hover:from-violet-600 disabled:hover:to-violet-500">
+                        <span wire:loading.remove wire:target="assignReviewer"
+                            class="inline-flex items-center gap-1.5">
+                            <flux:icon.user-plus class="size-3.5" />
+                            Assign Reviewer
+                        </span>
+                        <span wire:loading.flex wire:target="assignReviewer" class="items-center gap-1.5">
+                            <svg class="animate-spin size-3.5" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10"
+                                    stroke="currentColor" stroke-width="4" />
+                                <path class="opacity-75" fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                            </svg>
+                            Assigning...
                         </span>
                     </button>
                 </div>
