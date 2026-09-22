@@ -13,12 +13,12 @@ use Illuminate\Support\Carbon;
  * @property string $role_code
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ *
  * @method HasMany<User> users()
  */
 #[Guarded(['id'])]
 class Role extends Model
 {
-
     public function users(): HasMany
     {
         return $this->hasMany(User::class);

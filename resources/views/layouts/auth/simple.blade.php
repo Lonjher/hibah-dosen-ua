@@ -3,10 +3,25 @@
 
 <head>
     @include('partials.head')
+    {{-- Font: DM Sans untuk body, Manrope untuk heading --}}
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=dm-sans:400,500,600,700|manrope:400,500,600,700,800&display=swap" rel="stylesheet" />
+    <style>
+        :root {
+            --font-heading: 'Manrope', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            --font-body: 'DM Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        }
+        .font-heading {
+            font-family: var(--font-heading);
+        }
+        body, .font-body {
+            font-family: var(--font-body);
+        }
+    </style>
 </head>
 
 <body
-    class="min-h-screen bg-white antialiased dark:bg-linear-to-b dark:from-neutral-950 dark:to-neutral-900 relative overflow-x-hidden">
+    class="min-h-screen bg-white antialiased dark:bg-linear-to-b dark:from-neutral-950 dark:to-neutral-900 relative overflow-x-hidden font-body">
     {{-- Background pattern & dekorasi --}}
     <div class="pointer-events-none fixed inset-0 z-0 bg-pattern-dots"></div>
     <div

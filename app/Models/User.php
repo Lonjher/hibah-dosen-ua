@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Attributes\Guarded;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
@@ -35,6 +36,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string|null $remember_token
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ *
  * @method BelongsTo<Role> role()
  * @method HasMany<Proposal> proposals()
  * @method HasMany<Proposal> reviewedProposals()
@@ -69,7 +71,7 @@ class User extends Authenticatable implements PasskeyUser
         $initials = Str::initials($this->full_name, true);
 
         return Str::length($initials) > 1
-            ? Str::substr($initials, 0, 1) . Str::substr($initials, -1)
+            ? Str::substr($initials, 0, 1).Str::substr($initials, -1)
             : $initials;
     }
 
@@ -78,17 +80,17 @@ class User extends Authenticatable implements PasskeyUser
         return $this->belongsTo(Role::class);
     }
 
-    public function proposals(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function proposals(): HasMany
     {
         return $this->hasMany(Proposal::class, 'user_id');
     }
 
-    public function reviewedProposals(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function reviewedProposals(): HasMany
     {
         return $this->hasMany(Proposal::class, 'reviewer_id');
     }
 
-    public function reviewerNotes(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function reviewerNotes(): HasMany
     {
         return $this->hasMany(ReviewerNote::class, 'reviewer_id');
     }
