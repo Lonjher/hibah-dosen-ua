@@ -41,6 +41,20 @@ new class extends Component {
     public ?int $new_reviewer_id = null;
     public string $reviewer_note = '';
 
+    // ─────── Progress Reports Modal ───────
+    public bool    $showProgressModal = false;
+    public ?int    $progressProposalId = null;
+    public string  $progressProposalTitle = '';
+    public string  $progressProposalScheme = '';
+    public string  $progressFilter = 'all';
+
+    // ─────── Assign Reviewer for Progress ───────
+    public bool    $showAssignProgressModal = false;
+    public ?int    $assigningProgressId = null;
+    public string  $assigningProgressKeyword = '';
+    public string  $assigningProgressProposal = '';
+    public ?int    $new_progress_reviewer_id = null;
+
     // ═══════════════ Validation ═══════════════
     protected function rules(): array
     {
@@ -390,61 +404,167 @@ new class extends Component {
         $this->resetErrorBag();
         $this->resetValidation();
     }
+
+    // ═══════════════ Progress Reports ═══════════════
+    public function openProgressReports(int $proposalId): void
+    {
+        $proposal = Proposal::query()
+            ->with(['researchScheme', 'author'])
+            ->where('is_research', true)
+            ->findOrFail($proposalId);
+
+        if ($proposal->status_proposal !== 'accepted') {
+            Flux::toast(
+                text: 'Progress reports are only available for accepted proposals.',
+                variant: 'danger'
+            );
+            return;
+        }
+
+        $this->progressProposalId     = $proposal->id;
+        $this->progressProposalTitle  = $proposal->title;
+        $this->progressProposalScheme = $proposal->researchScheme?->scheme_name ?? '—';
+        $this->progressFilter         = 'all';
+
+        $this->closeAssignProgressModal();
+        $this->showProgressModal = true;
+    }
+
+    public function closeProgressReports(): void
+    {
+        $this->showProgressModal = false;
+        $this->reset([
+            'progressProposalId', 'progressProposalTitle',
+            'progressProposalScheme', 'progressFilter',
+        ]);
+        $this->closeAssignProgressModal();
+    }
+
+    public function approveProgress(int $id): void
+    {
+        $report = ProgressReport::where('proposal_id', $this->progressProposalId)
+            ->findOrFail($id);
+
+        $report->update([
+            'reviewer_id' => auth()->id(),
+            'is_approved' => true,
+        ]);
+
+        Flux::toast(text: 'Progress report approved.', variant: 'success');
+    }
+
+    public function reopenProgress(int $id): void
+    {
+        $report = ProgressReport::where('proposal_id', $this->progressProposalId)
+            ->findOrFail($id);
+
+        $report->update(['is_approved' => false]);
+
+        Flux::toast(
+            text: 'Report re-opened for revision.',
+            variant: 'success'
+        );
+    }
+
+    public function confirmDeleteProgress(int $id): void
+    {
+        $report = ProgressReport::where('proposal_id', $this->progressProposalId)
+            ->findOrFail($id);
+
+        $this->dispatch(
+            'confirm-delete',
+            subject: $report->keyword ?: 'Progress Report',
+            action: 'deleteProgressReport',
+            payload: ['id' => $report->id],
+            title: 'Delete Progress Report?',
+            note: 'Uploaded files will also be removed. This action cannot be undone.'
+        );
+    }
+
+    // ═══════════════ Assign Reviewer for Progress ═══════════════
+    public function openAssignProgressReviewer(int $id): void
+    {
+        $report = ProgressReport::with('proposal')
+            ->where('proposal_id', $this->progressProposalId)
+            ->findOrFail($id);
+
+        if ($report->is_approved && $report->reviewer_id) {
+            Flux::toast(
+                text: 'This report has already been approved.',
+                variant: 'danger'
+            );
+            return;
+        }
+
+        $this->assigningProgressId        = $report->id;
+        $this->assigningProgressKeyword   = $report->keyword ?: 'Progress Report';
+        $this->assigningProgressProposal  = $report->proposal?->title ?? '—';
+        $this->new_progress_reviewer_id   = $report->reviewer_id;
+
+        $this->resetErrorBag();
+        $this->resetValidation();
+        $this->showAssignProgressModal = true;
+    }
+
+    public function assignProgressReviewer(): void
+    {
+        $this->validate([
+            'new_progress_reviewer_id' => ['required', 'exists:users,id'],
+        ], [
+            'new_progress_reviewer_id.required' => 'Please select a reviewer.',
+        ]);
+
+        if (! $this->assigningProgressId) return;
+
+        $report = ProgressReport::findOrFail($this->assigningProgressId);
+
+        $report->update([
+            'reviewer_id' => $this->new_progress_reviewer_id,
+            'is_approved' => false,
+        ]);
+
+        Flux::toast(
+            text: 'Reviewer assigned. Report is now under review.',
+            variant: 'success'
+        );
+
+        $this->closeAssignProgressModal();
+    }
+
+    public function cancelAssignProgressReviewer(): void
+    {
+        $this->closeAssignProgressModal();
+    }
+
+    protected function closeAssignProgressModal(): void
+    {
+        $this->showAssignProgressModal = false;
+        $this->reset([
+            'assigningProgressId', 'assigningProgressKeyword',
+            'assigningProgressProposal', 'new_progress_reviewer_id',
+        ]);
+        $this->resetErrorBag();
+        $this->resetValidation();
+    }
+
+    // ═══════════════ Helper ═══════════════
+    public function progressStatusMeta(ProgressReport $report): array
+    {
+        if (is_null($report->reviewer_id)) {
+            return ['label' => 'Pending',      'class' => 'bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-zinc-300'];
+        }
+        if ($report->is_approved) {
+            return ['label' => 'Approved',     'class' => 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'];
+        }
+        return     ['label' => 'Under Review', 'class' => 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300'];
+    }
 };
 ?>
 
 <div class="p-4 sm:p-6 space-y-6">
 
     {{-- ══════════ Header ══════════ --}}
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <x-dashboard-header icon="beaker" title="Manage Research" leading="Review and manage all research proposals." />
-    </div>
-
-    {{-- ══════════ Status Filter Tabs ══════════ --}}
-    <div
-        class="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl rounded-2xl
-               border border-white/80 dark:border-zinc-800 shadow-sm p-3">
-        <div
-            class="flex items-center gap-1 overflow-x-auto
-                    [-ms-overflow-style:none] [scrollbar-width:none]
-                    [&::-webkit-scrollbar]:hidden">
-
-            @php
-                $tabs = [
-                    'all' => ['label' => 'All', 'count' => $totalCount],
-                    'draft' => ['label' => 'Draft', 'count' => $statusCounts['draft'] ?? 0],
-                    'admin_revision' => ['label' => 'Admin Revision', 'count' => $statusCounts['admin_revision'] ?? 0],
-                    'submitted' => ['label' => 'Submitted', 'count' => $statusCounts['submitted'] ?? 0],
-                    'under_review' => ['label' => 'Under Review', 'count' => $statusCounts['under_review'] ?? 0],
-                    'reviewer_revision' => [
-                        'label' => 'Reviewer Revision',
-                        'count' => $statusCounts['reviewer_revision'] ?? 0,
-                    ],
-                    'accepted' => ['label' => 'Accepted', 'count' => $statusCounts['accepted'] ?? 0],
-                    'rejected' => ['label' => 'Rejected', 'count' => $statusCounts['rejected'] ?? 0],
-                ];
-            @endphp
-
-            @foreach ($tabs as $key => $tab)
-                <button type="button" wire:click="$set('statusFilter', '{{ $key }}')"
-                    class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg
-                           text-[11px] font-medium whitespace-nowrap
-                           transition-colors duration-150
-                           {{ $statusFilter === $key
-                               ? 'bg-emerald-700 text-white shadow-sm dark:bg-emerald-600'
-                               : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100' }}">
-                    {{ $tab['label'] }}
-                    <span
-                        class="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold
-                               {{ $statusFilter === $key
-                                   ? 'bg-white/20 text-white'
-                                   : 'bg-slate-100 text-slate-500 dark:bg-zinc-800 dark:text-zinc-400' }}">
-                        {{ $tab['count'] }}
-                    </span>
-                </button>
-            @endforeach
-        </div>
-    </div>
+    <x-dashboard-header icon="beaker" title="Manage Research" leading="Review and manage all research proposals." />
 
     {{-- ══════════ Table Card ══════════ --}}
     <div
@@ -487,7 +607,7 @@ new class extends Component {
             </div>
 
             <x-input-search name="search" id="search-admin-research" wire:model.live.debounce.300ms="search"
-                placeholder="Search title, owner, keywords..." max-width="max-w-sm" class="!flex w-full sm:w-auto" />
+                placeholder="Search title, owner, keywords..." max-width="max-w-sm" class="w-full sm:w-md" />
         </div>
 
         <div class="overflow-x-auto">

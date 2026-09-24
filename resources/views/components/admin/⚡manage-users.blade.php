@@ -117,8 +117,8 @@ new class extends Component {
 ?>
 
 <div class="p-4 sm:p-6">
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-        <x-dashboard-header icon="users" title="Kelola Users" leading="Manajemen pengguna dengan peran user/dosen." />
+    <x-dashboard-header icon="users" title="Kelola Users" leading="Manajemen pengguna dengan peran user/dosen." />
+    <div class="flex justify-end items-center my-3">
         <flux:button icon="plus" wire:click="create" variant="primary" size="sm" class="shrink-0">Tambah User
         </flux:button>
     </div>

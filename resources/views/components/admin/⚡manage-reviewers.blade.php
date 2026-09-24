@@ -124,11 +124,11 @@ new class extends Component {
 ?>
 
 <div class="p-4 sm:p-6">
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-        <x-dashboard-header icon="clipboard-document-check" title="Kelola Reviewer" leading="Manajemen akun pengguna dengan peran reviewer." />
+    <x-dashboard-header icon="clipboard-document-check" title="Kelola Reviewer" leading="Manajemen akun pengguna dengan peran reviewer." />
+    <div class="my-3 flex justify-end items-center">
         <flux:button icon="plus" wire:click="create" variant="primary" size="sm" class="shrink-0">Tambah Reviewer
-        </flux:button>
     </div>
+    </flux:button>
     <div
         class="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl rounded-2xl border border-white/80 dark:border-zinc-800 shadow-sm overflow-hidden">
         <div class="overflow-x-auto">

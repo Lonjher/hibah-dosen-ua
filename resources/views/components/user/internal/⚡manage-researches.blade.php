@@ -2,13 +2,13 @@
 
 use Livewire\Component;
 use Livewire\WithPagination;
+use Livewire\Attributes\On;
 use App\Models\Proposal;
 use App\Models\BudgetProposal;
 use App\Models\ResearchScheme;
 use App\Models\Period;
 use Illuminate\Support\Facades\Auth;
 use Flux\Flux;
-use Livewire\Attributes\On;
 
 new class extends Component {
     use WithPagination;
@@ -115,15 +115,7 @@ new class extends Component {
     public function viewDetails(int $id): void
     {
         $proposal = Proposal::query()
-            ->with([
-                'researchScheme',
-                'period',
-                'reviewer',
-                'author',
-                'budgetProposal',
-                'adminNotes'    => fn ($q) => $q->latest(),
-                'reviewerNotes' => fn ($q) => $q->latest(),   // ← tambahkan ini
-            ])
+            ->with(['researchScheme', 'period', 'reviewer', 'author', 'budgetProposal', 'adminNotes' => fn($q) => $q->latest(), 'reviewerNotes' => fn($q) => $q->latest()])
             ->where('user_id', Auth::id())
             ->findOrFail($id);
 
@@ -131,61 +123,46 @@ new class extends Component {
 
         // Budget items
         $budgetItems = $proposal->budgetProposal
-            ->map(fn ($i) => [
-                'item_name' => $i->item_name,
-                'amount'    => (int) $i->amount,
-            ])
+            ->map(
+                fn($i) => [
+                    'item_name' => $i->item_name,
+                    'amount' => (int) $i->amount,
+                ],
+            )
             ->values()
             ->all();
 
         // Admin notes
         $adminNotes = $proposal->adminNotes
-            ->map(fn ($note) => [
-                'comment'        => $note->comment ?? '',
-                'recommendation' => $note->recommendation ?? '',
-                'createdAt'      => $note->created_at?->format('d M Y, H:i') ?? '—',
-                'relative'       => $note->created_at?->diffForHumans() ?? '',
-            ])
+            ->map(
+                fn($note) => [
+                    'comment' => $note->comment ?? '',
+                    'recommendation' => $note->recommendation ?? '',
+                    'createdAt' => $note->created_at?->format('d M Y, H:i') ?? '—',
+                    'relative' => $note->created_at?->diffForHumans() ?? '',
+                ],
+            )
             ->values()
             ->all();
 
-        // ── Reviewer notes (BARU) ──
+        // Reviewer notes
         $reviewerNotes = $proposal->reviewerNotes
-            ->map(fn ($note) => [
-                'comment'        => $note->comment ?? '',
-                'recommendation' => $note->recommendation ?? '',
-                'isApproved'     => (bool) $note->is_approved,
-                'createdAt'      => $note->created_at?->format('d M Y, H:i') ?? '—',
-                'relative'       => $note->created_at?->diffForHumans() ?? '',
-            ])
+            ->map(
+                fn($note) => [
+                    'comment' => $note->comment ?? '',
+                    'recommendation' => $note->recommendation ?? '',
+                    'isApproved' => (bool) $note->is_approved,
+                    'createdAt' => $note->created_at?->format('d M Y, H:i') ?? '—',
+                    'relative' => $note->created_at?->diffForHumans() ?? '',
+                ],
+            )
             ->values()
             ->all();
 
         $budgetTotal = (int) collect($budgetItems)->sum('amount');
         $budgetLimit = (int) ($proposal->researchScheme->budget_limit ?? 0);
 
-        $this->dispatch(
-            'view-details',
-            title:           $proposal->title,
-            scheme:          $proposal->researchScheme?->scheme_name ?? '—',
-            period:          $proposal->period?->periode ?? '—',
-            status:          $meta['label'],
-            statusClass:     $meta['class'],
-            is_research:     (bool) $proposal->is_research,
-            keywords:        array_filter(array_map('trim', explode(',', $proposal->keywords ?? ''))),
-            summary:         $proposal->summary ?? '',
-            reviewer:        $proposal->reviewer?->full_name,
-            owner:           $proposal->author?->full_name ?? Auth::user()->full_name,
-            budgetItems:     $budgetItems,
-            budgetLimit:     $budgetLimit,
-            budgetTotal:     $budgetTotal,
-            budgetRemaining: $budgetLimit - $budgetTotal,
-            budgetPercent:   $budgetLimit > 0 ? round(($budgetTotal / $budgetLimit) * 100, 1) : 0,
-            createdAt:       $proposal->created_at?->format('d M Y, H:i') ?? '—',
-            updatedAt:       $proposal->updated_at?->format('d M Y, H:i') ?? '—',
-            adminNotes:      $adminNotes,
-            reviewerNotes:   $reviewerNotes,   // ← kirim ke view-details
-        );
+        $this->dispatch('view-details', title: $proposal->title, scheme: $proposal->researchScheme?->scheme_name ?? '—', period: $proposal->period?->periode ?? '—', status: $meta['label'], statusClass: $meta['class'], is_research: (bool) $proposal->is_research, keywords: array_filter(array_map('trim', explode(',', $proposal->keywords ?? ''))), summary: $proposal->summary ?? '', reviewer: $proposal->reviewer?->full_name, owner: $proposal->author?->full_name ?? Auth::user()->full_name, budgetItems: $budgetItems, budgetLimit: $budgetLimit, budgetTotal: $budgetTotal, budgetRemaining: $budgetLimit - $budgetTotal, budgetPercent: $budgetLimit > 0 ? round(($budgetTotal / $budgetLimit) * 100, 1) : 0, createdAt: $proposal->created_at?->format('d M Y, H:i') ?? '—', updatedAt: $proposal->updated_at?->format('d M Y, H:i') ?? '—', adminNotes: $adminNotes, reviewerNotes: $reviewerNotes);
     }
 
     // ═══════════════ Step navigation ═══════════════
@@ -194,7 +171,6 @@ new class extends Component {
         $this->validate($this->rulesStep1());
 
         if ($this->draftProposalId) {
-            // Update existing draft
             Proposal::where('user_id', Auth::id())
                 ->findOrFail($this->draftProposalId)
                 ->update([
@@ -205,7 +181,6 @@ new class extends Component {
                     'period_id' => $this->period_id,
                 ]);
         } else {
-            // Create draft
             $proposal = Proposal::create([
                 'user_id' => Auth::id(),
                 'research_scheme_id' => $this->research_scheme_id,
@@ -229,7 +204,7 @@ new class extends Component {
         $this->step = 1;
     }
 
-    // Budget Items
+    // ═══════════════ Budget Items ═══════════════
     public function addBudgetItem(): void
     {
         if (!$this->draftProposalId) {
@@ -312,7 +287,6 @@ new class extends Component {
             return;
         }
 
-        // Dispatch ke browser — ditangkap oleh Alpine di <x-confirm-delete>
         $this->dispatch('confirm-delete', subject: $proposal->title, action: 'deleteProposal', payload: ['id' => $proposal->id], title: 'Delete Proposal?', note: 'This action cannot be undone. All associated budget items will also be deleted.');
     }
 
@@ -430,76 +404,23 @@ new class extends Component {
 <div class="p-4 sm:p-6 space-y-6">
 
     {{-- ══════════ Header ══════════ --}}
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <x-dashboard-header icon="beaker" title="Research Proposals" leading="Manage your research proposals." />
-
-        <flux:button icon="plus" wire:click="create" variant="primary" size="sm"
-            class="shrink-0 w-full sm:w-auto justify-center">
-            New Proposal
-        </flux:button>
-    </div>
-
-    {{-- ══════════ Status Filter Tabs ══════════ --}}
-    <div
-        class="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl rounded-2xl
-               border border-white/80 dark:border-zinc-800 shadow-sm p-3">
-        <div
-            class="flex items-center gap-1 overflow-x-auto
-                    [-ms-overflow-style:none] [scrollbar-width:none]
-                    [&::-webkit-scrollbar]:hidden">
-
-            @php
-                $tabs = [
-                    'all' => ['label' => 'All', 'count' => $totalCount],
-                    'draft' => ['label' => 'Draft', 'count' => $statusCounts['draft'] ?? 0],
-                    'admin_revision' => ['label' => 'Admin Revision', 'count' => $statusCounts['admin_revision'] ?? 0],
-                    'submitted' => ['label' => 'Submitted', 'count' => $statusCounts['submitted'] ?? 0],
-                    'under_review' => ['label' => 'Under Review', 'count' => $statusCounts['under_review'] ?? 0],
-                    'reviewer_revision' => [
-                        'label' => 'Reviewer Revision',
-                        'count' => $statusCounts['reviewer_revision'] ?? 0,
-                    ],
-                    'accepted' => ['label' => 'Accepted', 'count' => $statusCounts['accepted'] ?? 0],
-                    'rejected' => ['label' => 'Rejected', 'count' => $statusCounts['rejected'] ?? 0],
-                ];
-            @endphp
-
-            @foreach ($tabs as $key => $tab)
-                <button type="button" wire:click="$set('statusFilter', '{{ $key }}')"
-                    class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg
-                           text-[11px] font-medium whitespace-nowrap
-                           transition-colors duration-150
-                           {{ $statusFilter === $key
-                               ? 'bg-emerald-700 text-white shadow-sm dark:bg-emerald-600'
-                               : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100' }}">
-                    {{ $tab['label'] }}
-                    <span
-                        class="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold
-                               {{ $statusFilter === $key
-                                   ? 'bg-white/20 text-white'
-                                   : 'bg-slate-100 text-slate-500 dark:bg-zinc-800 dark:text-zinc-400' }}">
-                        {{ $tab['count'] }}
-                    </span>
-                </button>
-            @endforeach
-        </div>
-    </div>
+    <x-dashboard-header icon="beaker" title="Research Proposals" leading="Manage your research proposals." />
 
     {{-- ══════════ Table Card ══════════ --}}
     <div
         class="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl rounded-2xl
-               border border-white/80 dark:border-zinc-800 shadow-sm overflow-hidden">
+                border border-white/80 dark:border-zinc-800 shadow-sm overflow-hidden">
 
         <div
             class="flex flex-col sm:flex-row sm:items-center sm:justify-between
-                   gap-3 p-4 border-b border-slate-100 dark:border-zinc-800">
+                    gap-3 p-4 border-b border-slate-100 dark:border-zinc-800">
 
             <div class="flex items-center gap-2 text-[11px] text-slate-500 dark:text-zinc-400 min-w-0">
                 @if ($proposals->total() > 0)
                     <span
                         class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md
-                               bg-emerald-50 text-emerald-700 font-semibold
-                               dark:bg-emerald-900/30 dark:text-emerald-300">
+                                 bg-emerald-50 text-emerald-700 font-semibold
+                                 dark:bg-emerald-900/30 dark:text-emerald-300">
                         <flux:icon.list-bullet class="size-3" />
                         {{ $proposals->total() }} {{ Str::plural('proposal', $proposals->total()) }}
                     </span>
@@ -517,23 +438,30 @@ new class extends Component {
                 @else
                     <span
                         class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md
-                               bg-slate-100 text-slate-500 font-semibold
-                               dark:bg-zinc-800 dark:text-zinc-400">
+                                 bg-slate-100 text-slate-500 font-semibold
+                                 dark:bg-zinc-800 dark:text-zinc-400">
                         <flux:icon.list-bullet class="size-3" />
                         No proposals
                     </span>
                 @endif
             </div>
 
-            <x-input-search name="search" id="search-proposal" wire:model.live.debounce.300ms="search"
-                placeholder="Search title, keywords..." max-width="max-w-sm" class="!flex w-full sm:w-auto" />
+            <div class="flex gap-3">
+                <x-input-search name="search" id="search-proposal" wire:model.live.debounce.300ms="search"
+                    placeholder="Search title, keywords..." max-width="max-w-sm" class="w-full sm:w-md" />
+
+                <flux:button icon="plus" wire:click="create" variant="primary" size="sm"
+                    class="shrink-0 w-full sm:w-auto justify-center">
+                    New Proposal
+                </flux:button>
+            </div>
         </div>
 
         <div class="overflow-x-auto">
             <table class="w-full min-w-[880px] text-xs">
                 <thead
                     class="bg-emerald-50/50 dark:bg-emerald-900/20 text-left text-[11px]
-                           uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                              uppercase tracking-wider text-slate-600 dark:text-slate-300">
                     <tr>
                         <th class="px-4 py-3 font-semibold">Title & Scheme</th>
                         <th class="px-4 py-3 font-semibold">Period</th>
@@ -568,8 +496,8 @@ new class extends Component {
                                     <div class="flex items-center gap-2">
                                         <div
                                             class="w-6 h-6 rounded-full bg-violet-100 text-violet-700
-                                                   flex items-center justify-center text-[10px] font-bold
-                                                   dark:bg-violet-900/40 dark:text-violet-300">
+                                                    flex items-center justify-center text-[10px] font-bold
+                                                    dark:bg-violet-900/40 dark:text-violet-300">
                                             {{ strtoupper(substr($proposal->reviewer->full_name, 0, 1)) }}
                                         </div>
                                         <span class="truncate max-w-[140px]">
@@ -587,7 +515,7 @@ new class extends Component {
                                 @php $meta = $this->statusMeta($proposal->status_proposal); @endphp
                                 <span
                                     class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full
-                                           text-[11px] font-semibold whitespace-nowrap {{ $meta['class'] }}">
+                                             text-[11px] font-semibold whitespace-nowrap {{ $meta['class'] }}">
                                     {{ $meta['label'] }}
                                 </span>
                             </td>
@@ -604,8 +532,18 @@ new class extends Component {
                                             View Details
                                         </flux:menu.item>
 
+                                        @if ($proposal->status_proposal === 'accepted')
+                                            <flux:menu.item icon="document-chart-bar"
+                                                x-on:click="$dispatch('add-progress-report', { proposalId: {{ $proposal->id }} })"
+                                                class="text-emerald-600 dark:text-emerald-400
+                                                       hover:bg-emerald-50! dark:hover:bg-emerald-900/30!">
+                                                Progress Reports
+                                            </flux:menu.item>
+                                        @endif
+
                                         @if ($proposal->canDownloadLoA())
-                                            <flux:menu.item icon="printer" wire:click="viewDetails({{ $proposal->id }})">
+                                            <flux:menu.item icon="printer"
+                                                wire:click="viewDetails({{ $proposal->id }})">
                                                 Get LoA
                                             </flux:menu.item>
                                         @endif
@@ -660,9 +598,13 @@ new class extends Component {
         @endif
     </div>
 
-    {{-- ══════════ Multi-step Modal ══════════ --}}
+    {{-- ══════════ Modals ══════════ --}}
     <x-proposal-modal :show-modal="$showModal" :step="$step" :edit-mode="$editMode" :schemes="$schemes" :periods="$periods"
         :budget-items="$budgetItems" :budget-limit="$budgetLimit" :budget-total="$budgetTotal" :budget-remaining="$budgetRemaining" :budget-percent="$budgetPercent" />
+
     <x-confirm-delete />
     <x-view-details />
+
+    {{-- Progress Report Modal — event-driven dari menu di atas --}}
+    <livewire:user.internal.researches.add-progress-report wire:key="progress-report-modal" />
 </div>

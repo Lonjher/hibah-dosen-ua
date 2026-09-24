@@ -43,20 +43,20 @@ if ($flyout) {
     $classes = Flux::classes()
         ->add(match ($variant) {
             default => match($position) {
-                'bottom' => 'fixed m-0 p-8 min-w-[100%] overflow-y-auto mt-auto [--flux-flyout-translate:translateY(50px)] border-t',
-                'left' => 'fixed m-0 p-8 max-h-dvh min-h-dvh md:[:where(&)]:min-w-[25rem] overflow-y-auto mr-auto [--flux-flyout-translate:translateX(-50px)] border-e rtl:mr-0 rtl:ml-auto rtl:[--flux-flyout-translate:translateX(50px)]',
-                default => 'fixed m-0 p-8 max-h-dvh min-h-dvh md:[:where(&)]:min-w-[25rem] overflow-y-auto ml-auto [--flux-flyout-translate:translateX(50px)] border-s rtl:ml-0 rtl:mr-auto rtl:[--flux-flyout-translate:translateX(-50px)]',
+                'bottom' => 'fixed m-0 p-6 min-w-[100%] overflow-y-auto mt-auto [--flux-flyout-translate:translateY(50px)] border-t border-zinc-200 dark:border-zinc-800',
+                'left' => 'fixed m-0 p-6 max-h-dvh min-h-dvh md:[:where(&)]:min-w-[25rem] overflow-y-auto mr-auto [--flux-flyout-translate:translateX(-50px)] border-e border-zinc-200 dark:border-zinc-800 rtl:mr-0 rtl:ml-auto rtl:[--flux-flyout-translate:translateX(50px)]',
+                default => 'fixed m-0 p-6 max-h-dvh min-h-dvh md:[:where(&)]:min-w-[25rem] overflow-y-auto ml-auto [--flux-flyout-translate:translateX(50px)] border-s border-zinc-200 dark:border-zinc-800 rtl:ml-0 rtl:mr-auto rtl:[--flux-flyout-translate:translateX(-50px)]',
             },
             'floating' => match($position) {
-                'bottom' => 'fixed m-2 p-8 min-w-[calc(100%-1rem)] overflow-y-auto mt-auto [--flux-flyout-translate:translateY(50px)]',
-                'left' => 'fixed m-2 p-8 max-h-[calc(100dvh-1rem)] min-h-[calc(100dvh-1rem)] md:[:where(&)]:min-w-[25rem] overflow-y-auto mr-auto [--flux-flyout-translate:translateX(-50px)] rtl:mr-0 rtl:ml-auto rtl:[--flux-flyout-translate:translateX(50px)]',
-                default => 'fixed m-2 p-8 max-h-[calc(100dvh-1rem)] min-h-[calc(100dvh-1rem)] md:[:where(&)]:min-w-[25rem] overflow-y-auto ml-auto [--flux-flyout-translate:translateX(50px)] rtl:ml-0 rtl:mr-auto rtl:[--flux-flyout-translate:translateX(-50px)]',
+                'bottom' => 'fixed m-3 p-6 min-w-[calc(100%-1.5rem)] overflow-y-auto mt-auto [--flux-flyout-translate:translateY(50px)]',
+                'left' => 'fixed m-3 p-6 max-h-[calc(100dvh-1.5rem)] min-h-[calc(100dvh-1.5rem)] md:[:where(&)]:min-w-[25rem] overflow-y-auto mr-auto [--flux-flyout-translate:translateX(-50px)] rtl:mr-0 rtl:ml-auto rtl:[--flux-flyout-translate:translateX(50px)]',
+                default => 'fixed m-3 p-6 max-h-[calc(100dvh-1.5rem)] min-h-[calc(100dvh-1.5rem)] md:[:where(&)]:min-w-[25rem] overflow-y-auto ml-auto [--flux-flyout-translate:translateX(50px)] rtl:ml-0 rtl:mr-auto rtl:[--flux-flyout-translate:translateX(-50px)]',
             },
             'bare' => '',
         })
         ->add(match ($variant) {
-            default => 'bg-white dark:bg-stone-900 border-transparent dark:border-stone-700',
-            'floating' => 'bg-white dark:bg-stone-900 ring ring-black/5 dark:ring-stone-700 shadow-lg rounded-xl',
+            default => 'bg-white dark:bg-zinc-900 border-transparent dark:border-zinc-800',
+            'floating' => 'bg-white dark:bg-zinc-900 ring-1 ring-zinc-950/5 dark:ring-zinc-100/10 shadow-xl shadow-zinc-950/10 rounded-2xl',
             'bare' => 'bg-transparent',
         });
 } elseif ($overflow) {
@@ -65,21 +65,21 @@ if ($flyout) {
     $contentClasses = Flux::classes()
         ->add('relative')
         ->add(match ($variant) {
-            default => 'p-4 ' . $maxWidthClass . ' [:where(&)]:min-w-xs shadow-lg rounded-lg text-xs',
+            default => 'w-full p-5 sm:p-6 ' . $maxWidthClass . ' [:where(&)]:min-w-xs text-sm text-zinc-600 dark:text-zinc-300',
             'bare' => '',
         })
         ->add(match ($variant) {
-            default => 'bg-white dark:bg-stone-900 ring ring-black/5 dark:ring-stone-700 shadow-lg rounded-lg',
+            default => 'bg-white dark:bg-zinc-900 ring-1 ring-zinc-950/5 dark:ring-zinc-100/10 shadow-xl shadow-zinc-950/10 rounded-2xl',
             'bare' => 'bg-transparent',
         });
 } else {
     $classes = Flux::classes()
         ->add(match ($variant) {
-            default => 'p-4 ' . $maxWidthClass . ' [:where(&)]:min-w-xs shadow-lg rounded-lg text-xs',
+            default => 'w-[calc(100%-2rem)] p-5 sm:w-full sm:p-6 ' . $maxWidthClass . ' [:where(&)]:min-w-xs text-sm text-zinc-600 dark:text-zinc-300',
             'bare' => '',
         })
         ->add(match ($variant) {
-            default => 'bg-white dark:bg-stone-900 ring ring-black/5 dark:ring-stone-700 shadow-lg rounded-lg',
+            default => 'bg-white dark:bg-zinc-900 ring-1 ring-zinc-950/5 dark:ring-zinc-100/10 shadow-xl shadow-zinc-950/10 rounded-2xl',
             'bare' => 'bg-transparent',
         });
 }
@@ -142,31 +142,27 @@ if (! $overflow) {
             <div class="flex min-h-full items-center justify-center p-4 sm:p-6">
                 <div {{ $contentAttributes->class($contentClasses) }} data-flux-modal-content>
                     @if ($title || $description)
-                        <div class="mb-4 border-b border-stone-100 pb-3 dark:border-stone-800">
-                            <div class="flex items-start justify-between">
-                                <div>
-                                    @if ($title)
-                                        <h3 class="text-sm font-semibold text-stone-800 dark:text-stone-100">{{ $title }}</h3>
-                                    @endif
-                                    @if ($description)
-                                        <p class="mt-0.5 text-[11px] leading-normal text-stone-500 dark:text-stone-400">{{ $description }}</p>
-                                    @endif
-                                </div>
-                                @if ($closable)
-                                    <flux:modal.close>
-                                        <flux:button variant="ghost" icon="x-mark" size="sm" aria-label="{{ __('Close modal') }}" class="!text-stone-400 hover:!text-stone-800 dark:!text-stone-500 dark:hover:!text-white"></flux:button>
-                                    </flux:modal.close>
+                        <div class="mb-4 flex items-start justify-between gap-4 border-b border-zinc-100 pb-3 dark:border-zinc-800">
+                            <div class="min-w-0">
+                                @if ($title)
+                                    <h3 class="text-sm font-semibold text-zinc-800 dark:text-zinc-100">{{ $title }}</h3>
+                                @endif
+                                @if ($description)
+                                    <p class="mt-0.5 text-xs leading-normal text-zinc-500 dark:text-zinc-400">{{ $description }}</p>
                                 @endif
                             </div>
-                        </div>
-                    @else
-                        @if ($closable)
-                            <div class="absolute top-0 end-0 mt-4 me-4">
+                            @if ($closable)
                                 <flux:modal.close>
-                                    <flux:button variant="ghost" icon="x-mark" size="sm" aria-label="{{ __('Close modal') }}" class="!text-stone-400 hover:!text-stone-800 dark:!text-stone-500 dark:hover:!text-white"></flux:button>
+                                    <flux:button variant="ghost" icon="x-mark" size="sm" aria-label="{{ __('Close modal') }}" class="!shrink-0 !text-zinc-400 hover:!text-zinc-700 dark:!text-zinc-500 dark:hover:!text-zinc-100"></flux:button>
                                 </flux:modal.close>
-                            </div>
-                        @endif
+                            @endif
+                        </div>
+                    @elseif ($closable)
+                        <div class="absolute end-4 top-4">
+                            <flux:modal.close>
+                                <flux:button variant="ghost" icon="x-mark" size="sm" aria-label="{{ __('Close modal') }}" class="!text-zinc-400 hover:!text-zinc-700 dark:!text-zinc-500 dark:hover:!text-zinc-100"></flux:button>
+                            </flux:modal.close>
+                        </div>
                     @endif
 
                     {{ $slot }}
@@ -174,31 +170,27 @@ if (! $overflow) {
             </div>
         @else
             @if ($title || $description)
-                <div class="mb-4 border-b border-stone-100 pb-3 dark:border-stone-800">
-                    <div class="flex items-start justify-between">
-                        <div>
-                            @if ($title)
-                                <h3 class="text-sm font-semibold text-stone-800 dark:text-stone-100">{{ $title }}</h3>
-                            @endif
-                            @if ($description)
-                                <p class="mt-0.5 text-[11px] leading-normal text-stone-500 dark:text-stone-400">{{ $description }}</p>
-                            @endif
-                        </div>
-                        @if ($closable)
-                            <flux:modal.close>
-                                <flux:button variant="ghost" icon="x-mark" size="sm" aria-label="{{ __('Close modal') }}" class="!text-stone-400 hover:!text-stone-800 dark:!text-stone-500 dark:hover:!text-white"></flux:button>
-                            </flux:modal.close>
+                <div class="mb-4 flex items-start justify-between gap-4 border-b border-zinc-100 pb-3 dark:border-zinc-800">
+                    <div class="min-w-0">
+                        @if ($title)
+                            <h3 class="text-sm font-semibold text-zinc-800 dark:text-zinc-100">{{ $title }}</h3>
+                        @endif
+                        @if ($description)
+                            <p class="mt-0.5 text-xs leading-normal text-zinc-500 dark:text-zinc-400">{{ $description }}</p>
                         @endif
                     </div>
-                </div>
-            @else
-                @if ($closable)
-                    <div class="absolute top-0 end-0 mt-4 me-4">
+                    @if ($closable)
                         <flux:modal.close>
-                            <flux:button variant="ghost" icon="x-mark" size="sm" aria-label="{{ __('Close modal') }}" class="!text-stone-400 hover:!text-stone-800 dark:!text-stone-500 dark:hover:!text-white"></flux:button>
+                            <flux:button variant="ghost" icon="x-mark" size="sm" aria-label="{{ __('Close modal') }}" class="!shrink-0 !text-zinc-400 hover:!text-zinc-700 dark:!text-zinc-500 dark:hover:!text-zinc-100"></flux:button>
                         </flux:modal.close>
-                    </div>
-                @endif
+                    @endif
+                </div>
+            @elseif ($closable)
+                <div class="absolute end-4 top-4">
+                    <flux:modal.close>
+                        <flux:button variant="ghost" icon="x-mark" size="sm" aria-label="{{ __('Close modal') }}" class="!text-zinc-400 hover:!text-zinc-700 dark:!text-zinc-500 dark:hover:!text-zinc-100"></flux:button>
+                    </flux:modal.close>
+                </div>
             @endif
 
             {{ $slot }}

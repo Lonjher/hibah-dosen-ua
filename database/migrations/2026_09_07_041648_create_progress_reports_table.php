@@ -14,11 +14,14 @@ return new class extends Migration
         Schema::create('progress_reports', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('proposal_id');
+            $table->unsignedBigInteger('reviewer_id')->nullable();
             $table->text('summary');
             $table->string('keyword');
-            $table->string('report_path'); // PDF
+            $table->string('report_path');
             $table->string('ppt_path');
+            $table->boolean('is_approved');
             $table->foreign('proposal_id')->references('id')->on('proposals')->onDelete('cascade');
+            $table->foreign('reviewer_id')->references('id')->on('users')->onDelete('cascade');
             $table->timestamps();
         });
     }

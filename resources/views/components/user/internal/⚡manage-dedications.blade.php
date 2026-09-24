@@ -421,58 +421,8 @@ new class extends Component
 <div class="p-4 sm:p-6 space-y-6">
 
     {{-- ══════════ Header ══════════ --}}
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <x-dashboard-header icon="hand-raised" title="Community Service Proposals"
-            leading="Manage your community service proposals." />
-
-        <flux:button icon="plus" wire:click="create" variant="primary" size="sm"
-            class="shrink-0 w-full sm:w-auto justify-center">
-            New Proposal
-        </flux:button>
-    </div>
-
-    {{-- ══════════ Status Filter Tabs ══════════ --}}
-    <div
-        class="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl rounded-2xl
-               border border-white/80 dark:border-zinc-800 shadow-sm p-3">
-        <div class="flex items-center gap-1 overflow-x-auto
-                    [-ms-overflow-style:none] [scrollbar-width:none]
-                    [&::-webkit-scrollbar]:hidden">
-
-            @php
-                $tabs = [
-                    'all'               => ['label' => 'All',               'count' => $totalCount],
-                    'draft'             => ['label' => 'Draft',             'count' => $statusCounts['draft'] ?? 0],
-                    'admin_revision'    => ['label' => 'Admin Revision',    'count' => $statusCounts['admin_revision'] ?? 0],
-                    'submitted'         => ['label' => 'Submitted',         'count' => $statusCounts['submitted'] ?? 0],
-                    'under_review'      => ['label' => 'Under Review',      'count' => $statusCounts['under_review'] ?? 0],
-                    'reviewer_revision' => ['label' => 'Reviewer Revision', 'count' => $statusCounts['reviewer_revision'] ?? 0],
-                    'accepted'          => ['label' => 'Accepted',          'count' => $statusCounts['accepted'] ?? 0],
-                    'rejected'          => ['label' => 'Rejected',          'count' => $statusCounts['rejected'] ?? 0],
-                ];
-            @endphp
-
-            @foreach ($tabs as $key => $tab)
-                <button type="button"
-                    wire:click="$set('statusFilter', '{{ $key }}')"
-                    class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg
-                           text-[11px] font-medium whitespace-nowrap
-                           transition-colors duration-150
-                           {{ $statusFilter === $key
-                                ? 'bg-emerald-700 text-white shadow-sm dark:bg-emerald-600'
-                                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100' }}">
-                    {{ $tab['label'] }}
-                    <span
-                        class="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold
-                               {{ $statusFilter === $key
-                                    ? 'bg-white/20 text-white'
-                                    : 'bg-slate-100 text-slate-500 dark:bg-zinc-800 dark:text-zinc-400' }}">
-                        {{ $tab['count'] }}
-                    </span>
-                </button>
-            @endforeach
-        </div>
-    </div>
+    <x-dashboard-header icon="hand-raised" title="Community Service Proposals"
+        leading="Manage your community service proposals." />
 
     {{-- ══════════ Table Card ══════════ --}}
     <div
@@ -514,13 +464,19 @@ new class extends Component
                 @endif
             </div>
 
-            <x-input-search
-                name="search"
-                id="search-dedication"
-                wire:model.live.debounce.300ms="search"
-                placeholder="Search title, keywords..."
-                max-width="max-w-sm"
-                class="!flex w-full sm:w-auto" />
+            <div class="flex gap-3">
+                <x-input-search
+                    name="search"
+                    id="search-dedication"
+                    wire:model.live.debounce.300ms="search"
+                    placeholder="Search title, keywords..."
+                    max-width="max-w-sm"
+                    class="w-full sm:w-md" />
+                <flux:button icon="plus" wire:click="create" variant="primary" size="sm"
+                    class="shrink-0 w-full sm:w-auto justify-center">
+                    New Proposal
+                </flux:button>
+            </div>
         </div>
 
         <div class="overflow-x-auto">
