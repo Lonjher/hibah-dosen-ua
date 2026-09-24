@@ -18,6 +18,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::middleware('can:reviewer')->group(function(){
         Route::livewire('reviewer/review-proposal', 'reviewers.review-proposal')->name('reviewer.review-proposal');
+        Route::livewire('reviewer/review-progress-report', 'reviewers.researches.review-progress-report')->name('reviewer.review-progress-report');
     });
 
     Route::middleware('can:user')->group(function(){

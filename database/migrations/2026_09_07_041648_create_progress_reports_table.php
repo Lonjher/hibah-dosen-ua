@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('report_path');
             $table->string('ppt_path');
             $table->boolean('is_approved');
+            $table->timestamp('reviewed_at')->nullable();
             $table->foreign('proposal_id')->references('id')->on('proposals')->onDelete('cascade');
             $table->foreign('reviewer_id')->references('id')->on('users')->onDelete('cascade');
             $table->timestamps();

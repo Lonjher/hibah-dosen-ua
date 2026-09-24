@@ -4,9 +4,11 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\Proposal;
 use App\Models\AdminNotes;
+use App\Models\ProgressReport;
 use App\Models\User;
 use Livewire\Attributes\On;
 use Flux\Flux;
+use Illuminate\Support\Facades\Storage;
 
 new class extends Component {
     use WithPagination;
@@ -42,18 +44,18 @@ new class extends Component {
     public string $reviewer_note = '';
 
     // ─────── Progress Reports Modal ───────
-    public bool    $showProgressModal = false;
-    public ?int    $progressProposalId = null;
-    public string  $progressProposalTitle = '';
-    public string  $progressProposalScheme = '';
-    public string  $progressFilter = 'all';
+    public bool $showProgressModal = false;
+    public ?int $progressProposalId = null;
+    public string $progressProposalTitle = '';
+    public string $progressProposalScheme = '';
+    public string $progressFilter = 'all';
 
     // ─────── Assign Reviewer for Progress ───────
-    public bool    $showAssignProgressModal = false;
-    public ?int    $assigningProgressId = null;
-    public string  $assigningProgressKeyword = '';
-    public string  $assigningProgressProposal = '';
-    public ?int    $new_progress_reviewer_id = null;
+    public bool $showAssignProgressModal = false;
+    public ?int $assigningProgressId = null;
+    public string $assigningProgressKeyword = '';
+    public string $assigningProgressProposal = '';
+    public ?int $new_progress_reviewer_id = null;
 
     // ═══════════════ Validation ═══════════════
     protected function rules(): array
@@ -255,6 +257,21 @@ new class extends Component {
             )
             ->values()
             ->take(5);
+        $progressReports = collect();
+        if ($this->progressProposalId) {
+            $progressReports = ProgressReport::where('proposal_id', $this->progressProposalId)
+                ->with(['reviewer', 'proposal'])
+                ->when($this->progressFilter !== 'all', function ($q) {
+                    match ($this->progressFilter) {
+                        'pending' => $q->whereNull('reviewer_id'),
+                        'under_review' => $q->whereNotNull('reviewer_id')->where('is_approved', false),
+                        'approved' => $q->where('is_approved', true),
+                        default => $q,
+                    };
+                })
+                ->latest()
+                ->get();
+        }
 
         return [
             'proposals' => $query->paginate(10),
@@ -262,6 +279,7 @@ new class extends Component {
             'statusCounts' => Proposal::where('is_research', true)->selectRaw('status_proposal, count(*) as total')->groupBy('status_proposal')->pluck('total', 'status_proposal'),
             'totalCount' => Proposal::where('is_research', true)->count(),
             'reviewerOptions' => $reviewerOptions,
+            'progressReports' => $progressReports,
         ];
     }
 
@@ -414,17 +432,14 @@ new class extends Component {
             ->findOrFail($proposalId);
 
         if ($proposal->status_proposal !== 'accepted') {
-            Flux::toast(
-                text: 'Progress reports are only available for accepted proposals.',
-                variant: 'danger'
-            );
+            Flux::toast(text: 'Progress reports are only available for accepted proposals.', variant: 'danger');
             return;
         }
 
-        $this->progressProposalId     = $proposal->id;
-        $this->progressProposalTitle  = $proposal->title;
+        $this->progressProposalId = $proposal->id;
+        $this->progressProposalTitle = $proposal->title;
         $this->progressProposalScheme = $proposal->researchScheme?->scheme_name ?? '—';
-        $this->progressFilter         = 'all';
+        $this->progressFilter = 'all';
 
         $this->closeAssignProgressModal();
         $this->showProgressModal = true;
@@ -433,17 +448,13 @@ new class extends Component {
     public function closeProgressReports(): void
     {
         $this->showProgressModal = false;
-        $this->reset([
-            'progressProposalId', 'progressProposalTitle',
-            'progressProposalScheme', 'progressFilter',
-        ]);
+        $this->reset(['progressProposalId', 'progressProposalTitle', 'progressProposalScheme', 'progressFilter']);
         $this->closeAssignProgressModal();
     }
 
     public function approveProgress(int $id): void
     {
-        $report = ProgressReport::where('proposal_id', $this->progressProposalId)
-            ->findOrFail($id);
+        $report = ProgressReport::where('proposal_id', $this->progressProposalId)->findOrFail($id);
 
         $report->update([
             'reviewer_id' => auth()->id(),
@@ -455,51 +466,34 @@ new class extends Component {
 
     public function reopenProgress(int $id): void
     {
-        $report = ProgressReport::where('proposal_id', $this->progressProposalId)
-            ->findOrFail($id);
+        $report = ProgressReport::where('proposal_id', $this->progressProposalId)->findOrFail($id);
 
         $report->update(['is_approved' => false]);
 
-        Flux::toast(
-            text: 'Report re-opened for revision.',
-            variant: 'success'
-        );
+        Flux::toast(text: 'Report re-opened for revision.', variant: 'success');
     }
 
     public function confirmDeleteProgress(int $id): void
     {
-        $report = ProgressReport::where('proposal_id', $this->progressProposalId)
-            ->findOrFail($id);
+        $report = ProgressReport::where('proposal_id', $this->progressProposalId)->findOrFail($id);
 
-        $this->dispatch(
-            'confirm-delete',
-            subject: $report->keyword ?: 'Progress Report',
-            action: 'deleteProgressReport',
-            payload: ['id' => $report->id],
-            title: 'Delete Progress Report?',
-            note: 'Uploaded files will also be removed. This action cannot be undone.'
-        );
+        $this->dispatch('confirm-delete', subject: $report->keyword ?: 'Progress Report', action: 'deleteProgressReport', payload: ['id' => $report->id], title: 'Delete Progress Report?', note: 'Uploaded files will also be removed. This action cannot be undone.');
     }
 
     // ═══════════════ Assign Reviewer for Progress ═══════════════
     public function openAssignProgressReviewer(int $id): void
     {
-        $report = ProgressReport::with('proposal')
-            ->where('proposal_id', $this->progressProposalId)
-            ->findOrFail($id);
+        $report = ProgressReport::with('proposal')->where('proposal_id', $this->progressProposalId)->findOrFail($id);
 
         if ($report->is_approved && $report->reviewer_id) {
-            Flux::toast(
-                text: 'This report has already been approved.',
-                variant: 'danger'
-            );
+            Flux::toast(text: 'This report has already been approved.', variant: 'danger');
             return;
         }
 
-        $this->assigningProgressId        = $report->id;
-        $this->assigningProgressKeyword   = $report->keyword ?: 'Progress Report';
-        $this->assigningProgressProposal  = $report->proposal?->title ?? '—';
-        $this->new_progress_reviewer_id   = $report->reviewer_id;
+        $this->assigningProgressId = $report->id;
+        $this->assigningProgressKeyword = $report->keyword ?: 'Progress Report';
+        $this->assigningProgressProposal = $report->proposal?->title ?? '—';
+        $this->new_progress_reviewer_id = $report->reviewer_id;
 
         $this->resetErrorBag();
         $this->resetValidation();
@@ -508,13 +502,18 @@ new class extends Component {
 
     public function assignProgressReviewer(): void
     {
-        $this->validate([
-            'new_progress_reviewer_id' => ['required', 'exists:users,id'],
-        ], [
-            'new_progress_reviewer_id.required' => 'Please select a reviewer.',
-        ]);
+        $this->validate(
+            [
+                'new_progress_reviewer_id' => ['required', 'exists:users,id'],
+            ],
+            [
+                'new_progress_reviewer_id.required' => 'Please select a reviewer.',
+            ],
+        );
 
-        if (! $this->assigningProgressId) return;
+        if (!$this->assigningProgressId) {
+            return;
+        }
 
         $report = ProgressReport::findOrFail($this->assigningProgressId);
 
@@ -523,10 +522,7 @@ new class extends Component {
             'is_approved' => false,
         ]);
 
-        Flux::toast(
-            text: 'Reviewer assigned. Report is now under review.',
-            variant: 'success'
-        );
+        Flux::toast(text: 'Reviewer assigned. Report is now under review.', variant: 'success');
 
         $this->closeAssignProgressModal();
     }
@@ -539,10 +535,7 @@ new class extends Component {
     protected function closeAssignProgressModal(): void
     {
         $this->showAssignProgressModal = false;
-        $this->reset([
-            'assigningProgressId', 'assigningProgressKeyword',
-            'assigningProgressProposal', 'new_progress_reviewer_id',
-        ]);
+        $this->reset(['assigningProgressId', 'assigningProgressKeyword', 'assigningProgressProposal', 'new_progress_reviewer_id']);
         $this->resetErrorBag();
         $this->resetValidation();
     }
@@ -551,12 +544,12 @@ new class extends Component {
     public function progressStatusMeta(ProgressReport $report): array
     {
         if (is_null($report->reviewer_id)) {
-            return ['label' => 'Pending',      'class' => 'bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-zinc-300'];
+            return ['label' => 'Pending', 'class' => 'bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-zinc-300'];
         }
         if ($report->is_approved) {
-            return ['label' => 'Approved',     'class' => 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'];
+            return ['label' => 'Approved', 'class' => 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'];
         }
-        return     ['label' => 'Under Review', 'class' => 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300'];
+        return ['label' => 'Under Review', 'class' => 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300'];
     }
 };
 ?>
@@ -718,12 +711,14 @@ new class extends Component {
                                             View Details
                                         </flux:menu.item>
 
-                                        {{-- <flux:menu.item icon="adjustments-horizontal"
-                                            wire:click="manage({{ $proposal->id }})">
-                                            Manage Status
-                                        </flux:menu.item> --}}
-
-                                        {{-- <flux:menu.separator /> --}}
+                                        @if ($proposal->status_proposal === 'accepted' && $proposal->progressReport)
+                                            <flux:menu.item icon="document-chart-bar"
+                                                wire:click="openProgressReports({{ $proposal->id }})"
+                                                class="text-emerald-600 dark:text-emerald-400
+                                                    hover:bg-emerald-50! dark:hover:bg-emerald-900/30!">
+                                                Progress Reports
+                                            </flux:menu.item>
+                                        @endif
 
                                         @if ($proposal->status_proposal === 'submitted')
                                             <flux:menu.item icon="user-plus"
@@ -1429,6 +1424,479 @@ new class extends Component {
                             Assign Reviewer
                         </span>
                         <span wire:loading.flex wire:target="assignReviewer" class="items-center gap-1.5">
+                            <svg class="animate-spin size-3.5" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10"
+                                    stroke="currentColor" stroke-width="4" />
+                                <path class="opacity-75" fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                            </svg>
+                            Assigning...
+                        </span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- ══════════ Progress Report Viewer (Admin) ══════════ --}}
+    <div x-data="{ show: @entangle('showProgressModal') }" x-show="show" x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+        x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0" x-on:keydown.escape.window="$wire.closeProgressReports()" x-cloak
+        class="fixed inset-0 z-50 flex items-end sm:items-center justify-center
+           p-0 sm:p-4 bg-inverse-surface/40 backdrop-blur-sm">
+
+        <div x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+            x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+            x-transition:leave="transition ease-in duration-150"
+            x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+            x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+            class="bg-surface-container-lowest dark:bg-zinc-900 shadow-lg
+               w-full sm:max-w-3xl
+               rounded-t-2xl sm:rounded-xl
+               max-h-[92vh] sm:max-h-[90vh] flex flex-col
+               border border-outline-variant/50 dark:border-zinc-700">
+
+            {{-- ── Header ── --}}
+            <div
+                class="shrink-0 bg-gradient-to-r from-emerald-600 to-emerald-500
+                    px-5 sm:px-6 py-4 rounded-t-2xl sm:rounded-t-xl">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0 flex-1">
+                        <div class="flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
+                                <flux:icon.document-chart-bar class="size-4 text-white" />
+                            </div>
+                            <h3 class="font-heading text-base sm:text-lg font-semibold text-white">
+                                Progress Reports
+                            </h3>
+                        </div>
+                        <p class="text-[11px] text-white/75 mt-1 truncate" title="{{ $progressProposalTitle }}">
+                            {{ $progressProposalTitle }}
+                        </p>
+                        <p class="text-[10px] text-white/60 mt-0.5 truncate">
+                            {{ $progressProposalScheme }}
+                        </p>
+                    </div>
+
+                    <button type="button" wire:click="closeProgressReports"
+                        class="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center
+                           text-white/80 hover:text-white hover:bg-white/10 transition-colors">
+                        <flux:icon.x-mark class="size-4" />
+                    </button>
+                </div>
+            </div>
+
+            {{-- ── Body ── --}}
+            <div class="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
+
+                {{-- Empty state --}}
+                @if ($progressReports->isEmpty())
+                    <div
+                        class="p-8 rounded-xl text-center
+                            bg-surface-container-low dark:bg-zinc-800/40
+                            border border-outline-variant/60 dark:border-zinc-700">
+                        <flux:icon.document-chart-bar class="size-8 mx-auto text-outline-variant dark:text-zinc-700" />
+                        <p class="mt-2 text-sm font-medium text-on-surface dark:text-zinc-200">
+                            {{ $progressFilter === 'all' ? 'No progress reports yet' : 'No reports match this filter' }}
+                        </p>
+                        <p class="mt-0.5 text-[11px] text-outline dark:text-zinc-500">
+                            @if ($progressFilter === 'all')
+                                The author has not submitted any progress reports for this proposal.
+                            @else
+                                Try switching to a different filter tab.
+                            @endif
+                        </p>
+                    </div>
+                @else
+                    <div class="flex flex-col gap-3">
+                        @foreach ($progressReports as $report)
+                            @php $pMeta = $this->progressStatusMeta($report); @endphp
+
+                            <div wire:key="admin-progress-{{ $report->id }}"
+                                class="p-4 rounded-xl border
+                                    bg-surface-container-low dark:bg-zinc-800/40
+                                    border-outline-variant/60 dark:border-zinc-700">
+
+                                {{-- Row 1: Status + timestamp + actions --}}
+                                <div class="flex items-start justify-between gap-2 mb-2">
+                                    <div class="flex items-center gap-2 min-w-0">
+                                        <span
+                                            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full
+                                                 text-[10px] font-bold uppercase tracking-wider
+                                                 {{ $pMeta['class'] }}">
+                                            @if (is_null($report->reviewer_id))
+                                                <flux:icon.clock class="size-3" />
+                                            @elseif ($report->is_approved)
+                                                <flux:icon.check-circle class="size-3" />
+                                            @else
+                                                <flux:icon.eye class="size-3" />
+                                            @endif
+                                            {{ $pMeta['label'] }}
+                                        </span>
+                                        <span class="text-[10px] text-outline dark:text-zinc-500 font-mono">
+                                            {{ $report->created_at?->format('d M Y, H:i') }}
+                                        </span>
+                                    </div>
+
+                                    <div class="flex items-center gap-0.5 shrink-0">
+                                        {{-- Assign / Re-assign reviewer --}}
+                                        @if (!$report->is_approved)
+                                            <button type="button"
+                                                wire:click="openAssignProgressReviewer({{ $report->id }})"
+                                                title="{{ $report->reviewer_id ? 'Re-assign reviewer' : 'Assign reviewer' }}"
+                                                class="w-7 h-7 rounded-md flex items-center justify-center
+                                                   text-outline hover:text-violet-600 hover:bg-violet-100
+                                                   dark:text-zinc-500 dark:hover:text-violet-400
+                                                   dark:hover:bg-violet-900/30 transition-colors">
+                                                <flux:icon.user-plus class="size-3.5" />
+                                            </button>
+                                        @endif
+
+                                        {{-- Approve --}}
+                                        @if ($report->reviewer_id && !$report->is_approved)
+                                            <button type="button" wire:click="approveProgress({{ $report->id }})"
+                                                wire:confirm="Approve this progress report?" title="Approve"
+                                                class="w-7 h-7 rounded-md flex items-center justify-center
+                                                   text-outline hover:text-emerald-600 hover:bg-emerald-100
+                                                   dark:text-zinc-500 dark:hover:text-emerald-400
+                                                   dark:hover:bg-emerald-900/30 transition-colors">
+                                                <flux:icon.check-circle class="size-3.5" />
+                                            </button>
+                                        @endif
+
+                                        {{-- Re-open --}}
+                                        @if ($report->is_approved)
+                                            <button type="button" wire:click="reopenProgress({{ $report->id }})"
+                                                wire:confirm="Re-open this report for revision?" title="Re-open"
+                                                class="w-7 h-7 rounded-md flex items-center justify-center
+                                                   text-outline hover:text-amber-600 hover:bg-amber-100
+                                                   dark:text-zinc-500 dark:hover:text-amber-400
+                                                   dark:hover:bg-amber-900/30 transition-colors">
+                                                <flux:icon.arrow-path class="size-3.5" />
+                                            </button>
+                                        @endif
+
+                                        {{-- Delete --}}
+                                        <button type="button"
+                                            wire:click="confirmDeleteProgress({{ $report->id }})" title="Delete"
+                                            class="w-7 h-7 rounded-md flex items-center justify-center
+                                               text-outline hover:text-rose-600 hover:bg-rose-100
+                                               dark:text-zinc-500 dark:hover:text-rose-400
+                                               dark:hover:bg-rose-900/30 transition-colors">
+                                            <flux:icon.trash class="size-3.5" />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {{-- Keyword --}}
+                                <div class="flex items-center gap-1.5 mb-1.5">
+                                    <flux:icon.tag class="size-3.5 text-outline dark:text-zinc-500" />
+                                    <span class="text-[12px] font-semibold text-on-surface dark:text-zinc-100">
+                                        {{ $report->keyword }}
+                                    </span>
+                                </div>
+
+                                {{-- Summary --}}
+                                <p
+                                    class="text-[12px] leading-relaxed whitespace-pre-line line-clamp-3
+                                      text-on-surface-variant dark:text-zinc-400">
+                                    {{ $report->summary }}
+                                </p>
+
+                                {{-- Footer: Files + Reviewer --}}
+                                <div
+                                    class="mt-3 pt-3 flex flex-wrap items-center gap-3
+                                        border-t border-outline-variant/40 dark:border-zinc-700/60">
+                                    @if ($report->report_path)
+                                        <a href="{{ Storage::disk('public')->url($report->report_path) }}"
+                                            target="_blank"
+                                            class="inline-flex items-center gap-1 text-[10px]
+                                               text-rose-600 hover:text-rose-700
+                                               dark:text-rose-400 dark:hover:text-rose-300
+                                               hover:underline font-medium">
+                                            <flux:icon.document-text class="size-3" />
+                                            Report PDF
+                                        </a>
+                                    @endif
+
+                                    @if ($report->ppt_path)
+                                        <a href="{{ Storage::disk('public')->url($report->ppt_path) }}"
+                                            target="_blank"
+                                            class="inline-flex items-center gap-1 text-[10px]
+                                               text-orange-600 hover:text-orange-700
+                                               dark:text-orange-400 dark:hover:text-orange-300
+                                               hover:underline font-medium">
+                                            <flux:icon.presentation-chart-bar class="size-3" />
+                                            Presentation
+                                        </a>
+                                    @endif
+
+                                    @if ($report->reviewer)
+                                        <div
+                                            class="ml-auto flex items-center gap-1.5 text-[10px]
+                                                text-outline dark:text-zinc-500">
+                                            <flux:icon.user-circle class="size-3" />
+                                            <span class="font-medium text-on-surface dark:text-zinc-300">
+                                                {{ $report->reviewer->full_name }}
+                                            </span>
+                                        </div>
+                                    @else
+                                        <div
+                                            class="ml-auto flex items-center gap-1.5 text-[10px]
+                                                text-outline dark:text-zinc-500 italic">
+                                            <flux:icon.user-circle class="size-3" />
+                                            No reviewer assigned
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+        </div>
+    </div>
+
+    {{-- ══════════ Assign Progress Reviewer Modal ══════════ --}}
+    <div x-data="{
+        search: '',
+        reviewers: @js($reviewerOptions),
+        selected: null,
+
+        init() {
+            $wire.$watch('showAssignProgressModal', (val) => {
+                if (val) {
+                    const initialId = $wire.new_progress_reviewer_id;
+                    this.selected = initialId ?
+                        this.reviewers.find(r => r.id === initialId) || null :
+                        null;
+                    this.search = '';
+                    this.$nextTick(() => {
+                        if (!this.selected) this.$refs.progressSearchInput?.focus();
+                    });
+                }
+            });
+        },
+
+        get filtered() {
+            if (!this.search.trim()) return this.reviewers;
+            const q = this.search.toLowerCase();
+            return this.reviewers.filter(r =>
+                r.name.toLowerCase().includes(q) ||
+                (r.nidn && String(r.nidn).toLowerCase().includes(q))
+            );
+        },
+
+        select(r) {
+            this.selected = r;
+            this.search = '';
+            $wire.set('new_progress_reviewer_id', r.id);
+        },
+
+        clear() {
+            this.selected = null;
+            this.search = '';
+            $wire.set('new_progress_reviewer_id', null);
+            this.$nextTick(() => this.$refs.progressSearchInput?.focus());
+        }
+    }" x-show="$wire.showAssignProgressModal"
+        x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+        x-on:keydown.escape.window="if (selected) clear(); else $wire.cancelAssignProgressReviewer()" x-cloak
+        class="fixed inset-0 z-[60] flex items-end sm:items-center justify-center
+           p-0 sm:p-4 bg-inverse-surface/40 backdrop-blur-sm">
+
+        <div x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+            x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+            x-transition:leave="transition ease-in duration-150"
+            x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+            x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+            @click.away="! selected && $wire.cancelAssignProgressReviewer()"
+            class="bg-surface-container-lowest dark:bg-zinc-900 shadow-lg
+               w-full sm:max-w-md
+               rounded-t-2xl sm:rounded-xl
+               max-h-[92vh] sm:max-h-[90vh] flex flex-col
+               border border-outline-variant/50 dark:border-zinc-700">
+
+            {{-- Header --}}
+            <div
+                class="shrink-0 bg-gradient-to-r from-violet-600 to-violet-500
+                    px-5 py-3.5 rounded-t-2xl sm:rounded-t-xl">
+                <div class="flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-2 min-w-0 flex-1">
+                        <div class="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
+                            <flux:icon.user-plus class="size-4 text-white" />
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <h3 class="font-heading text-[15px] font-semibold text-white leading-tight truncate">
+                                Assign Progress Reviewer
+                            </h3>
+                            <p class="text-[10px] text-white/70 truncate" title="{{ $assigningProgressKeyword }}">
+                                {{ $assigningProgressProposal }} · {{ $assigningProgressKeyword }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <button type="button" wire:click="cancelAssignProgressReviewer"
+                        class="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center
+                           text-white/80 hover:text-white hover:bg-white/10 transition-colors">
+                        <flux:icon.x-mark class="size-4" />
+                    </button>
+                </div>
+            </div>
+
+            {{-- Body --}}
+            <form wire:submit.prevent="assignProgressReviewer" class="flex-1 flex flex-col overflow-hidden">
+                <div class="flex-1 overflow-y-auto p-5 space-y-3">
+
+                    <div class="relative">
+                        {{-- Selected chip --}}
+                        <template x-if="selected">
+                            <div
+                                class="flex items-center justify-between gap-2 px-3 py-2.5 rounded-lg
+                                    border border-violet-300 dark:border-violet-700
+                                    bg-violet-50 dark:bg-violet-900/20">
+                                <div class="flex items-center gap-2.5 min-w-0">
+                                    <div class="w-8 h-8 rounded-full bg-violet-600 text-white
+                                            flex items-center justify-center text-[11px] font-bold shrink-0"
+                                        x-text="selected.name.charAt(0).toUpperCase()"></div>
+                                    <div class="flex flex-col min-w-0">
+                                        <span
+                                            class="text-sm font-medium truncate
+                                                 text-on-surface dark:text-zinc-100"
+                                            x-text="selected.name"></span>
+                                        <template x-if="selected.nidn">
+                                            <span
+                                                class="text-[10px] text-violet-700/70
+                                                     dark:text-violet-400/70 font-mono truncate"
+                                                x-text="'NIDN ' + selected.nidn"></span>
+                                        </template>
+                                    </div>
+                                </div>
+                                <button type="button" @click="clear()" title="Change reviewer"
+                                    class="shrink-0 w-7 h-7 rounded-md flex items-center justify-center
+                                       text-violet-600 hover:bg-violet-100
+                                       dark:text-violet-400 dark:hover:bg-violet-900/40
+                                       transition-colors">
+                                    <flux:icon.arrow-path class="size-3.5" />
+                                </button>
+                            </div>
+                        </template>
+
+                        {{-- Search input --}}
+                        <template x-if="!selected">
+                            <div class="relative">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                    <flux:icon.magnifying-glass class="size-4 text-outline dark:text-zinc-500" />
+                                </div>
+                                <input type="text" x-ref="progressSearchInput" x-model="search"
+                                    placeholder="Type a name or NIDN..."
+                                    class="w-full pl-10 pr-3 py-2.5 rounded-lg shadow-sm
+                                       border-outline-variant dark:border-zinc-600
+                                       bg-surface-container-lowest dark:bg-zinc-800
+                                       text-on-surface dark:text-zinc-100
+                                       placeholder:text-outline dark:placeholder-zinc-500
+                                       focus:border-violet-500 focus:ring-violet-500
+                                       sm:text-sm" />
+                            </div>
+                        </template>
+
+                        {{-- Suggestions --}}
+                        <div x-show="!selected" x-transition:enter="transition ease-out duration-150"
+                            x-transition:enter-start="opacity-0 -translate-y-1"
+                            x-transition:enter-end="opacity-100 translate-y-0"
+                            class="mt-1 max-h-56 overflow-y-auto
+                               bg-white dark:bg-zinc-900
+                               border border-outline-variant/60 dark:border-zinc-700
+                               rounded-lg shadow-sm py-1">
+
+                            <template x-if="filtered.length === 0">
+                                <div class="px-3 py-6 text-center">
+                                    <flux:icon.user-circle
+                                        class="size-6 mx-auto text-outline-variant dark:text-zinc-700" />
+                                    <p class="mt-1 text-[11px] text-outline dark:text-zinc-500"
+                                        x-text="reviewers.length === 0
+                                        ? 'No reviewers available'
+                                        : 'No matches for \'' + search + '\''">
+                                    </p>
+                                </div>
+                            </template>
+
+                            <template x-for="r in filtered" :key="r.id">
+                                <button type="button" @click="select(r)"
+                                    class="w-full flex items-center gap-2.5 px-3 py-2 text-left
+                                       transition-colors
+                                       hover:bg-violet-50 dark:hover:bg-violet-900/20
+                                       focus:bg-violet-50 dark:focus:bg-violet-900/20
+                                       focus:outline-none">
+                                    <div class="w-7 h-7 rounded-full
+                                            bg-violet-100 text-violet-700
+                                            dark:bg-violet-900/40 dark:text-violet-300
+                                            flex items-center justify-center text-[11px] font-bold shrink-0"
+                                        x-text="r.name.charAt(0).toUpperCase()"></div>
+                                    <div class="flex flex-col min-w-0 flex-1">
+                                        <span
+                                            class="text-sm font-medium truncate
+                                                 text-on-surface dark:text-zinc-100"
+                                            x-text="r.name"></span>
+                                        <template x-if="r.nidn">
+                                            <span
+                                                class="text-[10px] text-outline dark:text-zinc-500
+                                                     font-mono truncate"
+                                                x-text="'NIDN ' + r.nidn"></span>
+                                        </template>
+                                    </div>
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+
+                    @error('new_progress_reviewer_id')
+                        <p class="text-error text-xs flex items-center gap-1">
+                            <flux:icon.exclamation-circle class="size-3.5 shrink-0" />
+                            {{ $message }}
+                        </p>
+                    @enderror
+                </div>
+
+                {{-- Footer --}}
+                <div
+                    class="shrink-0 flex flex-col-reverse sm:flex-row sm:justify-end gap-2
+                        px-5 py-3.5
+                        border-t border-outline-variant/40 dark:border-zinc-700
+                        bg-surface-container-lowest dark:bg-zinc-900
+                        rounded-b-2xl sm:rounded-b-xl">
+
+                    <button type="button" wire:click="cancelAssignProgressReviewer"
+                        class="w-full sm:w-auto px-4 py-2 text-sm font-medium rounded-md
+                           text-on-surface-variant dark:text-zinc-300
+                           bg-surface-container-lowest dark:bg-zinc-800
+                           border border-outline-variant dark:border-zinc-600
+                           hover:bg-surface-container-low dark:hover:bg-zinc-700
+                           transition-colors duration-150">
+                        Cancel
+                    </button>
+
+                    <button type="submit" wire:loading.attr="disabled" wire:target="assignProgressReviewer"
+                        :disabled="!selected"
+                        class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5
+                           px-5 py-2 text-sm font-medium text-white rounded-md
+                           bg-gradient-to-r from-violet-600 to-violet-500
+                           hover:from-violet-700 hover:to-violet-600
+                           focus:outline-none focus:ring-2 focus:ring-violet-500
+                           transition-all duration-200
+                           disabled:opacity-50 disabled:cursor-not-allowed
+                           disabled:hover:from-violet-600 disabled:hover:to-violet-500">
+                        <span wire:loading.remove wire:target="assignProgressReviewer"
+                            class="inline-flex items-center gap-1.5">
+                            <flux:icon.user-plus class="size-3.5" />
+                            Assign Reviewer
+                        </span>
+                        <span wire:loading.flex wire:target="assignProgressReviewer" class="items-center gap-1.5">
                             <svg class="animate-spin size-3.5" fill="none" viewBox="0 0 24 24">
                                 <circle class="opacity-25" cx="12" cy="12" r="10"
                                     stroke="currentColor" stroke-width="4" />
