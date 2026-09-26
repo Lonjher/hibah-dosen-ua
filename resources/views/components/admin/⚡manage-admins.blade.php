@@ -1,222 +1,209 @@
 <?php
 
+use App\Models\User;
+use Flux\Flux;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithPagination;
-use App\Models\User;
-use App\Models\Role;
-use Illuminate\Validation\Rule;
-use Flux\Flux;
 
-new class extends Component
-{
+new #[Title('Manage Admins')] class extends Component {
     use WithPagination;
 
-    public $full_name = '';
-    public $email = '';
-    public $nidn = '';
-    public $phone_number = '';
-    public $password = '';
-    public $editingId = null;
-    public $showModal = false;
+    public $search = '';
 
-    protected $rules = [
-        'full_name' => 'required|string|max:255',
-        'email' => 'required|email|max:255|unique:users,email',
-        'nidn' => 'nullable|string|max:30',
-        'phone_number' => 'nullable|string|max:20',
-        'password' => 'nullable|string|min:8',
-    ];
-
-    public function render()
+    public function mount(): void
     {
-        $adminRole = Role::where('role_code', 'ADMIN')->firstOrFail();
-        $admins = User::where('role_id', $adminRole->id)
-            ->orderBy('full_name')
+        // 🔒 Guard: hanya Super Admin
+        abort_unless(
+            auth()->user()?->role?->role_code === 'SUPERADMIN',
+            403,
+            'Hanya Super Admin yang dapat mengakses halaman ini.'
+        );
+    }
+
+    public function with()
+    {
+        $admins = User::query()
+            ->with('role')
+            ->whereHas('role', fn ($q) => $q->where('role_code', 'ADMIN'))
+            ->when($this->search, fn ($q) => $q->where(function ($q) {
+                $q->where('full_name', 'like', "%{$this->search}%")
+                  ->orWhere('nidn', 'like', "%{$this->search}%")
+                  ->orWhere('email', 'like', "%{$this->search}%");
+            }))
+            ->latest()
             ->paginate(10);
 
-        return $this->view([
-            'admins' => $admins
-        ]);
+        return ['admins' => $admins];
     }
 
-    public function create()
+    public function delete(User $user)
     {
-        $this->resetForm();
-        $this->showModal = true;
-    }
-
-    public function edit(User $admin)
-    {
-        $this->editingId = $admin->id;
-        $this->full_name = $admin->full_name;
-        $this->email = $admin->email;
-        $this->nidn = $admin->nidn ?? '';
-        $this->phone_number = $admin->phone_number ?? '';
-        $this->password = '';
-        $this->showModal = true;
-    }
-
-    public function save()
-    {
-        // Untuk edit, pengecualian unique
-        $this->rules['email'] = Rule::unique('users', 'email')->ignore($this->editingId);
-        $this->validate();
-
-        $adminRole = Role::where('code', 'ADMIN')->firstOrFail();
-
-        if ($this->editingId) {
-            $admin = User::findOrFail($this->editingId);
-            $admin->update([
-                'full_name' => $this->full_name,
-                'email' => $this->email,
-                'nidn' => $this->nidn ?: null,
-                'phone_number' => $this->phone_number ?: null,
-                'role_id' => $adminRole->id,
-            ]);
-            if ($this->password) {
-                $admin->update(['password' => Hash::make($this->password)]);
-            }
-            Flux::toast('Data admin berhasil diperbarui.');
-        } else {
-            User::create([
-                'full_name' => $this->full_name,
-                'email' => $this->email,
-                'nidn' => $this->nidn ?: null,
-                'phone_number' => $this->phone_number ?: null,
-                'password' => Hash::make($this->password),
-                'role_id' => $adminRole->id,
-            ]);
-            Flux::toast('Admin baru berhasil ditambahkan.');
-        }
-
-        $this->showModal = false;
-        $this->resetForm();
-    }
-
-    public function delete(User $admin)
-    {
-        // Cegah admin menghapus dirinya sendiri
-        if ($admin->id === auth()->id()) {
-            Flux::toast('Anda tidak dapat menghapus akun sendiri.', variant: 'danger');
+        // Cegah Super Admin hapus dirinya sendiri
+        if ($user->id === auth()->id()) {
+            Flux::toast('Tidak dapat menghapus akun sendiri.', variant: 'danger');
             return;
         }
 
-        $admin->delete();
-        Flux::toast('Admin dihapus.');
-    }
+        // Cegah hapus Super Admin
+        if ($user->role?->role_code === 'SUPERADMIN') {
+            Flux::toast('Tidak dapat menghapus Super Admin.', variant: 'danger');
+            return;
+        }
 
-    private function resetForm()
-    {
-        $this->reset(['full_name', 'email', 'nidn', 'phone_number', 'password', 'editingId']);
+        $user->delete();
+        Flux::toast('Admin dihapus.');
     }
 };
 ?>
 
-<div class="p-4 sm:p-6">
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-        <x-dashboard-header icon="shield-check" title="Kelola Admin" leading="Manajemen akun pengguna dengan peran admin." />
-        <flux:button icon="plus" wire:click="create" variant="primary" size="sm" class="shrink-0">Tambah Admin</flux:button>
-    </div>
+<div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950 p-3 sm:p-4 lg:p-6">
+    <div class="max-w-7xl mx-auto space-y-4">
 
-    <!-- Tabel Admin -->
-    <div class="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl rounded-2xl border border-white/80 dark:border-zinc-800 shadow-sm overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="w-full min-w-[800px] text-xs">
-                <thead class="bg-emerald-50/50 dark:bg-emerald-900/20 text-left text-[11px] uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                    <tr>
-                        <th class="px-4 py-3 font-semibold">Nama</th>
-                        <th class="px-4 py-3 font-semibold">Email</th>
-                        <th class="px-4 py-3 font-semibold">NIDN</th>
-                        <th class="px-4 py-3 font-semibold">No. HP</th>
-                        <th class="px-4 py-3 font-semibold text-right">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100 dark:divide-zinc-800">
-                    @forelse($admins as $admin)
-                        <tr class="hover:bg-emerald-50/30 dark:hover:bg-zinc-800/50 transition-colors">
-                            <td class="px-4 py-3">
-                                <div class="flex items-center gap-2">
-                                    <div class="w-7 h-7 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-[10px] shrink-0">
-                                        {{ $admin->initials() }}
-                                    </div>
-                                    <span class="font-medium text-slate-900 dark:text-zinc-100">{{ $admin->full_name }}</span>
-                                </div>
-                            </td>
-                            <td class="px-4 py-3 text-slate-600 dark:text-slate-300">{{ $admin->email }}</td>
-                            <td class="px-4 py-3 text-slate-600 dark:text-slate-300">{{ $admin->nidn ?: '—' }}</td>
-                            <td class="px-4 py-3 text-slate-600 dark:text-slate-300">{{ $admin->phone_number ?: '—' }}</td>
-                            <td class="px-4 py-3 text-right whitespace-nowrap">
-                                <div class="flex items-center justify-end gap-1">
-                                    <flux:button size="sm" icon="pencil-square" wire:click="edit({{ $admin->id }})" class="text-slate-500 hover:bg-slate-100 dark:hover:bg-zinc-800" />
-                                    <flux:button size="sm" icon="trash" wire:click="delete({{ $admin->id }})" wire:confirm="Yakin ingin menghapus admin ini?" class="text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-900/30" />
-                                </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="5" class="px-4 py-10 text-center text-slate-500 dark:text-slate-400">
-                                <div class="flex flex-col items-center gap-2">
-                                    <flux:icon.shield-check class="size-8 text-slate-300 dark:text-zinc-700" />
-                                    <span>Belum ada admin. Klik "Tambah Admin" untuk membuat.</span>
-                                </div>
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
+        <x-dashboard-header icon="shield-check" title="Manage Admins"
+            leading="Kelola akun administrator sistem. Hanya Super Admin yang dapat mengakses." />
+
+        {{-- Warning Banner --}}
+        <div class="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-3 flex items-start gap-2">
+            <flux:icon.shield-exclamation class="size-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <div>
+                <p class="text-[11px] font-semibold text-amber-800 dark:text-amber-300">
+                    Akses Terbatas — Super Admin Only
+                </p>
+                <p class="text-[10px] text-amber-700 dark:text-amber-400 mt-0.5">
+                    Halaman ini hanya dapat diakses oleh Super Admin. Admin biasa tidak dapat mengelola akun admin lain.
+                </p>
+            </div>
         </div>
-        @if ($admins->hasPages())
-            <div class="px-4 py-3 border-t border-slate-100 dark:border-zinc-800">
-                {{ $admins->links() }}
+
+        <div class="bg-white dark:bg-zinc-900 rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-zinc-950/50 border border-slate-200 dark:border-zinc-800 overflow-hidden">
+
+            <div class="p-3 sm:p-4 border-b border-slate-200 dark:border-zinc-800 bg-gradient-to-r from-slate-50 to-white dark:from-zinc-900 dark:to-zinc-900/50">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div class="flex items-center gap-2">
+                        <div class="flex items-center justify-center w-5 h-5 rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
+                            <flux:icon.list-bullet class="size-4 text-emerald-600 dark:text-emerald-400" />
+                        </div>
+                        <p class="text-[10px] font-medium text-slate-900 dark:text-zinc-400">
+                            {{ $admins->total() }} found
+                        </p>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <div class="flex-1 sm:flex-none sm:w-64">
+                            <x-input-search name="q" wire:model.live="search" id="search-admin"
+                                placeholder="Cari admin..." class="w-full text-xs" />
+                        </div>
+                        <flux:button icon="plus" x-data
+                            x-on:click="$dispatch('open-add-admin')"
+                            variant="primary" size="xs"
+                            class="shrink-0 shadow-lg shadow-emerald-500/20 text-xs">
+                            <span class="hidden sm:inline">Tambah Admin</span>
+                            <span class="sm:hidden">Tambah</span>
+                        </flux:button>
+                    </div>
+                </div>
             </div>
-        @endif
+
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="bg-slate-50 dark:bg-zinc-900/50 border-b border-slate-200 dark:border-zinc-800">
+                            <th class="px-3 sm:px-4 py-2.5 text-left">
+                                <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-700 dark:text-zinc-300">Admin</span>
+                            </th>
+                            <th class="hidden md:table-cell px-3 sm:px-4 py-2.5 text-left">
+                                <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-700 dark:text-zinc-300">NIDN</span>
+                            </th>
+                            <th class="px-3 sm:px-4 py-2.5 text-left">
+                                <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-700 dark:text-zinc-300">Notes Given</span>
+                            </th>
+                            <th class="px-3 sm:px-4 py-2.5 text-right">
+                                <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-700 dark:text-zinc-300">Action</span>
+                            </th>
+                        </tr>
+                    </thead>
+
+                    <tbody class="divide-y divide-slate-200 dark:divide-zinc-800">
+                        @forelse ($admins as $admin)
+                            <tr class="group hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
+                                <td class="px-3 sm:px-4 py-2.5">
+                                    <div class="flex items-center gap-2">
+                                        <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-100 to-teal-50 dark:from-emerald-900/30 dark:to-teal-900/20 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 group-hover:scale-105 transition-transform">
+                                            {{ $admin->initials() }}
+                                        </div>
+                                        <div>
+                                            <p class="text-xs font-semibold text-slate-900 dark:text-white">
+                                                {{ $admin->full_name }}
+                                            </p>
+                                            <p class="text-[10px] text-slate-500 dark:text-zinc-400 mt-0.5">
+                                                {{ $admin->email }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td class="hidden md:table-cell px-3 sm:px-4 py-2.5">
+                                    <span class="text-[11px] text-slate-700 dark:text-zinc-300 font-mono">
+                                        {{ $admin->nidn }}
+                                    </span>
+                                </td>
+
+                                <td class="px-3 sm:px-4 py-2.5">
+                                    <span class="inline-flex items-center gap-1 text-[10px] text-slate-600 dark:text-zinc-400">
+                                        <flux:icon.chat-bubble-left class="size-3" />
+                                        {{ $admin->adminNotes()->count() }} catatan
+                                    </span>
+                                </td>
+
+                                <td class="px-3 sm:px-4 py-2.5 text-right">
+                                    <flux:dropdown position="bottom" align="end">
+                                        <flux:button size="xs" variant="ghost" icon="ellipsis-horizontal"
+                                            class="rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100 dark:text-zinc-400 dark:hover:bg-zinc-800" />
+                                        <flux:menu class="min-w-[160px] text-xs">
+                                            <flux:menu.item icon="pencil-square" x-data
+                                                x-on:click="$dispatch('open-edit-admin', { id: {{ $admin->id }} })">
+                                                Edit Admin
+                                            </flux:menu.item>
+                                            <flux:menu.separator />
+                                            <flux:menu.item variant="danger" icon="trash"
+                                                wire:click="delete({{ $admin->id }})"
+                                                wire:confirm="Yakin ingin menghapus admin ini?">
+                                                Hapus Admin
+                                            </flux:menu.item>
+                                        </flux:menu>
+                                    </flux:dropdown>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="4" class="px-3 sm:px-4 py-12">
+                                    <div class="flex flex-col items-center justify-center gap-3 text-center">
+                                        <div class="flex items-center justify-center w-14 h-14 rounded-xl bg-slate-100 dark:bg-zinc-800">
+                                            <flux:icon.shield-check class="size-7 text-slate-400 dark:text-zinc-600" />
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-semibold text-slate-900 dark:text-white">Belum ada admin</p>
+                                            <p class="text-[11px] text-slate-500 dark:text-zinc-400 mt-1">
+                                                Klik "Tambah Admin" untuk membuat admin baru
+                                            </p>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            @if ($admins->hasPages())
+                <div class="px-3 sm:px-4 py-3 border-t border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900/50">
+                    {{ $admins->links() }}
+                </div>
+            @endif
+        </div>
     </div>
 
-    <!-- Modal Form -->
-    <flux:modal wire:model="showModal" :title="$editingId ? 'Edit Admin' : 'Tambah Admin'"
-        description="Lengkapi data akun admin." size="lg">
-        <form wire:submit="save" class="space-y-4">
-            <div>
-                <flux:label for="full_name">Nama Lengkap</flux:label>
-                <flux:input wire:model="full_name" id="full_name" placeholder="Sesuai KTP" size="sm" required />
-                @error('full_name')
-                    <p class="mt-1 text-xs text-rose-500">{{ $message }}</p>
-                @enderror
-            </div>
-            <div>
-                <flux:label for="email">Email</flux:label>
-                <flux:input wire:model="email" id="email" type="email" placeholder="user@domain.com" size="sm" required />
-                @error('email')
-                    <p class="mt-1 text-xs text-rose-500">{{ $message }}</p>
-                @enderror
-            </div>
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div>
-                    <flux:label for="nidn">NIDN</flux:label>
-                    <flux:input wire:model="nidn" id="nidn" placeholder="Opsional" size="sm" />
-                    @error('nidn')
-                        <p class="mt-1 text-xs text-rose-500">{{ $message }}</p>
-                    @enderror
-                </div>
-                <div>
-                    <flux:label for="phone_number">No. HP</flux:label>
-                    <flux:input wire:model="phone_number" id="phone_number" placeholder="628xxxxxxxxx" size="sm" />
-                    @error('phone_number')
-                        <p class="mt-1 text-xs text-rose-500">{{ $message }}</p>
-                    @enderror
-                </div>
-            </div>
-            <div>
-                <flux:label for="password">{{ $editingId ? 'Password Baru (opsional)' : 'Password' }}</flux:label>
-                <flux:input wire:model="password" id="password" type="password" placeholder="Minimal 8 karakter" size="sm" {{ $editingId ? '' : 'required' }} />
-                @error('password')
-                    <p class="mt-1 text-xs text-rose-500">{{ $message }}</p>
-                @enderror
-            </div>
-            <div class="flex justify-end gap-2 pt-2">
-                <flux:button type="button" size="sm" wire:click="$set('showModal', false)">Batal</flux:button>
-                <flux:button type="submit" variant="primary" size="sm">{{ $editingId ? 'Simpan' : 'Tambah' }}</flux:button>
-            </div>
-        </form>
-    </flux:modal>
+    <livewire:admin.admins.add-admin />
+    <livewire:admin.admins.edit-admin />
 </div>

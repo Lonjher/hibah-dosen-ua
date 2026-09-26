@@ -1,84 +1,27 @@
 <?php
 
-use Livewire\Component;
-use Livewire\WithPagination;
 use App\Models\ResearchScheme;
 use Flux\Flux;
+use Livewire\Attributes\Title;
+use Livewire\Component;
+use Livewire\WithPagination;
 
-new class extends Component
-{
+new #[Title('Manage Schemes')] class extends Component {
     use WithPagination;
 
-    public $scheme_name = '';
-    public $scheme_code = '';
-    public $scheme_description = '';
-    public $budget_limit = '';
-    public $is_active = false;
-    public $editingId = null;
-    public $showModal = false;
+    public $search = '';
 
-    protected $rules = [
-        'scheme_name' => 'required|string|max:255',
-        'scheme_code' => 'required|string|max:50|unique:research_schemes,scheme_code',
-        'scheme_description' => 'nullable|string|max:1000',
-        'budget_limit' => 'required|numeric|min:0',
-        'is_active' => 'boolean',
-    ];
-
-    public function render()
+    public function with()
     {
-        $schemes = ResearchScheme::orderBy('scheme_code')->paginate(10);
-        return $this->view([
-            'schemes' => $schemes,
-        ]);
-    }
+        $schemes = ResearchScheme::query()
+            ->when($this->search, fn ($q) => $q->where(function ($q) {
+                $q->where('name', 'like', "%{$this->search}%")
+                  ->orWhere('code', 'like', "%{$this->search}%");
+            }))
+            ->latest()
+            ->paginate(10);
 
-    public function create()
-    {
-        $this->resetForm();
-        $this->showModal = true;
-    }
-
-    public function edit(ResearchScheme $scheme)
-    {
-        $this->editingId = $scheme->id;
-        $this->scheme_name = $scheme->scheme_name;
-        $this->scheme_code = $scheme->scheme_code;
-        $this->scheme_description = $scheme->scheme_description;
-        $this->budget_limit = $scheme->budget_limit;
-        $this->is_active = (bool) $scheme->is_active;
-        $this->showModal = true;
-    }
-
-    public function save()
-    {
-        // Untuk edit, pengecualian unique
-        $this->rules['scheme_code'] = 'required|string|max:50|unique:research_schemes,scheme_code,' . ($this->editingId ?? 'NULL');
-        $this->validate();
-
-        if ($this->editingId) {
-            $scheme = ResearchScheme::findOrFail($this->editingId);
-            $scheme->update([
-                'scheme_name' => $this->scheme_name,
-                'scheme_code' => $this->scheme_code,
-                'scheme_description' => $this->scheme_description,
-                'budget_limit' => $this->budget_limit,
-                'is_active' => $this->is_active,
-            ]);
-            Flux::toast('Skema berhasil diperbarui.');
-        } else {
-            ResearchScheme::create([
-                'scheme_name' => $this->scheme_name,
-                'scheme_code' => $this->scheme_code,
-                'scheme_description' => $this->scheme_description,
-                'budget_limit' => $this->budget_limit,
-                'is_active' => $this->is_active,
-            ]);
-            Flux::toast('Skema baru berhasil ditambahkan.');
-        }
-
-        $this->showModal = false;
-        $this->resetForm();
+        return ['schemes' => $schemes];
     }
 
     public function delete(ResearchScheme $scheme)
@@ -91,153 +34,155 @@ new class extends Component
         $scheme->delete();
         Flux::toast('Skema dihapus.');
     }
-
-    public function toggleActive(ResearchScheme $scheme)
-    {
-        $scheme->update(['is_active' => ! $scheme->is_active]);
-        $status = $scheme->is_active ? 'diaktifkan' : 'dinonaktifkan';
-        Flux::toast("Skema '{$scheme->scheme_name}' {$status}.");
-    }
-
-    private function resetForm()
-    {
-        $this->reset([
-            'scheme_name',
-            'scheme_code',
-            'scheme_description',
-            'budget_limit',
-            'is_active',
-            'editingId',
-        ]);
-    }
 };
 ?>
 
-<div class="p-4 sm:p-6">
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-        <x-dashboard-header icon="rectangle-group" title="Kelola Skema Hibah" leading="Atur skema penelitian dan pengabdian yang tersedia." />
-        <flux:button icon="plus" wire:click="create" variant="primary" size="sm" class="shrink-0">Tambah Skema</flux:button>
-    </div>
+<div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950 p-3 sm:p-4 lg:p-6">
+    <div class="max-w-7xl mx-auto space-y-4">
 
-    <!-- Tabel Skema -->
-    <div class="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl rounded-2xl border border-white/80 dark:border-zinc-800 shadow-sm overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="w-full min-w-[860px] text-xs">
-                <thead class="bg-emerald-50/50 dark:bg-emerald-900/20 text-left text-[11px] uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                    <tr>
-                        <th class="px-4 py-3 font-semibold">Nama Skema</th>
-                        <th class="px-4 py-3 font-semibold">Kode</th>
-                        <th class="px-4 py-3 font-semibold">Deskripsi</th>
-                        <th class="px-4 py-3 font-semibold">Batas Anggaran</th>
-                        <th class="px-4 py-3 font-semibold">Status</th>
-                        <th class="px-4 py-3 font-semibold text-right">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100 dark:divide-zinc-800">
-                    @forelse($schemes as $scheme)
-                        <tr class="hover:bg-emerald-50/30 dark:hover:bg-zinc-800/50 transition-colors">
-                            <td class="px-4 py-3 font-medium text-slate-900 dark:text-zinc-100">
-                                {{ $scheme->scheme_name }}
-                            </td>
-                            <td class="px-4 py-3">
-                                <span class="inline-flex items-center rounded bg-slate-100 px-2 py-0.5 font-mono text-[11px] text-slate-700 dark:bg-zinc-800 dark:text-zinc-300">
-                                    {{ $scheme->scheme_code }}
-                                </span>
-                            </td>
-                            <td class="px-4 py-3 text-slate-600 dark:text-slate-300 max-w-[250px] truncate">
-                                {{ $scheme->scheme_description ?: '—' }}
-                            </td>
-                            <td class="px-4 py-3 text-slate-600 dark:text-slate-300">
-                                Rp {{ number_format((float) $scheme->budget_limit, 0, ',', '.') }}
-                            </td>
-                            <td class="px-4 py-3">
-                                @if ($scheme->is_active)
-                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[11px] font-semibold dark:bg-emerald-900/40 dark:text-emerald-300">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                                        Aktif
+        <x-dashboard-header icon="beaker" title="Manage Schemes"
+            leading="Manage all research & community service schemes." />
+
+        <div class="bg-white dark:bg-zinc-900 rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-zinc-950/50 border border-slate-200 dark:border-zinc-800 overflow-hidden">
+
+            {{-- Toolbar --}}
+            <div class="p-3 sm:p-4 border-b border-slate-200 dark:border-zinc-800 bg-gradient-to-r from-slate-50 to-white dark:from-zinc-900 dark:to-zinc-900/50">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+
+                    <div class="flex items-center gap-2">
+                        <div class="flex items-center justify-center w-5 h-5 rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
+                            <flux:icon.list-bullet class="size-4 text-emerald-600 dark:text-emerald-400" />
+                        </div>
+                        <p class="text-[10px] font-medium text-slate-900 dark:text-zinc-400">
+                            {{ $schemes->total() }} found
+                        </p>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <div class="flex-1 sm:flex-none sm:w-64">
+                            <x-input-search name="q" wire:model.live="search" id="search-scheme"
+                                placeholder="Cari skema..." class="w-full text-xs" />
+                        </div>
+                        <flux:button icon="plus" x-data
+                            x-on:click="$dispatch('open-add-scheme')"
+                            variant="primary" size="xs"
+                            class="shrink-0 shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30 transition-shadow text-xs">
+                            <span class="hidden sm:inline">Tambah Skema</span>
+                            <span class="sm:hidden">Tambah</span>
+                        </flux:button>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Table --}}
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="bg-slate-50 dark:bg-zinc-900/50 border-b border-slate-200 dark:border-zinc-800">
+                            <th class="px-3 sm:px-4 py-2.5 text-left">
+                                <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-700 dark:text-zinc-300">Scheme</span>
+                            </th>
+                            <th class="hidden md:table-cell px-3 sm:px-4 py-2.5 text-left">
+                                <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-700 dark:text-zinc-300">Budget Limit</span>
+                            </th>
+                            <th class="px-3 sm:px-4 py-2.5 text-left">
+                                <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-700 dark:text-zinc-300">Status</span>
+                            </th>
+                            <th class="px-3 sm:px-4 py-2.5 text-right">
+                                <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-700 dark:text-zinc-300">Action</span>
+                            </th>
+                        </tr>
+                    </thead>
+
+                    <tbody class="divide-y divide-slate-200 dark:divide-zinc-800">
+                        @forelse ($schemes as $scheme)
+                            <tr class="group hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors duration-150">
+
+                                <td class="px-3 sm:px-4 py-2.5">
+                                    <div class="flex items-center gap-2">
+                                        <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-100 to-teal-50 dark:from-emerald-900/30 dark:to-teal-900/20 group-hover:scale-105 transition-transform">
+                                            <flux:icon.beaker class="size-3.5 text-emerald-600 dark:text-emerald-400" />
+                                        </div>
+                                        <div>
+                                            <p class="text-xs font-semibold text-slate-900 dark:text-white">
+                                                {{ $scheme->name }}
+                                            </p>
+                                            <p class="text-[10px] text-slate-500 dark:text-zinc-400 mt-0.5">
+                                                {{ $scheme->code }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td class="hidden md:table-cell px-3 sm:px-4 py-2.5">
+                                    <span class="text-[11px] font-medium text-slate-700 dark:text-zinc-300">
+                                        Rp {{ number_format((int) $scheme->budget_limit, 0, ',', '.') }}
                                     </span>
-                                @else
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 text-[11px] font-medium dark:bg-zinc-800 dark:text-zinc-400">
-                                        Nonaktif
-                                    </span>
-                                @endif
-                            </td>
-                            <td class="px-4 py-3 text-right whitespace-nowrap">
-                                <div class="flex items-center justify-end gap-1">
+                                </td>
+
+                                <td class="px-3 sm:px-4 py-2.5">
                                     @if ($scheme->is_active)
-                                        <flux:button size="sm" icon="x-circle" wire:click="toggleActive({{ $scheme->id }})" title="Nonaktifkan" class="text-slate-500 hover:bg-slate-100 dark:hover:bg-zinc-800" />
+                                        <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 text-[10px] font-semibold">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                            Aktif
+                                        </span>
                                     @else
-                                        <flux:button size="sm" icon="check-circle" wire:click="toggleActive({{ $scheme->id }})" title="Aktifkan" class="text-emerald-600 hover:bg-emerald-100 dark:hover:bg-emerald-900/30" />
+                                        <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 text-[10px] font-medium">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                                            Nonaktif
+                                        </span>
                                     @endif
-                                    <flux:button size="sm" icon="pencil-square" wire:click="edit({{ $scheme->id }})" class="text-slate-500 hover:bg-slate-100 dark:hover:bg-zinc-800" />
-                                    <flux:button size="sm" icon="trash" wire:click="delete({{ $scheme->id }})" wire:confirm="Yakin ingin menghapus skema ini?" class="text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-900/30" />
-                                </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="6" class="px-4 py-10 text-center text-slate-500 dark:text-slate-400">
-                                <div class="flex flex-col items-center gap-2">
-                                    <flux:icon.rectangle-group class="size-8 text-slate-300 dark:text-zinc-700" />
-                                    <span>Belum ada skema. Klik "Tambah Skema" untuk membuat.</span>
-                                </div>
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-        @if ($schemes->hasPages())
-            <div class="px-4 py-3 border-t border-slate-100 dark:border-zinc-800">
-                {{ $schemes->links() }}
+                                </td>
+
+                                <td class="px-3 sm:px-4 py-2.5 text-right">
+                                    <flux:dropdown position="bottom" align="end">
+                                        <flux:button size="xs" variant="ghost" icon="ellipsis-horizontal"
+                                            class="rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100 dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-zinc-800" />
+
+                                        <flux:menu class="min-w-[160px] text-xs">
+                                            <flux:menu.item icon="pencil-square" x-data
+                                                x-on:click="$dispatch('open-edit-scheme', { id: {{ $scheme->id }} })">
+                                                Edit Skema
+                                            </flux:menu.item>
+                                            <flux:menu.separator />
+                                            <flux:menu.item variant="danger" icon="trash"
+                                                wire:click="delete({{ $scheme->id }})"
+                                                wire:confirm="Yakin ingin menghapus skema ini?">
+                                                Hapus Skema
+                                            </flux:menu.item>
+                                        </flux:menu>
+                                    </flux:dropdown>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="4" class="px-3 sm:px-4 py-12">
+                                    <div class="flex flex-col items-center justify-center gap-3 text-center">
+                                        <div class="flex items-center justify-center w-14 h-14 rounded-xl bg-slate-100 dark:bg-zinc-800">
+                                            <flux:icon.beaker class="size-7 text-slate-400 dark:text-zinc-600" />
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-semibold text-slate-900 dark:text-white">Belum ada skema</p>
+                                            <p class="text-[11px] text-slate-500 dark:text-zinc-400 mt-1">
+                                                Klik "Tambah Skema" untuk membuat skema baru
+                                            </p>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
-        @endif
+
+            @if ($schemes->hasPages())
+                <div class="px-3 sm:px-4 py-3 border-t border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900/50">
+                    {{ $schemes->links() }}
+                </div>
+            @endif
+        </div>
     </div>
 
-    <!-- Modal Form -->
-    <flux:modal wire:model="showModal" :title="$editingId ? 'Edit Skema' : 'Tambah Skema'"
-        description="Lengkapi informasi skema hibah." size="lg">
-        <form wire:submit="save" class="space-y-4">
-            <div>
-                <flux:label for="scheme_name">Nama Skema</flux:label>
-                <flux:input wire:model="scheme_name" id="scheme_name" placeholder="Contoh: Penelitian Dasar" size="sm" required />
-                @error('scheme_name')
-                    <p class="mt-1 text-xs text-rose-500">{{ $message }}</p>
-                @enderror
-            </div>
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div>
-                    <flux:label for="scheme_code">Kode Skema</flux:label>
-                    <flux:input wire:model="scheme_code" id="scheme_code" placeholder="Contoh: PD-01" size="sm" required />
-                    @error('scheme_code')
-                        <p class="mt-1 text-xs text-rose-500">{{ $message }}</p>
-                    @enderror
-                </div>
-                <div>
-                    <flux:label for="budget_limit">Batas Anggaran (Rp)</flux:label>
-                    <flux:input type="number" step="0.01" min="0" wire:model="budget_limit" id="budget_limit" placeholder="0" size="sm" required />
-                    @error('budget_limit')
-                        <p class="mt-1 text-xs text-rose-500">{{ $message }}</p>
-                    @enderror
-                </div>
-            </div>
-            <div>
-                <flux:label for="scheme_description">Deskripsi</flux:label>
-                <flux:textarea wire:model="scheme_description" id="scheme_description" rows="3" placeholder="Jelaskan skema ini..." size="sm" />
-                @error('scheme_description')
-                    <p class="mt-1 text-xs text-rose-500">{{ $message }}</p>
-                @enderror
-            </div>
-            <div>
-                <flux:checkbox wire:model="is_active" label="Skema aktif" />
-                @error('is_active')
-                    <p class="mt-1 text-xs text-rose-500">{{ $message }}</p>
-                @enderror
-            </div>
-            <div class="flex justify-end gap-2 pt-2">
-                <flux:button type="button" size="sm" wire:click="$set('showModal', false)">Batal</flux:button>
-                <flux:button type="submit" variant="primary" size="sm">{{ $editingId ? 'Simpan' : 'Tambah' }}</flux:button>
-            </div>
-        </form>
-    </flux:modal>
+    <livewire:admin.schemes.add-scheme />
+    <livewire:admin.schemes.edit-scheme />
 </div>

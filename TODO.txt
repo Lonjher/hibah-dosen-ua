@@ -12,7 +12,7 @@ Ringkasan Text
 Keyword Text
 laporan kemajuan pdf
 ppt
-Review
+Reviewer
 
 3. Laporan Akhir
 Ringkasan Text
@@ -21,7 +21,6 @@ laporan akhir pdf
 ppt
 hasil luaran pdf/word
 bukti submit img
-Review
 
 4. Luaran
 Nama jurnal
@@ -29,7 +28,6 @@ Link jurnal
 Edisi
 Volume
 Tingkat
-Review
 
 
 

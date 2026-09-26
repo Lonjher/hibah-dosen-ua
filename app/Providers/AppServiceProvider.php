@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -24,6 +25,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Relation::enforceMorphMap([
+            'proposal'        => \App\Models\Proposal::class,
+            'progress_report' => \App\Models\ProgressReport::class,
+            'final_report'    => \App\Models\FinalReport::class,
+            'output'          => \App\Models\Output::class,
+        ]);
+
         $this->configureDefaults();
 
         Gate::define('superadmin', function ($user) {

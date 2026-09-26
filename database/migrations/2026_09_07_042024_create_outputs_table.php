@@ -6,9 +6,6 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('outputs', function (Blueprint $table) {
@@ -19,14 +16,13 @@ return new class extends Migration
             $table->string('edition');
             $table->string('volume');
             $table->string('level');
+            $table->string('status')->default('pending');
+            // pending, revised, accepted, rejected
             $table->foreign('proposal_id')->references('id')->on('proposals')->onDelete('cascade');
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('outputs');

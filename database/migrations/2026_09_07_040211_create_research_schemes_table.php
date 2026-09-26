@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::create('research_schemes', function (Blueprint $table) {
             $table->id();
-            $table->string('scheme_name');
-            $table->string('scheme_code');
-            $table->string('scheme_description');
+            $table->string('name');
+            $table->string('code');
+            $table->string('description');
             $table->string('budget_limit');
             $table->boolean('is_active');
             $table->timestamps();
