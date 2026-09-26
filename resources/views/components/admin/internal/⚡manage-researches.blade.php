@@ -9,6 +9,7 @@ use App\Models\User;
 use Livewire\Attributes\On;
 use Flux\Flux;
 use Illuminate\Support\Facades\Storage;
+use App\Models\FinalReport;
 
 new class extends Component {
     use WithPagination;
@@ -56,6 +57,14 @@ new class extends Component {
     public string $assigningProgressKeyword = '';
     public string $assigningProgressProposal = '';
     public ?int $new_progress_reviewer_id = null;
+
+    // ─────── Final Report Modal ───────
+    public bool $showFinalModal = false;
+    public ?int $finalProposalId = null;
+    public string $finalProposalTitle = '';
+    public string $finalProposalScheme = '';
+    public string $finalRejectReason = '';
+    public bool $showFinalRejectForm = false;
 
     // ═══════════════ Validation ═══════════════
     protected function rules(): array
@@ -224,63 +233,96 @@ new class extends Component {
         };
     }
 
-    public function with(): array
+    // ═══════════════ Final Report ═══════════════
+    public function openFinalReport(int $proposalId): void
     {
-        $query = Proposal::query()
-            ->with(['researchScheme', 'period', 'reviewer', 'author'])
-            ->where('is_research', true) // ← Research only
-            ->when($this->search, function ($q) {
-                $q->where(function ($q) {
-                    $q->where('title', 'like', "%{$this->search}%")
-                        ->orWhere('keywords', 'like', "%{$this->search}%")
-                        ->orWhere('summary', 'like', "%{$this->search}%")
-                        ->orWhereHas('author', function ($q) {
-                            $q->where('full_name', 'like', "%{$this->search}%");
-                        });
-                });
-            })
-            ->when($this->statusFilter !== 'all', fn($q) => $q->where('status_proposal', $this->statusFilter))
-            ->latest();
+        $proposal = Proposal::query()
+            ->with(['researchScheme', 'author', 'finalReport'])
+            ->where('is_research', true)
+            ->findOrFail($proposalId);
 
-        // Reviewer list — adjust relation name if needed
-        $reviewers = User::query()->whereHas('role', fn($q) => $q->where('role_code', 'REVIEWER'))->orderBy('full_name')->get();
-        $reviewerOptions = User::query()
-            ->whereHas('role', fn($q) => $q->where('role_code', 'REVIEWER'))
-            ->orderBy('full_name')
-            ->get()
-            ->map(
-                fn($r) => [
-                    'id' => $r->id,
-                    'name' => $r->full_name,
-                    'nidn' => $r->nidn ?? null,
-                ],
-            )
-            ->values()
-            ->take(5);
-        $progressReports = collect();
-        if ($this->progressProposalId) {
-            $progressReports = ProgressReport::where('proposal_id', $this->progressProposalId)
-                ->with(['reviewer', 'proposal'])
-                ->when($this->progressFilter !== 'all', function ($q) {
-                    match ($this->progressFilter) {
-                        'pending' => $q->whereNull('reviewer_id'),
-                        'under_review' => $q->whereNotNull('reviewer_id')->where('is_approved', false),
-                        'approved' => $q->where('is_approved', true),
-                        default => $q,
-                    };
-                })
-                ->latest()
-                ->get();
+        if (!$proposal->finalReport) {
+            Flux::toast(text: 'This proposal has not submitted a final report yet.', variant: 'danger');
+            return;
         }
 
-        return [
-            'proposals' => $query->paginate(10),
-            'reviewers' => $reviewers,
-            'statusCounts' => Proposal::where('is_research', true)->selectRaw('status_proposal, count(*) as total')->groupBy('status_proposal')->pluck('total', 'status_proposal'),
-            'totalCount' => Proposal::where('is_research', true)->count(),
-            'reviewerOptions' => $reviewerOptions,
-            'progressReports' => $progressReports,
-        ];
+        $this->finalProposalId = $proposal->id;
+        $this->finalProposalTitle = $proposal->title;
+        $this->finalProposalScheme = $proposal->researchScheme?->scheme_name ?? '—';
+
+        $this->showFinalRejectForm = false;
+        $this->finalRejectReason = '';
+        $this->resetErrorBag();
+        $this->resetValidation();
+        $this->showFinalModal = true;
+    }
+
+    public function closeFinalReport(): void
+    {
+        $this->showFinalModal = false;
+        $this->showFinalRejectForm = false;
+        $this->finalRejectReason = '';
+        $this->reset(['finalProposalId', 'finalProposalTitle', 'finalProposalScheme']);
+        $this->resetErrorBag();
+        $this->resetValidation();
+    }
+
+    public function approveFinal(int $id): void
+    {
+        $report = FinalReport::where('proposal_id', $this->finalProposalId)->findOrFail($id);
+
+        $report->update([
+            'reviewer_id' => $report->reviewer_id ?? auth()->id(),
+            'is_approved' => true,
+        ]);
+
+        Flux::toast(text: 'Final report approved.', variant: 'success');
+        $this->closeFinalReport();
+    }
+
+    public function openFinalReject(): void
+    {
+        $this->showFinalRejectForm = true;
+        $this->finalRejectReason = '';
+        $this->resetErrorBag();
+        $this->resetValidation();
+    }
+
+    public function cancelFinalReject(): void
+    {
+        $this->showFinalRejectForm = false;
+        $this->finalRejectReason = '';
+        $this->resetErrorBag();
+        $this->resetValidation();
+    }
+
+    public function rejectFinal(int $id): void
+    {
+        $this->validate(
+            [
+                'finalRejectReason' => ['required', 'string', 'min:10', 'max:1000'],
+            ],
+            [
+                'finalRejectReason.required' => 'Please explain why this final report is rejected.',
+                'finalRejectReason.min' => 'Reason must be at least 10 characters.',
+            ],
+        );
+
+        $report = FinalReport::where('proposal_id', $this->finalProposalId)->findOrFail($id);
+
+        $report->update([
+            'reviewer_id' => $report->reviewer_id ?? auth()->id(),
+            'is_approved' => false,
+        ]);
+
+        Flux::toast(text: 'Final report rejected.', variant: 'success');
+        $this->closeFinalReport();
+    }
+
+    // ═══════════════ Helper ═══════════════
+    public function finalStatusMeta(FinalReport $report): array
+    {
+        return $report->statusMeta();
     }
 
     public function submitProposal(int $id): void
@@ -551,6 +593,66 @@ new class extends Component {
         }
         return ['label' => 'Under Review', 'class' => 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300'];
     }
+
+    public function with(): array
+    {
+        $query = Proposal::query()
+            ->with(['researchScheme', 'period', 'reviewer', 'author', 'progressReport', 'finalReport'])
+            ->where('is_research', true)
+            ->when($this->search, function ($q) {
+                $q->where(function ($q) {
+                    $q->where('title', 'like', "%{$this->search}%")
+                        ->orWhere('keywords', 'like', "%{$this->search}%")
+                        ->orWhere('summary', 'like', "%{$this->search}%")
+                        ->orWhereHas('author', function ($q) {
+                            $q->where('full_name', 'like', "%{$this->search}%");
+                        });
+                });
+            })
+            ->when($this->statusFilter !== 'all', fn($q) => $q->where('status_proposal', $this->statusFilter))
+            ->latest();
+
+        // Reviewer list — adjust relation name if needed
+        $reviewers = User::query()->whereHas('role', fn($q) => $q->where('role_code', 'REVIEWER'))->orderBy('full_name')->get();
+        $reviewerOptions = User::query()
+            ->whereHas('role', fn($q) => $q->where('role_code', 'REVIEWER'))
+            ->orderBy('full_name')
+            ->get()
+            ->map(
+                fn($r) => [
+                    'id' => $r->id,
+                    'name' => $r->full_name,
+                    'nidn' => $r->nidn ?? null,
+                ],
+            )
+            ->values()
+            ->take(5);
+        $progressReports = collect();
+        if ($this->progressProposalId) {
+            $progressReports = ProgressReport::where('proposal_id', $this->progressProposalId)
+                ->with(['reviewer', 'proposal'])
+                ->when($this->progressFilter !== 'all', function ($q) {
+                    match ($this->progressFilter) {
+                        'pending' => $q->whereNull('reviewer_id'),
+                        'under_review' => $q->whereNotNull('reviewer_id')->where('is_approved', false),
+                        'approved' => $q->where('is_approved', true),
+                        default => $q,
+                    };
+                })
+                ->latest()
+                ->get();
+        }
+
+        return [
+            'proposals' => $query->paginate(10),
+            'reviewers' => $reviewers,
+            'statusCounts' => Proposal::where('is_research', true)->selectRaw('status_proposal, count(*) as total')->groupBy('status_proposal')->pluck('total', 'status_proposal'),
+            'totalCount' => Proposal::where('is_research', true)->count(),
+            'reviewerOptions' => $reviewerOptions,
+            'progressReports' => $progressReports,
+            'finalReport' => $this->finalProposalId ? FinalReport::where('proposal_id', $this->finalProposalId)->first() : null,
+        ];
+    }
 };
 ?>
 
@@ -719,6 +821,20 @@ new class extends Component {
                                                 Progress Reports
                                             </flux:menu.item>
                                         @endif
+                                        @if ($proposal->finalReport)
+                                            @php $fMeta = $proposal->finalReport->statusMeta(); @endphp
+
+                                            <flux:menu.item icon="document-check"
+                                                wire:click="openFinalReport({{ $proposal->id }})"
+                                                class="text-blue-600 dark:text-blue-400 hover:bg-blue-50! dark:hover:bg-blue-900/30!">
+                                                Final Report
+                                                <span
+                                                    class="ml-auto inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider
+                                                    {{ $fMeta['class'] }}">
+                                                    {{ $fMeta['label'] }}
+                                                </span>
+                                            </flux:menu.item>
+                                        @endif
 
                                         @if ($proposal->status_proposal === 'submitted')
                                             <flux:menu.item icon="user-plus"
@@ -728,28 +844,30 @@ new class extends Component {
                                                 Assign Reviewer
                                             </flux:menu.item>
                                         @endif
-                                        {{-- Submit --}}
-                                        <flux:menu.item icon="check-circle"
-                                            wire:click="submitProposal({{ $proposal->id }})"
-                                            wire:confirm="Submit this proposal? This will notify the author."
-                                            class="text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50! dark:hover:bg-emerald-900/30!">
-                                            Submit
-                                        </flux:menu.item>
+                                        @if (!$proposal->progressReport)
+                                            {{-- Submit --}}
+                                            <flux:menu.item icon="check-circle"
+                                                wire:click="submitProposal({{ $proposal->id }})"
+                                                wire:confirm="Submit this proposal? This will notify the author."
+                                                class="text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50! dark:hover:bg-emerald-900/30!">
+                                                Submit
+                                            </flux:menu.item>
 
-                                        {{-- Revise --}}
-                                        <flux:menu.item icon="pencil-square"
-                                            wire:click="reviseProposal({{ $proposal->id }})"
-                                            class="text-amber-600 dark:text-amber-400 hover:bg-amber-50! dark:hover:bg-amber-900/30!">
-                                            Request Revision
-                                        </flux:menu.item>
+                                            {{-- Revise --}}
+                                            <flux:menu.item icon="pencil-square"
+                                                wire:click="reviseProposal({{ $proposal->id }})"
+                                                class="text-amber-600 dark:text-amber-400 hover:bg-amber-50! dark:hover:bg-amber-900/30!">
+                                                Request Revision
+                                            </flux:menu.item>
 
-                                        {{-- Reject --}}
-                                        <flux:menu.item icon="x-circle"
-                                            wire:click="rejectProposal({{ $proposal->id }})"
-                                            wire:confirm="Reject this proposal? This action can be changed later."
-                                            class="text-rose-600 dark:text-rose-400 hover:bg-rose-50! dark:hover:bg-rose-900/30!">
-                                            Reject
-                                        </flux:menu.item>
+                                            {{-- Reject --}}
+                                            <flux:menu.item icon="x-circle"
+                                                wire:click="rejectProposal({{ $proposal->id }})"
+                                                wire:confirm="Reject this proposal? This action can be changed later."
+                                                class="text-rose-600 dark:text-rose-400 hover:bg-rose-50! dark:hover:bg-rose-900/30!">
+                                                Reject
+                                            </flux:menu.item>
+                                        @endif
 
                                         {{-- Delete --}}
                                         <flux:menu.separator />
@@ -1913,4 +2031,387 @@ new class extends Component {
     {{-- ══════════ Shared Modals ══════════ --}}
     <x-view-details />
     <x-confirm-delete />
+    {{-- ══════════ Final Report Viewer (Admin) ══════════ --}}
+    @if ($finalReport)
+        @php
+            $fReport = $finalReport;
+            $fMeta = $this->finalStatusMeta($fReport);
+        @endphp
+
+        <div x-data="{ show: @entangle('showFinalModal') }" x-show="show" x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+            x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0" x-on:keydown.escape.window="$wire.closeFinalReport()" x-cloak
+            class="fixed inset-0 z-50 flex items-end sm:items-center justify-center
+               p-0 sm:p-4 bg-inverse-surface/40 backdrop-blur-sm">
+
+            <div x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                x-transition:leave="transition ease-in duration-150"
+                x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                class="bg-surface-container-lowest dark:bg-zinc-900 shadow-lg
+                   w-full sm:max-w-2xl
+                   rounded-t-2xl sm:rounded-xl
+                   max-h-[92vh] sm:max-h-[90vh] flex flex-col
+                   border border-outline-variant/50 dark:border-zinc-700">
+
+                {{-- ── Header ── --}}
+                <div
+                    class="shrink-0 bg-gradient-to-r from-blue-600 to-blue-500
+                        px-5 sm:px-6 py-4 rounded-t-2xl sm:rounded-t-xl">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-center gap-2">
+                                <div class="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
+                                    <flux:icon.document-check class="size-4 text-white" />
+                                </div>
+                                <h3 class="font-heading text-base sm:text-lg font-semibold text-white">
+                                    Final Report
+                                </h3>
+                                <span
+                                    class="ml-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full
+                                         text-[10px] font-bold uppercase tracking-wider
+                                         bg-white/20 text-white">
+                                    {{ $fMeta['label'] }}
+                                </span>
+                            </div>
+                            <p class="text-[11px] text-white/75 mt-1 truncate" title="{{ $finalProposalTitle }}">
+                                {{ $finalProposalTitle }}
+                            </p>
+                            <p class="text-[10px] text-white/60 mt-0.5 truncate">
+                                {{ $finalProposalScheme }}
+                            </p>
+                        </div>
+
+                        <button type="button" wire:click="closeFinalReport"
+                            class="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center
+                               text-white/80 hover:text-white hover:bg-white/10 transition-colors">
+                            <flux:icon.x-mark class="size-4" />
+                        </button>
+                    </div>
+                </div>
+
+                {{-- ── Body ── --}}
+                <div class="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
+
+                    {{-- Submitted --}}
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] text-outline dark:text-zinc-500 font-mono">
+                            Submitted {{ $fReport->created_at?->format('d M Y, H:i') }}
+                        </span>
+                    </div>
+
+                    {{-- Keyword --}}
+                    <div class="flex items-center gap-1.5">
+                        <flux:icon.tag class="size-3.5 text-outline dark:text-zinc-500" />
+                        <span class="text-[13px] font-semibold text-on-surface dark:text-zinc-100">
+                            {{ $fReport->keyword }}
+                        </span>
+                    </div>
+
+                    {{-- Summary --}}
+                    <div>
+                        <div
+                            class="text-[10px] uppercase tracking-wider font-semibold
+                                text-outline dark:text-zinc-500 mb-1">
+                            Summary
+                        </div>
+                        <div
+                            class="p-3 rounded-lg bg-surface-container-low dark:bg-zinc-800/40
+                                border border-outline-variant/60 dark:border-zinc-700
+                                text-[12px] leading-relaxed whitespace-pre-line
+                                text-on-surface-variant dark:text-zinc-300">
+                            {{ $fReport->summary }}
+                        </div>
+                    </div>
+
+                    {{-- Deliverables --}}
+                    <div>
+                        <div
+                            class="text-[10px] uppercase tracking-wider font-semibold
+                                text-outline dark:text-zinc-500 mb-2">
+                            Deliverables
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+
+                            @if ($fReport->report_path)
+                                <a href="{{ Storage::disk('public')->url($fReport->report_path) }}" target="_blank"
+                                    class="flex items-center gap-2.5 p-3 rounded-lg
+                                       bg-rose-50 hover:bg-rose-100
+                                       dark:bg-rose-900/20 dark:hover:bg-rose-900/40
+                                       border border-rose-200/80 dark:border-rose-800/60
+                                       transition-colors group">
+                                    <div
+                                        class="w-8 h-8 rounded-lg bg-rose-600 text-white
+                                            flex items-center justify-center shrink-0">
+                                        <flux:icon.document-text class="size-4" />
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="text-[11px] font-semibold text-rose-900 dark:text-rose-200">
+                                            Final Report
+                                        </div>
+                                        <div class="text-[10px] text-rose-700/70 dark:text-rose-400/70">
+                                            PDF Document
+                                        </div>
+                                    </div>
+                                    <flux:icon.arrow-up-right class="size-3.5 text-rose-600/60 shrink-0" />
+                                </a>
+                            @endif
+
+                            @if ($fReport->ppt_path)
+                                <a href="{{ Storage::disk('public')->url($fReport->ppt_path) }}" target="_blank"
+                                    class="flex items-center gap-2.5 p-3 rounded-lg
+                                       bg-orange-50 hover:bg-orange-100
+                                       dark:bg-orange-900/20 dark:hover:bg-orange-900/40
+                                       border border-orange-200/80 dark:border-orange-800/60
+                                       transition-colors group">
+                                    <div
+                                        class="w-8 h-8 rounded-lg bg-orange-600 text-white
+                                            flex items-center justify-center shrink-0">
+                                        <flux:icon.presentation-chart-bar class="size-4" />
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="text-[11px] font-semibold text-orange-900 dark:text-orange-200">
+                                            Presentation
+                                        </div>
+                                        <div class="text-[10px] text-orange-700/70 dark:text-orange-400/70">
+                                            PPT / PPTX
+                                        </div>
+                                    </div>
+                                    <flux:icon.arrow-up-right class="size-3.5 text-orange-600/60 shrink-0" />
+                                </a>
+                            @endif
+
+                            @if ($fReport->research_output)
+                                <a href="{{ Storage::disk('public')->url($fReport->research_output) }}"
+                                    target="_blank"
+                                    class="flex items-center gap-2.5 p-3 rounded-lg
+                                       bg-blue-50 hover:bg-blue-100
+                                       dark:bg-blue-900/20 dark:hover:bg-blue-900/40
+                                       border border-blue-200/80 dark:border-blue-800/60
+                                       transition-colors group">
+                                    <div
+                                        class="w-8 h-8 rounded-lg bg-blue-600 text-white
+                                            flex items-center justify-center shrink-0">
+                                        <flux:icon.document-arrow-down class="size-4" />
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="text-[11px] font-semibold text-blue-900 dark:text-blue-200">
+                                            Research Output
+                                        </div>
+                                        <div class="text-[10px] text-blue-700/70 dark:text-blue-400/70">
+                                            PDF / DOC / DOCX
+                                        </div>
+                                    </div>
+                                    <flux:icon.arrow-up-right class="size-3.5 text-blue-600/60 shrink-0" />
+                                </a>
+                            @endif
+
+                            @if ($fReport->submission_proof)
+                                <a href="{{ Storage::disk('public')->url($fReport->submission_proof) }}"
+                                    target="_blank"
+                                    class="flex items-center gap-2.5 p-3 rounded-lg
+                                       bg-emerald-50 hover:bg-emerald-100
+                                       dark:bg-emerald-900/20 dark:hover:bg-emerald-900/40
+                                       border border-emerald-200/80 dark:border-emerald-800/60
+                                       transition-colors group">
+                                    <div
+                                        class="w-8 h-8 rounded-lg bg-emerald-600 text-white
+                                            flex items-center justify-center shrink-0">
+                                        <flux:icon.photo class="size-4" />
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="text-[11px] font-semibold text-emerald-900 dark:text-emerald-200">
+                                            Submission Proof
+                                        </div>
+                                        <div class="text-[10px] text-emerald-700/70 dark:text-emerald-400/70">
+                                            Image
+                                        </div>
+                                    </div>
+                                    <flux:icon.arrow-up-right class="size-3.5 text-emerald-600/60 shrink-0" />
+                                </a>
+                            @endif
+                        </div>
+                    </div>
+
+                    {{-- Reviewer info --}}
+                    @if ($fReport->reviewer)
+                        <div
+                            class="flex items-center gap-2 p-3 rounded-lg
+                                bg-surface-container-low dark:bg-zinc-800/40
+                                border border-outline-variant/60 dark:border-zinc-700">
+                            <flux:icon.user-circle class="size-4 text-outline dark:text-zinc-500 shrink-0" />
+                            <div class="min-w-0 flex-1">
+                                <div
+                                    class="text-[10px] uppercase tracking-wider font-semibold
+                                        text-outline dark:text-zinc-500">
+                                    Reviewed by
+                                </div>
+                                <div class="text-[12px] font-medium text-on-surface dark:text-zinc-100 truncate">
+                                    {{ $fReport->reviewer->full_name }}
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
+                    {{-- Reject Form --}}
+                    @if ($showFinalRejectForm)
+                        <div
+                            class="p-4 rounded-lg bg-rose-50 dark:bg-rose-900/20
+                                border border-rose-200/80 dark:border-rose-800/60 space-y-3">
+
+                            <div class="flex items-start gap-2">
+                                <flux:icon.exclamation-triangle
+                                    class="size-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+                                <div
+                                    class="text-[11px] leading-relaxed
+                                        text-rose-800 dark:text-rose-300">
+                                    <span class="font-semibold">Reject this final report?</span>
+                                    The author will need to revise and resubmit.
+                                </div>
+                            </div>
+
+                            <div>
+                                <label for="finalRejectReason"
+                                    class="block text-sm font-medium text-rose-900 dark:text-rose-200">
+                                    Reason <span class="text-error">*</span>
+                                </label>
+                                <textarea id="finalRejectReason" wire:model="finalRejectReason" rows="3"
+                                    placeholder="Explain what needs to be fixed..."
+                                    class="mt-1 block w-full rounded-md shadow-sm resize-none
+                                       border-rose-300 dark:border-rose-700
+                                       bg-white dark:bg-zinc-800
+                                       text-on-surface dark:text-zinc-100
+                                       placeholder:text-outline dark:placeholder-zinc-500
+                                       focus:border-rose-500 focus:ring-rose-500
+                                       sm:text-sm py-2 px-3"></textarea>
+                                <div class="flex items-center justify-between mt-1">
+                                    @error('finalRejectReason')
+                                        <span class="text-error text-xs">{{ $message }}</span>
+                                    @else
+                                        <span class="text-[11px] text-rose-700/70 dark:text-rose-400/70">
+                                            Minimum 10 characters.
+                                        </span>
+                                    @enderror
+                                    <span class="text-[11px] text-rose-700/70 dark:text-rose-400/70 font-mono">
+                                        {{ strlen($finalRejectReason) }}/1000
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+                </div>
+
+                {{-- ── Footer ── --}}
+                <div
+                    class="shrink-0 flex flex-col-reverse sm:flex-row sm:justify-end gap-2
+                        px-5 sm:px-6 py-4
+                        border-t border-outline-variant/40 dark:border-zinc-700
+                        bg-surface-container-lowest dark:bg-zinc-900
+                        rounded-b-2xl sm:rounded-b-xl">
+
+                    @if ($showFinalRejectForm)
+                        <button type="button" wire:click="cancelFinalReject"
+                            class="w-full sm:w-auto px-4 py-2 text-sm font-medium rounded-md
+                               text-on-surface-variant dark:text-zinc-300
+                               bg-surface-container-lowest dark:bg-zinc-800
+                               border border-outline-variant dark:border-zinc-600
+                               hover:bg-surface-container-low dark:hover:bg-zinc-700
+                               transition-colors duration-150">
+                            Cancel
+                        </button>
+
+                        <button type="button" wire:click="rejectFinal({{ $fReport->id }})"
+                            wire:loading.attr="disabled" wire:target="rejectFinal"
+                            class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5
+                               px-5 py-2 text-sm font-medium text-white rounded-md
+                               bg-gradient-to-r from-rose-600 to-rose-500
+                               hover:from-rose-700 hover:to-rose-600
+                               focus:outline-none focus:ring-2 focus:ring-rose-500
+                               transition-all duration-200
+                               disabled:opacity-60 disabled:cursor-not-allowed">
+                            <span wire:loading.remove wire:target="rejectFinal"
+                                class="inline-flex items-center gap-1.5">
+                                <flux:icon.x-circle class="size-3.5" />
+                                Confirm Reject
+                            </span>
+                            <span wire:loading.flex wire:target="rejectFinal" class="items-center gap-1.5">
+                                <svg class="animate-spin size-3.5" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10"
+                                        stroke="currentColor" stroke-width="4" />
+                                    <path class="opacity-75" fill="currentColor"
+                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                </svg>
+                                Rejecting...
+                            </span>
+                        </button>
+                    @else
+                        <button type="button" wire:click="closeFinalReport"
+                            class="w-full sm:w-auto px-4 py-2 text-sm font-medium rounded-md
+                               text-on-surface-variant dark:text-zinc-300
+                               bg-surface-container-lowest dark:bg-zinc-800
+                               border border-outline-variant dark:border-zinc-600
+                               hover:bg-surface-container-low dark:hover:bg-zinc-700
+                               transition-colors duration-150">
+                            Close
+                        </button>
+
+                        @if ($fReport->isApproved())
+                            {{-- Sudah approved → hanya bisa re-open/reject --}}
+                            <button type="button" wire:click="openFinalReject"
+                                class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5
+                                   px-5 py-2 text-sm font-medium text-white rounded-md
+                                   bg-gradient-to-r from-rose-600 to-rose-500
+                                   hover:from-rose-700 hover:to-rose-600
+                                   focus:outline-none focus:ring-2 focus:ring-rose-500
+                                   transition-all duration-200">
+                                <flux:icon.arrow-path class="size-3.5" />
+                                Reopen / Reject
+                            </button>
+                        @else
+                            <button type="button" wire:click="openFinalReject"
+                                class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5
+                                   px-4 py-2 text-sm font-medium rounded-md
+                                   text-rose-700 dark:text-rose-300
+                                   bg-rose-50 dark:bg-rose-900/20
+                                   border border-rose-300 dark:border-rose-700
+                                   hover:bg-rose-100 dark:hover:bg-rose-900/40
+                                   transition-colors duration-150">
+                                <flux:icon.x-circle class="size-3.5" />
+                                Reject
+                            </button>
+
+                            <button type="button" wire:click="approveFinal({{ $fReport->id }})"
+                                wire:confirm="Approve this final report?" wire:loading.attr="disabled"
+                                wire:target="approveFinal"
+                                class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5
+                                   px-5 py-2 text-sm font-medium text-white rounded-md
+                                   bg-gradient-to-r from-emerald-600 to-emerald-500
+                                   hover:from-emerald-700 hover:to-emerald-600
+                                   focus:outline-none focus:ring-2 focus:ring-emerald-500
+                                   transition-all duration-200
+                                   disabled:opacity-60 disabled:cursor-not-allowed">
+                                <span wire:loading.remove wire:target="approveFinal"
+                                    class="inline-flex items-center gap-1.5">
+                                    <flux:icon.check-circle class="size-3.5" />
+                                    Approve
+                                </span>
+                                <span wire:loading.flex wire:target="approveFinal" class="items-center gap-1.5">
+                                    <svg class="animate-spin size-3.5" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10"
+                                            stroke="currentColor" stroke-width="4" />
+                                        <path class="opacity-75" fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                    </svg>
+                                    Approving...
+                                </span>
+                            </button>
+                        @endif
+                    @endif
+                </div>
+            </div>
+        </div>
+    @endif
 </div>

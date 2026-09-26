@@ -12,35 +12,27 @@ use Illuminate\Support\Carbon;
 /**
  * @property int $id
  * @property int $noteable_id
- * @property string $noteable_type // Morph map: proposal, progress_report
- * @property int $reviewer_id
+ * @property string $noteable_type // Morph map: proposal, progress_report, final_report, output
+ * @property int $admin_id
  * @property string|null $comment
- * @property bool $is_approved
  * @property string|null $recommendation
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  *
  * @method MorphTo noteable()
- * @method BelongsTo<User> reviewer()
+ * @method BelongsTo<User> admin()
  */
 #[Guarded(['id'])]
-class ReviewerNote extends Model
+class AdminNote extends Model
 {
     use HasFactory;
-    protected function casts(): array
-    {
-        return [
-            'is_approved' => 'boolean',
-        ];
-    }
-
     public function noteable(): MorphTo
     {
         return $this->morphTo();
     }
 
-    public function reviewer(): BelongsTo
+    public function admin(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'reviewer_id');
+        return $this->belongsTo(User::class, 'admin_id');
     }
 }

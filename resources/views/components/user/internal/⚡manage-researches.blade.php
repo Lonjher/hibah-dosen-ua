@@ -351,7 +351,7 @@ new class extends Component {
     {
         // ── List query ──
         $query = Proposal::query()
-            ->with(['researchScheme', 'period', 'reviewer'])
+            ->with(['researchScheme', 'period', 'reviewer', 'progressReport', 'finalReport'])
             ->where('user_id', Auth::id())
             ->where('is_research', true)
             ->when($this->search, function ($q) {
@@ -541,6 +541,15 @@ new class extends Component {
                                             </flux:menu.item>
                                         @endif
 
+                                        @if ($proposal->status_proposal === 'accepted' && $proposal->progressReport?->isApproved())
+                                            <flux:menu.item icon="document-check"
+                                                x-on:click="$dispatch('add-final-report', { proposalId: {{ $proposal->id }} })"
+                                                class="text-blue-600 dark:text-blue-400
+                                                    hover:bg-blue-50! dark:hover:bg-blue-900/30!">
+                                                Final Report
+                                            </flux:menu.item>
+                                        @endif
+
                                         @if ($proposal->canDownloadLoA())
                                             <flux:menu.item icon="printer"
                                                 wire:click="viewDetails({{ $proposal->id }})">
@@ -607,4 +616,5 @@ new class extends Component {
 
     {{-- Progress Report Modal — event-driven dari menu di atas --}}
     <livewire:user.internal.researches.add-progress-report wire:key="progress-report-modal" />
+    <livewire:user.internal.researches.add-final-report wire:key="final-report-modal" />
 </div>

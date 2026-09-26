@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -12,49 +13,60 @@ use Illuminate\Support\Str;
  */
 class UserFactory extends Factory
 {
-    /**
-     * The current password being used by the factory.
-     */
-    protected static ?string $password;
+    protected $model = User::class;
 
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
+    protected static ?string $password = null;
+
     public function definition(): array
     {
         return [
-            'name' => fake()->name(),
-            'email' => fake()->unique()->safeEmail(),
+            'nidn'              => fake()->unique()->numerify('##########'),
+            'full_name'         => fake()->name(),
+            'birthday'          => fake()->dateTimeBetween('-60 years', '-25 years')->format('Y-m-d'),
+            'gender'            => fake()->randomElement(['laki-laki', 'perempuan']),
+            'address'           => fake()->address(),
+            'phone_number'      => '628'.fake()->numerify('##########'),
+            'avatar'            => null,
+            'email'             => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
-            'password' => static::$password ??= Hash::make('password'),
-            'remember_token' => Str::random(10),
-            'two_factor_secret' => null,
-            'two_factor_recovery_codes' => null,
-            'two_factor_confirmed_at' => null,
+            'password'          => static::$password ??= Hash::make('password'),
+            'role_id'           => Role::query()->inRandomOrder()->value('id'),
+            'remember_token'    => Str::random(10),
         ];
     }
 
-    /**
-     * Indicate that the model's email address should be unverified.
-     */
     public function unverified(): static
     {
-        return $this->state(fn (array $attributes) => [
-            'email_verified_at' => null,
-        ]);
+        return $this->state(fn () => ['email_verified_at' => null]);
     }
 
     /**
-     * Indicate that the model has two-factor authentication configured.
+     * Assign role by role_code (UPPERCASE).
      */
-    public function withTwoFactor(): static
+    public function role(string $roleCode): static
     {
-        return $this->state(fn (array $attributes) => [
-            'two_factor_secret' => encrypt('secret'),
-            'two_factor_recovery_codes' => encrypt(json_encode(['recovery-code-1'])),
-            'two_factor_confirmed_at' => now(),
-        ]);
+        $roleId = Role::query()->where('role_code', $roleCode)->value('id');
+
+        return $this->state(fn () => ['role_id' => $roleId]);
+    }
+
+    public function superAdmin(): static
+    {
+        return $this->role('SUPERADMIN');
+    }
+
+    public function admin(): static
+    {
+        return $this->role('ADMIN');
+    }
+
+    public function reviewer(): static
+    {
+        return $this->role('REVIEWER');
+    }
+
+    public function user(): static
+    {
+        return $this->role('USER');
     }
 }

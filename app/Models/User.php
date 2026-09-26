@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Guarded;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -13,9 +12,6 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
-use Laravel\Fortify\Contracts\PasskeyUser;
-use Laravel\Fortify\PasskeyAuthenticatable;
-use Laravel\Fortify\TwoFactorAuthenticatable;
 
 /**
  * @property int $id
@@ -29,7 +25,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string $email
  * @property Carbon|null $email_verified_at
  * @property string $password
- * @property Role $role_id
+ * @property int $role_id
  * @property string|null $two_factor_secret
  * @property string|null $two_factor_recovery_codes
  * @property Carbon|null $two_factor_confirmed_at
@@ -40,20 +36,17 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @method BelongsTo<Role> role()
  * @method HasMany<Proposal> proposals()
  * @method HasMany<Proposal> reviewedProposals()
- * @method HasMany<ReviewerNotes> reviewerNotes()
+ * @method HasMany<ProgressReport> reviewedProgressReports()
+ * @method HasMany<ReviewerNote> reviewerNotes()
+ * @method HasMany<AdminNote> adminNotes()
  */
 #[Guarded(['id'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
-class User extends Authenticatable implements PasskeyUser
+class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
+    use HasFactory, Notifiable;
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
@@ -63,9 +56,6 @@ class User extends Authenticatable implements PasskeyUser
         ];
     }
 
-    /**
-     * Get the user's initials
-     */
     public function initials(): string
     {
         $initials = Str::initials($this->full_name, true);
@@ -90,8 +80,18 @@ class User extends Authenticatable implements PasskeyUser
         return $this->hasMany(Proposal::class, 'reviewer_id');
     }
 
+    public function reviewedProgressReports(): HasMany
+    {
+        return $this->hasMany(ProgressReport::class, 'reviewer_id');
+    }
+
     public function reviewerNotes(): HasMany
     {
         return $this->hasMany(ReviewerNote::class, 'reviewer_id');
+    }
+
+    public function adminNotes(): HasMany
+    {
+        return $this->hasMany(AdminNote::class, 'admin_id');
     }
 }

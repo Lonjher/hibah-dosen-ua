@@ -6,24 +6,22 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('admin_notes', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('proposal_id');
+            $table->unsignedBigInteger('noteable_id');
+            $table->string('noteable_type');
+            // Morph Map: 'proposal' | 'progress_report' | 'final_report' | 'output'
+            $table->unsignedBigInteger('admin_id');
             $table->text('comment')->nullable();
             $table->text('recommendation')->nullable();
-            $table->foreign('proposal_id')->references('id')->on('proposals')->onDelete('cascade');
+            $table->foreign('admin_id')->references('id')->on('users')->onDelete('cascade');
+            $table->index(['noteable_id', 'noteable_type']);
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('admin_notes');

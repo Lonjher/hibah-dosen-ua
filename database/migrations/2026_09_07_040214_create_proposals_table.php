@@ -20,7 +20,8 @@ return new class extends Migration
             $table->text('summary');
             $table->string('keywords');
             $table->boolean('is_research');
-            $table->enum('status_proposal', ['draft', 'admin_revision', 'submitted', 'under_review', 'reviewer_revision', 'accepted', 'rejected'])->default('draft');
+            $table->string('file_path');
+            $table->string('status');
             $table->unsignedBigInteger('period_id');
             $table->foreign('research_scheme_id')->references('id')->on('research_schemes')->onDelete('cascade');
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');

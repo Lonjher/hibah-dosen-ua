@@ -3,9 +3,10 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Guarded;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Carbon;
 
 /**
@@ -16,30 +17,27 @@ use Illuminate\Support\Carbon;
  * @property string $keyword
  * @property string $report_path
  * @property string $ppt_path
- * @property bool $is_approved
+ * @property string $status // pending, revised, submitted, rejected, under_review, accepted
  * @property Carbon|null $reviewed_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  *
  * @method BelongsTo<Proposal> proposal()
  * @method BelongsTo<User> reviewer()
- * @method HasMany<ProgressReportNote> notes()
+ * @method MorphMany<ReviewerNote> reviewerNotes()
+ * @method MorphMany<AdminNote> adminNotes()
  */
 #[Guarded(['id'])]
 class ProgressReport extends Model
 {
-    /**
-     * @return array<string, string>
-     */
+    use HasFactory;
     protected function casts(): array
     {
         return [
-            'is_approved' => 'boolean',
             'reviewed_at' => 'datetime',
         ];
     }
 
-    // ═══════════════ Relations ═══════════════
     public function proposal(): BelongsTo
     {
         return $this->belongsTo(Proposal::class);
@@ -50,82 +48,60 @@ class ProgressReport extends Model
         return $this->belongsTo(User::class, 'reviewer_id');
     }
 
-    public function notes(): HasMany
+    public function reviewerNotes(): MorphMany
     {
-        return $this->hasMany(ProgressReportNote::class)->with('reviewer')->latest();
+        return $this->morphMany(ReviewerNote::class, 'noteable');
     }
 
-    public function latestNote(): ?ProgressReportNote
+    public function adminNotes(): MorphMany
     {
-        return $this->notes()->first();
+        return $this->morphMany(AdminNote::class, 'noteable');
     }
 
-    // ═══════════════ State Helpers ═══════════════
-
-    /** Belum di-assign reviewer sama sekali. */
+    // === Status Helpers ===
     public function isPending(): bool
     {
-        return is_null($this->reviewer_id);
+        return $this->status === 'pending';
     }
 
-    /** Sudah di-assign reviewer tapi belum direview. */
+    public function isRevised(): bool
+    {
+        return $this->status === 'revised';
+    }
+
+    public function isSubmitted(): bool
+    {
+        return $this->status === 'submitted';
+    }
+
     public function isUnderReview(): bool
     {
-        return !is_null($this->reviewer_id) && is_null($this->reviewed_at);
+        return $this->status === 'under_review';
     }
 
-    /** Sudah direview dan di-approve. */
-    public function isApproved(): bool
+    public function isAccepted(): bool
     {
-        return !is_null($this->reviewed_at) && $this->is_approved === true;
+        return $this->status === 'accepted';
     }
 
-    /** Sudah direview tapi ditolak / minta revisi. */
     public function isRejected(): bool
     {
-        return !is_null($this->reviewed_at) && $this->is_approved === false;
+        return $this->status === 'rejected';
     }
 
-    /** Author boleh edit hanya kalau masih pending atau butuh revisi. */
-    public function canBeEdited(): bool
-    {
-        return $this->isPending() || $this->isRejected();
-    }
-
-    /** Author boleh delete hanya saat pending (belum di-assign). */
-    public function canBeDeleted(): bool
-    {
-        return $this->isPending();
-    }
-
-    // ═══════════════ Status Badge ═══════════════
+    /**
+     * @return array{label: string, class: string}
+     */
     public function statusMeta(): array
     {
-        if ($this->isPending()) {
-            return [
-                'label' => 'Pending',
-                'class' => 'bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-zinc-300',
-                'icon'  => 'clock',
-            ];
-        }
-        if ($this->isUnderReview()) {
-            return [
-                'label' => 'Under Review',
-                'class' => 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300',
-                'icon'  => 'eye',
-            ];
-        }
-        if ($this->isApproved()) {
-            return [
-                'label' => 'Approved',
-                'class' => 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
-                'icon'  => 'check-circle',
-            ];
-        }
-        return [
-            'label' => 'Needs Revision',
-            'class' => 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
-            'icon'  => 'arrow-path',
-        ];
+        return match ($this->status) {
+            'pending'      => ['label' => 'Pending',      'class' => 'bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-zinc-300'],
+            'submitted'    => ['label' => 'Submitted',    'class' => 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'],
+            'under_review' => ['label' => 'Under Review', 'class' => 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300'],
+            'revised'      => ['label' => 'Revised',      'class' => 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'],
+            'accepted'     => ['label' => 'Accepted',     'class' => 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'],
+            'rejected'     => ['label' => 'Rejected',     'class' => 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300'],
+            default        => ['label' => ucfirst((string) $this->status), 'class' => 'bg-slate-100 text-slate-600'],
+        };
     }
 }
