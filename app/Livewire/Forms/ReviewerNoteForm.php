@@ -10,7 +10,7 @@ class ReviewerNoteForm extends Form
     public ?ReviewerNote $reviewerNote = null;
 
     public ?int    $noteable_id = null;
-    public string  $noteable_type = 'proposal'; // proposal | progress_report
+    public string  $noteable_type = 'proposal';
     public ?int    $reviewer_id = null;
     public ?string $comment = null;
     public bool    $is_approved = false;
@@ -33,14 +33,15 @@ class ReviewerNoteForm extends Form
     public function messages(): array
     {
         return [
-            'noteable_id.required'   => 'Noteable is required.',
-            'noteable_type.required' => 'Noteable type is required.',
-            'noteable_type.in'       => 'Noteable type must be proposal or progress_report.',
+            'noteable_id.required'   => 'Noteable wajib diisi.',
+            'noteable_id.min'        => 'Noteable tidak valid.',
+            'noteable_type.required' => 'Tipe noteable wajib diisi.',
+            'noteable_type.in'       => 'Tipe noteable harus proposal atau progress_report.',
 
-            'reviewer_id.required'   => 'Reviewer is required.',
-            'reviewer_id.exists'     => 'Selected reviewer is invalid.',
+            'reviewer_id.required'   => 'Reviewer wajib diisi.',
+            'reviewer_id.exists'     => 'Reviewer tidak valid.',
 
-            'is_approved.boolean'    => 'Approved must be true or false.',
+            'is_approved.boolean'    => 'Status approve harus true atau false.',
         ];
     }
 

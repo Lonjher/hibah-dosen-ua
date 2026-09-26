@@ -25,7 +25,7 @@ class ProgressReportForm extends Form
         return [
             'proposal_id' => ['required', 'exists:proposals,id'],
             'reviewer_id' => ['nullable', 'exists:users,id'],
-            'summary'     => ['required', 'string'],
+            'summary'     => ['required', 'string', 'min:20'],
             'keyword'     => ['required', 'string', 'max:255'],
             'status'      => ['required', 'string', 'in:pending,revised,submitted,rejected,under_review,accepted'],
             'reviewed_at' => ['nullable', 'date'],
@@ -35,19 +35,21 @@ class ProgressReportForm extends Form
     public function messages(): array
     {
         return [
-            'proposal_id.required' => 'Proposal is required.',
-            'proposal_id.exists'   => 'Selected proposal is invalid.',
+            'proposal_id.required' => 'Proposal wajib diisi.',
+            'proposal_id.exists'   => 'Proposal tidak valid.',
 
-            'reviewer_id.exists'   => 'Selected reviewer is invalid.',
+            'reviewer_id.exists'   => 'Reviewer tidak valid.',
 
-            'summary.required'     => 'Summary is required.',
+            'summary.required'     => 'Ringkasan wajib diisi.',
+            'summary.min'          => 'Ringkasan minimal 20 karakter.',
 
-            'keyword.required'     => 'Keyword is required.',
+            'keyword.required'     => 'Kata kunci wajib diisi.',
+            'keyword.max'          => 'Kata kunci maksimal 255 karakter.',
 
-            'status.required'      => 'Status is required.',
-            'status.in'            => 'Selected status is invalid.',
+            'status.required'      => 'Status wajib diisi.',
+            'status.in'            => 'Status tidak valid.',
 
-            'reviewed_at.date'     => 'Reviewed At must be a valid date.',
+            'reviewed_at.date'     => 'Reviewed At harus tanggal valid.',
         ];
     }
 

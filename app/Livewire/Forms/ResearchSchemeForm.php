@@ -31,17 +31,20 @@ class ResearchSchemeForm extends Form
     public function messages(): array
     {
         return [
-            'name.required'         => 'Scheme name is required.',
-            'name.max'              => 'Scheme name must not exceed 255 characters.',
+            'name.required'         => 'Nama skema wajib diisi.',
+            'name.max'              => 'Nama skema maksimal 255 karakter.',
 
-            'code.required'         => 'Scheme code is required.',
-            'code.unique'           => 'Scheme code has already been taken.',
+            'code.required'         => 'Kode skema wajib diisi.',
+            'code.unique'           => 'Kode skema sudah digunakan.',
+            'code.max'              => 'Kode skema maksimal 255 karakter.',
 
-            'description.required'  => 'Description is required.',
+            'description.required'  => 'Deskripsi wajib diisi.',
+            'description.max'       => 'Deskripsi maksimal 255 karakter.',
 
-            'budget_limit.required' => 'Budget limit is required.',
+            'budget_limit.required' => 'Batas anggaran wajib diisi.',
+            'budget_limit.max'      => 'Batas anggaran maksimal 255 karakter.',
 
-            'is_active.boolean'     => 'Active must be true or false.',
+            'is_active.boolean'     => 'Status aktif harus true atau false.',
         ];
     }
 

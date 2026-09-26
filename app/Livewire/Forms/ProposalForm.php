@@ -16,7 +16,7 @@ class ProposalForm extends Form
     public string  $summary = '';
     public string  $keywords = '';
     public bool    $is_research = true;
-    public ?string $file_path = null;  // untuk upload (handle di component)
+    public ?string $file_path = null;
     public string  $status = 'pending';
     public ?int    $period_id = null;
 
@@ -29,7 +29,7 @@ class ProposalForm extends Form
             'user_id'            => ['required', 'exists:users,id'],
             'reviewer_id'        => ['nullable', 'exists:users,id'],
             'title'              => ['required', 'string', 'max:255'],
-            'summary'            => ['required', 'string'],
+            'summary'            => ['required', 'string', 'min:20'],
             'keywords'           => ['required', 'string', 'max:255'],
             'is_research'        => ['boolean'],
             'status'             => ['required', 'string', 'in:pending,revised,submitted,rejected,under_review,accepted'],
@@ -40,27 +40,41 @@ class ProposalForm extends Form
     public function messages(): array
     {
         return [
-            'research_scheme_id.required' => 'Research scheme is required.',
-            'research_scheme_id.exists'   => 'Selected research scheme is invalid.',
+            'research_scheme_id.required' => 'Skema wajib dipilih.',
+            'research_scheme_id.exists'   => 'Skema tidak valid.',
 
-            'user_id.required'            => 'Author is required.',
-            'user_id.exists'              => 'Selected author is invalid.',
+            'user_id.required'            => 'Author wajib diisi.',
+            'user_id.exists'              => 'Author tidak valid.',
 
-            'reviewer_id.exists'          => 'Selected reviewer is invalid.',
+            'reviewer_id.exists'          => 'Reviewer tidak valid.',
 
-            'title.required'              => 'Title is required.',
-            'title.max'                   => 'Title must not exceed 255 characters.',
+            'title.required'              => 'Judul wajib diisi.',
+            'title.max'                   => 'Judul maksimal 255 karakter.',
 
-            'summary.required'            => 'Summary is required.',
+            'summary.required'            => 'Ringkasan wajib diisi.',
+            'summary.min'                 => 'Ringkasan minimal 20 karakter.',
 
-            'keywords.required'           => 'Keywords are required.',
+            'keywords.required'           => 'Kata kunci wajib diisi.',
+            'keywords.max'                => 'Kata kunci maksimal 255 karakter.',
 
-            'status.required'             => 'Status is required.',
-            'status.in'                   => 'Selected status is invalid.',
+            'status.required'             => 'Status wajib diisi.',
+            'status.in'                   => 'Status tidak valid.',
 
-            'period_id.required'          => 'Period is required.',
-            'period_id.exists'            => 'Selected period is invalid.',
+            'period_id.required'          => 'Periode wajib dipilih.',
+            'period_id.exists'            => 'Periode tidak valid.',
         ];
+    }
+
+    /**
+     * Validasi khusus Step 1 (Metadata).
+     */
+    public function validateStep1(): void
+    {
+        $this->validateOnly('research_scheme_id');
+        $this->validateOnly('title');
+        $this->validateOnly('summary');
+        $this->validateOnly('keywords');
+        $this->validateOnly('period_id');
     }
 
     // ═══════════════ Load ═══════════════

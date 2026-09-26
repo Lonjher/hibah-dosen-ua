@@ -45,29 +45,35 @@ class UserForm extends Form
     public function messages(): array
     {
         return [
-            'nidn.required'      => 'NIDN is required.',
-            'nidn.unique'        => 'NIDN has already been taken.',
+            'nidn.required'      => 'NIDN wajib diisi.',
+            'nidn.unique'        => 'NIDN sudah digunakan.',
+            'nidn.max'           => 'NIDN maksimal 255 karakter.',
 
-            'full_name.required' => 'Full name is required.',
+            'full_name.required' => 'Nama lengkap wajib diisi.',
+            'full_name.max'      => 'Nama lengkap maksimal 255 karakter.',
 
-            'birthday.required'  => 'Birthday is required.',
-            'birthday.date'      => 'Birthday must be a valid date.',
+            'birthday.required'  => 'Tanggal lahir wajib diisi.',
+            'birthday.date'      => 'Tanggal lahir harus tanggal valid.',
 
-            'gender.required'    => 'Gender is required.',
-            'gender.in'          => 'Gender must be laki-laki or perempuan.',
+            'gender.required'    => 'Jenis kelamin wajib dipilih.',
+            'gender.in'          => 'Jenis kelamin harus laki-laki atau perempuan.',
 
-            'address.required'   => 'Address is required.',
+            'address.required'   => 'Alamat wajib diisi.',
+            'address.max'        => 'Alamat maksimal 255 karakter.',
 
-            'email.required'     => 'Email is required.',
-            'email.email'        => 'Email must be a valid email address.',
-            'email.unique'       => 'Email has already been taken.',
+            'phone_number.max'   => 'Nomor telepon maksimal 255 karakter.',
 
-            'password.required'  => 'Password is required.',
-            'password.min'       => 'Password must be at least 8 characters.',
-            'password.confirmed' => 'Password confirmation does not match.',
+            'email.required'     => 'Email wajib diisi.',
+            'email.email'        => 'Email harus format email valid.',
+            'email.unique'       => 'Email sudah digunakan.',
+            'email.max'          => 'Email maksimal 255 karakter.',
 
-            'role_id.required'   => 'Role is required.',
-            'role_id.exists'     => 'Selected role is invalid.',
+            'password.required'  => 'Password wajib diisi.',
+            'password.min'       => 'Password minimal 8 karakter.',
+            'password.confirmed' => 'Konfirmasi password tidak cocok.',
+
+            'role_id.required'   => 'Role wajib dipilih.',
+            'role_id.exists'     => 'Role tidak valid.',
         ];
     }
 
@@ -84,7 +90,6 @@ class UserForm extends Form
         $this->phone_number= $user->phone_number;
         $this->email       = $user->email;
         $this->role_id     = $user->role_id;
-        // password tidak di-load (harus diisi ulang untuk ubah)
     }
 
     // ═══════════════ Actions ═══════════════
@@ -131,7 +136,6 @@ class UserForm extends Form
             'role_id'      => $this->role_id,
         ];
 
-        // Hanya update password kalau diisi
         if ($this->password) {
             $data['password'] = Hash::make($this->password);
         }

@@ -123,12 +123,7 @@
                                 class="px-2 py-1 font-body text-[9px] uppercase tracking-wider text-outline font-bold dark:text-zinc-500">Internal
                                 Data</span>
                             <x-sidebar-link href="admin.internal.manage-researches" title="Research" icon="beaker" />
-                            <a href="#"
-                                class="flex items-center gap-2 px-2 py-1.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low/50 font-heading text-[11px] font-medium transition-all group dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-800/50">
-                                <flux:icon.hand-raised
-                                    class="size-4 text-outline group-hover:text-emerald-500 transition-colors shrink-0 dark:group-hover:text-emerald-400" />
-                                <span>Dedication</span>
-                            </a>
+                            <x-sidebar-link href="admin.internal.manage-dedications" title="Dedication" icon="hand-raised" />
                         </div>
 
                         {{-- Group External Data --}}

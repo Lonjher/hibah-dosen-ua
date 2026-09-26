@@ -27,15 +27,15 @@ class BudgetProposalForm extends Form
     public function messages(): array
     {
         return [
-            'proposal_id.required' => 'Proposal is required.',
-            'proposal_id.exists'   => 'Selected proposal is invalid.',
+            'proposal_id.required' => 'Proposal wajib diisi.',
+            'proposal_id.exists'   => 'Proposal tidak valid.',
 
-            'item_name.required'   => 'Item name is required.',
-            'item_name.max'        => 'Item name must not exceed 255 characters.',
+            'item_name.required'   => 'Nama item wajib diisi.',
+            'item_name.max'        => 'Nama item maksimal 255 karakter.',
 
-            'amount.required'      => 'Amount is required.',
-            'amount.integer'       => 'Amount must be an integer.',
-            'amount.min'           => 'Amount must be at least 1.',
+            'amount.required'      => 'Jumlah wajib diisi.',
+            'amount.integer'       => 'Jumlah harus berupa angka.',
+            'amount.min'           => 'Jumlah harus lebih dari 0.',
         ];
     }
 

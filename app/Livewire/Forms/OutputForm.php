@@ -24,10 +24,10 @@ class OutputForm extends Form
         return [
             'proposal_id'  => ['required', 'exists:proposals,id'],
             'journal_name' => ['required', 'string', 'max:255'],
-            'journal_link' => ['required', 'string', 'max:255'],
+            'journal_link' => ['required', 'url', 'max:255'],
             'edition'      => ['required', 'string', 'max:255'],
             'volume'       => ['required', 'string', 'max:255'],
-            'level'        => ['required', 'string', 'max:255'],
+            'level'        => ['required', 'string', 'in:Lokal,Nasional,Internasional'],
             'status'       => ['required', 'string', 'in:pending,revised,accepted,rejected'],
         ];
     }
@@ -35,17 +35,27 @@ class OutputForm extends Form
     public function messages(): array
     {
         return [
-            'proposal_id.required'  => 'Proposal is required.',
-            'proposal_id.exists'    => 'Selected proposal is invalid.',
+            'proposal_id.required'  => 'Proposal wajib diisi.',
+            'proposal_id.exists'    => 'Proposal tidak valid.',
 
-            'journal_name.required' => 'Journal name is required.',
-            'journal_link.required' => 'Journal link is required.',
-            'edition.required'      => 'Edition is required.',
-            'volume.required'       => 'Volume is required.',
-            'level.required'        => 'Level is required.',
+            'journal_name.required' => 'Nama jurnal wajib diisi.',
+            'journal_name.max'      => 'Nama jurnal maksimal 255 karakter.',
 
-            'status.required'       => 'Status is required.',
-            'status.in'             => 'Selected status is invalid.',
+            'journal_link.required' => 'Link jurnal wajib diisi.',
+            'journal_link.url'      => 'Link jurnal harus URL valid.',
+            'journal_link.max'      => 'Link jurnal maksimal 255 karakter.',
+
+            'edition.required'      => 'Edition wajib diisi.',
+            'edition.max'           => 'Edition maksimal 255 karakter.',
+
+            'volume.required'       => 'Volume wajib diisi.',
+            'volume.max'            => 'Volume maksimal 255 karakter.',
+
+            'level.required'        => 'Level wajib diisi.',
+            'level.in'              => 'Level harus Lokal, Nasional, atau Internasional.',
+
+            'status.required'       => 'Status wajib diisi.',
+            'status.in'             => 'Status tidak valid.',
         ];
     }
 

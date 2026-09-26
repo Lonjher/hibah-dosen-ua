@@ -29,40 +29,34 @@ class PeriodForm extends Form
     public function messages(): array
     {
         return [
-            'periode.required'       => 'Period name is required.',
-            'periode.string'         => 'Period name must be a string.',
-            'periode.max'            => 'Period name must not exceed 255 characters.',
+            'periode.required'       => 'Nama periode wajib diisi.',
+            'periode.string'         => 'Nama periode harus berupa teks.',
+            'periode.max'            => 'Nama periode maksimal 255 karakter.',
 
-            'open_from.required'     => 'Open From is required.',
-            'open_from.date'         => 'Open From must be a valid date.',
+            'open_from.required'     => 'Tanggal buka wajib diisi.',
+            'open_from.date'         => 'Tanggal buka harus tanggal valid.',
 
-            'open_to.required'       => 'Open To is required.',
-            'open_to.date'           => 'Open To must be a valid date.',
-            'open_to.after_or_equal' => 'Open To must be the same as or after Open From.',
+            'open_to.required'       => 'Tanggal tutup wajib diisi.',
+            'open_to.date'           => 'Tanggal tutup harus tanggal valid.',
+            'open_to.after_or_equal' => 'Tanggal tutup harus sama atau setelah tanggal buka.',
 
-            'is_active.boolean'      => 'Active must be true or false.',
+            'is_active.boolean'      => 'Status aktif harus true atau false.',
         ];
     }
 
     // ═══════════════ Load ═══════════════
 
-    /**
-     * Load period dari database ke form (untuk mode edit).
-     */
     public function setPeriod(Period $period): void
     {
         $this->period    = $period;
         $this->periode   = $period->periode;
-        $this->open_from = $period->open_from?->format('Y-m-d\TH:i');
-        $this->open_to   = $period->open_to?->format('Y-m-d\TH:i');
+        $this->open_from = $period->open_from?->format('Y-m-d');
+        $this->open_to   = $period->open_to?->format('Y-m-d');
         $this->is_active = (bool) $period->is_active;
     }
 
     // ═══════════════ Actions ═══════════════
 
-    /**
-     * Simpan sebagai period baru.
-     */
     public function create(): Period
     {
         $this->validate();
@@ -79,11 +73,6 @@ class PeriodForm extends Form
         return $period;
     }
 
-    /**
-     * Update period yang sedang di-edit.
-     *
-     * @throws \RuntimeException jika tidak ada period yang di-load.
-     */
     public function update(): Period
     {
         if (! $this->period) {
