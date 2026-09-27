@@ -1,6 +1,5 @@
 <?php
 
-use App\Models\AdminNote;
 use App\Models\Proposal;
 use Flux\Flux;
 use Livewire\Attributes\Title;
@@ -32,34 +31,17 @@ new #[Title('Manage Dedications')] class extends Component {
     public function updatingSearch(): void { $this->resetPage(); }
     public function updatingStatusFilter(): void { $this->resetPage(); }
 
+    // ═══════════════ AKSI ADMIN ═══════════════
+
     public function submit(Proposal $proposal): void
     {
-        if (! in_array($proposal->status, ['pending', 'revised'])) {
+        if (! in_array($proposal->status, ['pending', 'revised', 'rejected'])) {
             Flux::toast('Proposal tidak dapat di-submit pada status ini.', variant: 'danger');
             return;
         }
 
         $proposal->update(['status' => 'submitted']);
         Flux::toast('Proposal berhasil di-submit.');
-    }
-
-    public function revise(Proposal $proposal): void
-    {
-        if (! in_array($proposal->status, ['pending', 'submitted'])) {
-            Flux::toast('Proposal tidak dapat direvisi pada status ini.', variant: 'danger');
-            return;
-        }
-
-        AdminNote::create([
-            'noteable_id'    => $proposal->id,
-            'noteable_type'  => 'proposal',
-            'admin_id'       => auth()->id(),
-            'comment'        => 'Proposal pengabdian perlu direvisi. Silakan periksa kembali kelengkapan dan isi proposal sesuai ketentuan.',
-            'recommendation' => 'Revisi proposal',
-        ]);
-
-        $proposal->update(['status' => 'revised']);
-        Flux::toast('Proposal dikembalikan untuk revisi.');
     }
 
     public function reject(Proposal $proposal): void
@@ -150,10 +132,11 @@ new #[Title('Manage Dedications')] class extends Component {
                     </thead>
 
                     <tbody class="divide-y divide-slate-200 dark:divide-zinc-800">
-                        @forelse ($dedications as $dedication)
-                            @php $meta = $dedication->statusMeta(); @endphp
+                        @forelse ($dedications as $proposal)
+                            @php $meta = $proposal->statusMeta(); @endphp
                             <tr class="group hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
 
+                                {{-- Dedication --}}
                                 <td class="px-3 sm:px-4 py-2.5">
                                     <div class="flex items-start gap-2">
                                         <div class="flex items-center justify-center w-8 h-8 rounded-lg
@@ -164,7 +147,7 @@ new #[Title('Manage Dedications')] class extends Component {
                                         </div>
                                         <div class="min-w-0">
                                             <p class="text-xs font-semibold text-slate-900 dark:text-white line-clamp-1">
-                                                {{ $dedication->title }}
+                                                {{ $proposal->title }}
                                             </p>
                                             <div class="flex items-center gap-2 mt-0.5">
                                                 <span class="text-[9px] px-1.5 py-0.5 rounded
@@ -173,68 +156,150 @@ new #[Title('Manage Dedications')] class extends Component {
                                                     Pengabdian
                                                 </span>
                                                 <span class="text-[10px] text-slate-500 dark:text-zinc-400 line-clamp-1">
-                                                    {{ $dedication->keywords }}
+                                                    {{ $proposal->keywords }}
                                                 </span>
                                             </div>
                                         </div>
                                     </div>
                                 </td>
 
+                                {{-- Author --}}
                                 <td class="hidden md:table-cell px-3 sm:px-4 py-2.5">
                                     <span class="text-[11px] text-slate-700 dark:text-zinc-300">
-                                        {{ $dedication->author?->full_name ?? '—' }}
+                                        {{ $proposal->author?->full_name ?? '—' }}
                                     </span>
                                 </td>
 
+                                {{-- Scheme --}}
                                 <td class="hidden lg:table-cell px-3 sm:px-4 py-2.5">
                                     <span class="text-[10px] px-2 py-0.5 rounded-full
                                                  bg-slate-100 dark:bg-zinc-800
                                                  text-slate-700 dark:text-zinc-300">
-                                        {{ $dedication->researchScheme?->code ?? '—' }}
+                                        {{ $proposal->researchScheme?->code ?? '—' }}
                                     </span>
                                 </td>
 
+                                {{-- Status --}}
                                 <td class="px-3 sm:px-4 py-2.5">
                                     <span class="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-semibold {{ $meta['class'] }}">
                                         {{ $meta['label'] }}
                                     </span>
                                 </td>
 
+                                {{-- Actions --}}
                                 <td class="px-3 sm:px-4 py-2.5 text-right">
                                     <flux:dropdown position="bottom" align="end">
                                         <flux:button size="xs" variant="ghost" icon="ellipsis-horizontal"
                                             class="rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100 dark:text-zinc-400 dark:hover:bg-zinc-800" />
 
-                                        <flux:menu class="min-w-[200px] text-xs">
+                                        <flux:menu class="min-w-[220px] text-xs">
 
-                                            @if (in_array($dedication->status, ['pending', 'revised']))
+                                            {{-- ══════════ STATUS: PENDING ══════════ --}}
+                                            @if ($proposal->status === 'pending')
                                                 <flux:menu.item icon="check-circle"
-                                                    wire:click="submit({{ $dedication->id }})">
-                                                    Submit (Lolos Verifikasi)
+                                                    wire:click="submit({{ $proposal->id }})">
+                                                    Submit Proposal
                                                 </flux:menu.item>
-                                            @endif
-
-                                            @if (in_array($dedication->status, ['pending', 'submitted']))
                                                 <flux:menu.item icon="arrow-path"
-                                                    wire:click="revise({{ $dedication->id }})">
-                                                    Minta Revisi
+                                                    x-data
+                                                    x-on:click="$dispatch('open-admin-note-revision', { id: {{ $proposal->id }} })">
+                                                    Request Revision
                                                 </flux:menu.item>
-                                            @endif
-
-                                            @if ($dedication->status !== 'rejected')
                                                 <flux:menu.item variant="danger" icon="x-circle"
-                                                    wire:click="reject({{ $dedication->id }})"
+                                                    wire:click="reject({{ $proposal->id }})"
                                                     wire:confirm="Yakin ingin menolak proposal ini?">
-                                                    Tolak Proposal
+                                                    Reject Proposal
                                                 </flux:menu.item>
                                             @endif
 
+                                            {{-- ══════════ STATUS: REVISED ══════════ --}}
+                                            @if ($proposal->status === 'revised')
+                                                <flux:menu.item icon="check-circle"
+                                                    wire:click="submit({{ $proposal->id }})">
+                                                    Submit Proposal
+                                                </flux:menu.item>
+                                                <flux:menu.item icon="arrow-path"
+                                                    x-data
+                                                    x-on:click="$dispatch('open-admin-note-revision', { id: {{ $proposal->id }} })">
+                                                    Request Revision
+                                                </flux:menu.item>
+                                                <flux:menu.item variant="danger" icon="x-circle"
+                                                    wire:click="reject({{ $proposal->id }})"
+                                                    wire:confirm="Yakin ingin menolak proposal ini?">
+                                                    Reject Proposal
+                                                </flux:menu.item>
+                                            @endif
+
+                                            {{-- ══════════ STATUS: SUBMITTED ══════════ --}}
+                                            @if ($proposal->status === 'submitted')
+                                                <flux:menu.item icon="arrow-path"
+                                                    x-data
+                                                    x-on:click="$dispatch('open-admin-note-revision', { id: {{ $proposal->id }} })">
+                                                    Request Revision
+                                                </flux:menu.item>
+                                                <flux:menu.item variant="danger" icon="x-circle"
+                                                    wire:click="reject({{ $proposal->id }})"
+                                                    wire:confirm="Yakin ingin menolak proposal ini?">
+                                                    Reject Proposal
+                                                </flux:menu.item>
+                                                <flux:menu.separator />
+                                                <flux:menu.item icon="user-plus"
+                                                    x-data
+                                                    x-on:click="$dispatch('open-assign-reviewer', { id: {{ $proposal->id }} })"
+                                                    class="text-violet-600 dark:text-violet-400">
+                                                    Assign Reviewer
+                                                </flux:menu.item>
+                                            @endif
+
+                                            {{-- ══════════ STATUS: REJECTED ══════════ --}}
+                                            @if ($proposal->status === 'rejected')
+                                                <flux:menu.item icon="arrow-path"
+                                                    x-data
+                                                    x-on:click="$dispatch('open-admin-note-revision', { id: {{ $proposal->id }} })">
+                                                    Request Revision
+                                                </flux:menu.item>
+                                                <flux:menu.item icon="check-circle"
+                                                    wire:click="submit({{ $proposal->id }})">
+                                                    Submit Proposal
+                                                </flux:menu.item>
+                                            @endif
+
+                                            {{-- ══════════ STATUS: UNDER_REVIEW ══════════ --}}
+                                            @if ($proposal->status === 'under_review')
+                                                <flux:menu.item icon="arrow-path"
+                                                    x-data
+                                                    x-on:click="$dispatch('open-admin-note-revision', { id: {{ $proposal->id }} })">
+                                                    Request Revision
+                                                </flux:menu.item>
+                                            @endif
+
+                                            {{-- ══════════ STATUS: ACCEPTED ══════════ --}}
+                                            @if ($proposal->status === 'accepted')
+                                                <flux:menu.item variant="danger" icon="x-circle"
+                                                    wire:click="reject({{ $proposal->id }})"
+                                                    wire:confirm="Yakin ingin menolak proposal ini?">
+                                                    Reject Proposal
+                                                </flux:menu.item>
+                                            @endif
+
+                                            {{-- ══════════ TETAP ══════════ --}}
                                             <flux:menu.separator />
+                                            <flux:menu.item icon="chat-bubble-left-right"
+                                                x-data
+                                                x-on:click="$dispatch('open-admin-notes', { id: {{ $proposal->id }}, type: 'proposal' })">
+                                                View Admin Notes
+                                            </flux:menu.item>
+
+                                            <flux:menu.item icon="eye"
+                                                x-data
+                                                x-on:click="$dispatch('open-view-proposal', { id: {{ $proposal->id }} })">
+                                                View Proposal
+                                            </flux:menu.item>
 
                                             <flux:menu.item variant="danger" icon="trash"
-                                                wire:click="delete({{ $dedication->id }})"
+                                                wire:click="delete({{ $proposal->id }})"
                                                 wire:confirm="Yakin ingin menghapus proposal ini? Data akan hilang permanen.">
-                                                Hapus Proposal
+                                                Delete Proposal
                                             </flux:menu.item>
                                         </flux:menu>
                                     </flux:dropdown>
@@ -271,5 +336,9 @@ new #[Title('Manage Dedications')] class extends Component {
         </div>
     </div>
 
-    {{-- TIDAK ADA MODAL --}}
+    {{-- ══════════ MODALS ══════════ --}}
+    <livewire:admin.internal.modals.assign-reviewer />
+    <livewire:admin.internal.modals.admin-note-revision />
+    <livewire:admin.internal.modals.admin-notes />
+    <livewire:admin.internal.modals.view-proposal />
 </div>
