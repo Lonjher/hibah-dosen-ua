@@ -119,6 +119,9 @@ new #[Title('Manage Dedications')] class extends Component {
                             <th class="hidden md:table-cell px-3 sm:px-4 py-2.5 text-left">
                                 <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-700 dark:text-zinc-300">Author</span>
                             </th>
+                            <th class="hidden md:table-cell px-3 sm:px-4 py-2.5 text-left">
+                                <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-700 dark:text-zinc-300">Reviewer</span>
+                            </th>
                             <th class="hidden lg:table-cell px-3 sm:px-4 py-2.5 text-left">
                                 <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-700 dark:text-zinc-300">Scheme</span>
                             </th>
@@ -147,7 +150,7 @@ new #[Title('Manage Dedications')] class extends Component {
                                         </div>
                                         <div class="min-w-0">
                                             <p class="text-xs font-semibold text-slate-900 dark:text-white line-clamp-1">
-                                                {{ $proposal->title }}
+                                                {{ Str::limit($proposal->title, 35) }}
                                             </p>
                                             <div class="flex items-center gap-2 mt-0.5">
                                                 <span class="text-[9px] px-1.5 py-0.5 rounded
@@ -165,9 +168,44 @@ new #[Title('Manage Dedications')] class extends Component {
 
                                 {{-- Author --}}
                                 <td class="hidden md:table-cell px-3 sm:px-4 py-2.5">
-                                    <span class="text-[11px] text-slate-700 dark:text-zinc-300">
-                                        {{ $proposal->author?->full_name ?? '—' }}
-                                    </span>
+                                    @if ($proposal->author)
+                                        <div class="flex items-center gap-2 min-w-0">
+                                            <div
+                                                class="w-6 h-6 rounded-full shrink-0
+                                                        bg-emerald-100 text-emerald-700
+                                                        flex items-center justify-center
+                                                        text-[10px] font-bold
+                                                        dark:bg-emerald-900/40 dark:text-emerald-300">
+                                                {{ strtoupper(substr($proposal->author->full_name, 0, 1)) }}
+                                            </div>
+                                            <span class="text-[11px] text-slate-700 dark:text-zinc-300">
+                                                {{ $proposal->author->full_name }}
+                                            </span>
+                                        </div>
+                                    @else
+                                        <span class="text-slate-400 dark:text-zinc-500 italic">—</span>
+                                    @endif
+                                </td>
+
+                                {{-- Reviewer --}}
+                                <td class="hidden md:table-cell px-3 sm:px-4 py-2.5">
+                                    @if ($proposal->reviewer)
+                                        <div class="flex items-center gap-2 min-w-0">
+                                            <div
+                                                class="w-6 h-6 rounded-full shrink-0
+                                                        bg-emerald-100 text-emerald-700
+                                                        flex items-center justify-center
+                                                        text-[10px] font-bold
+                                                        dark:bg-emerald-900/40 dark:text-emerald-300">
+                                                {{ strtoupper(substr($proposal->reviewer->full_name, 0, 1)) }}
+                                            </div>
+                                            <span class="text-[11px] text-slate-700 dark:text-zinc-300">
+                                                {{ $proposal->reviewer->full_name }}
+                                            </span>
+                                        </div>
+                                    @else
+                                        <span class="text-slate-400 dark:text-zinc-500 italic">—</span>
+                                    @endif
                                 </td>
 
                                 {{-- Scheme --}}

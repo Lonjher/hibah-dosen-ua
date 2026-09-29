@@ -14,25 +14,25 @@ new #[Title('Research Proposals')] class extends Component {
     public string $statusFilter = 'all';
     public bool $isResearch = true;
 
-    public function updatingSearch(): void { $this->resetPage(); }
-    public function updatingStatusFilter(): void { $this->resetPage(); }
+    public function updatingSearch(): void
+    {
+        $this->resetPage();
+    }
+    public function updatingStatusFilter(): void
+    {
+        $this->resetPage();
+    }
 
     public function confirmDelete(int $id): void
     {
         $proposal = Proposal::where('user_id', auth()->id())->findOrFail($id);
 
-        if (! in_array($proposal->status, ['pending', 'revised'])) {
+        if (!in_array($proposal->status, ['pending', 'revised'])) {
             Flux::toast('Proposal ini tidak dapat dihapus.', variant: 'danger');
             return;
         }
 
-        $this->dispatch('confirm-delete',
-            subject: $proposal->title,
-            action: 'deleteProposal',
-            payload: ['id' => $proposal->id],
-            title: 'Hapus Proposal?',
-            note: 'Tindakan ini tidak dapat dibatalkan.',
-        );
+        $this->dispatch('confirm-delete', subject: $proposal->title, action: 'deleteProposal', payload: ['id' => $proposal->id], title: 'Hapus Proposal?', note: 'Tindakan ini tidak dapat dibatalkan.');
     }
 
     #[On('delete-confirmed')]
@@ -45,8 +45,12 @@ new #[Title('Research Proposals')] class extends Component {
 
     protected function deleteProposal(?int $id): void
     {
-        if (! $id) return;
-        Proposal::where('user_id', auth()->id())->findOrFail($id)->delete();
+        if (!$id) {
+            return;
+        }
+        Proposal::where('user_id', auth()->id())
+            ->findOrFail($id)
+            ->delete();
         Flux::toast('Proposal berhasil dihapus.', variant: 'success');
     }
 
@@ -62,38 +66,38 @@ new #[Title('Research Proposals')] class extends Component {
 
     public function canAddProgressReport(Proposal $p): bool
     {
-        return $p->status === 'accepted' && ! $p->progressReport;
+        return $p->status === 'accepted' && !$p->progressReport;
     }
 
     public function canAddFinalReport(Proposal $p): bool
     {
-        return $p->progressReport?->status === 'accepted' && ! $p->finalReport;
+        return $p->progressReport?->status === 'accepted' && !$p->finalReport;
     }
 
     public function canAddOutput(Proposal $p): bool
     {
-        return $p->finalReport?->status === 'accepted' && ! $p->output;
+        return $p->finalReport?->status === 'accepted' && !$p->output;
     }
 
     public function with(): array
     {
         $proposals = Proposal::query()
-            ->with(['researchScheme', 'period', 'reviewer', 'progressReport', 'finalReport', 'output'])
+            ->with(['researchScheme', 'period', 'reviewer', 'progressReport', 'finalReport', 'output', 'adminNotes', 'reviewerNotes'])
             ->where('user_id', auth()->id())
             ->where('is_research', $this->isResearch)
-            ->when($this->search, fn ($q) => $q->where(function ($q) {
-                $q->where('title', 'like', "%{$this->search}%")
-                  ->orWhere('keywords', 'like', "%{$this->search}%");
-            }))
-            ->when($this->statusFilter !== 'all', fn ($q) => $q->where('status', $this->statusFilter))
+            ->when(
+                $this->search,
+                fn($q) => $q->where(function ($q) {
+                    $q->where('title', 'like', "%{$this->search}%")->orWhere('keywords', 'like', "%{$this->search}%");
+                }),
+            )
+            ->when($this->statusFilter !== 'all', fn($q) => $q->where('status', $this->statusFilter))
             ->latest()
             ->paginate(10);
 
         return [
             'proposals' => $proposals,
-            'theme' => $this->isResearch
-                ? ['icon' => 'beaker', 'color' => 'emerald', 'label' => 'Penelitian']
-                : ['icon' => 'heart',  'color' => 'rose',    'label' => 'Pengabdian'],
+            'theme' => $this->isResearch ? ['icon' => 'beaker', 'color' => 'emerald', 'label' => 'Penelitian'] : ['icon' => 'heart', 'color' => 'rose', 'label' => 'Pengabdian'],
         ];
     }
 };
@@ -101,18 +105,20 @@ new #[Title('Research Proposals')] class extends Component {
 
 <div class="p-4 sm:p-6 space-y-6">
 
-    <x-dashboard-header :icon="$theme['icon']" title="Research Proposals"
-        leading="Manage your research proposals." />
+    <x-dashboard-header :icon="$theme['icon']" title="Research Proposals" leading="Manage your research proposals." />
 
-    <div class="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl rounded-2xl
+    <div
+        class="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl rounded-2xl
                 border border-white/80 dark:border-zinc-800 shadow-sm overflow-hidden">
 
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between
+        <div
+            class="flex flex-col sm:flex-row sm:items-center sm:justify-between
                     gap-3 p-4 border-b border-slate-100 dark:border-zinc-800">
 
             <div class="flex items-center gap-2 text-[11px] text-slate-500 dark:text-zinc-400 min-w-0">
                 @if ($proposals->total() > 0)
-                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md
+                    <span
+                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md
                                  bg-{{ $theme['color'] }}-50 text-{{ $theme['color'] }}-700 font-semibold
                                  dark:bg-{{ $theme['color'] }}-900/30 dark:text-{{ $theme['color'] }}-300">
                         <flux:icon.list-bullet class="size-3" />
@@ -130,7 +136,8 @@ new #[Title('Research Proposals')] class extends Component {
                         </span>
                     </span>
                 @else
-                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md
+                    <span
+                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md
                                  bg-slate-100 text-slate-500 font-semibold
                                  dark:bg-zinc-800 dark:text-zinc-400">
                         <flux:icon.list-bullet class="size-3" />
@@ -140,15 +147,11 @@ new #[Title('Research Proposals')] class extends Component {
             </div>
 
             <div class="flex gap-3">
-                <x-input-search name="search" id="search-proposal"
-                    wire:model.live.debounce.300ms="search"
-                    placeholder="Search title, keywords..." max-width="max-w-sm"
-                    class="w-full sm:w-md" />
+                <x-input-search name="search" id="search-proposal" wire:model.live.debounce.300ms="search"
+                    placeholder="Search title, keywords..." max-width="max-w-sm" class="w-full sm:w-md" />
 
-                <flux:button icon="plus" x-data
-                    x-on:click="$dispatch('open-add-proposal')"
-                    variant="primary" size="sm"
-                    class="shrink-0 w-full sm:w-auto justify-center">
+                <flux:button icon="plus" x-data x-on:click="$dispatch('open-add-proposal')" variant="primary"
+                    size="sm" class="shrink-0 w-full sm:w-auto justify-center">
                     New Proposal
                 </flux:button>
             </div>
@@ -156,7 +159,8 @@ new #[Title('Research Proposals')] class extends Component {
 
         <div class="overflow-x-auto">
             <table class="w-full min-w-[880px] text-xs">
-                <thead class="bg-{{ $theme['color'] }}-50/50 dark:bg-{{ $theme['color'] }}-900/20 text-left text-[11px]
+                <thead
+                    class="bg-{{ $theme['color'] }}-50/50 dark:bg-{{ $theme['color'] }}-900/20 text-left text-[11px]
                               uppercase tracking-wider text-slate-600 dark:text-slate-300">
                     <tr>
                         <th class="px-4 py-3 font-semibold">Title & Scheme</th>
@@ -191,7 +195,8 @@ new #[Title('Research Proposals')] class extends Component {
                             <td class="px-4 py-3 text-slate-600 dark:text-zinc-300">
                                 @if ($proposal->reviewer)
                                     <div class="flex items-center gap-2">
-                                        <div class="w-6 h-6 rounded-full bg-violet-100 text-violet-700
+                                        <div
+                                            class="w-6 h-6 rounded-full bg-violet-100 text-violet-700
                                                     flex items-center justify-center text-[10px] font-bold
                                                     dark:bg-violet-900/40 dark:text-violet-300">
                                             {{ strtoupper(substr($proposal->reviewer->full_name, 0, 1)) }}
@@ -206,7 +211,8 @@ new #[Title('Research Proposals')] class extends Component {
                             </td>
 
                             <td class="px-4 py-3">
-                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full
+                                <span
+                                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full
                                              text-[11px] font-semibold whitespace-nowrap {{ $meta['class'] }}">
                                     {{ $meta['label'] }}
                                 </span>
@@ -221,8 +227,7 @@ new #[Title('Research Proposals')] class extends Component {
                                     <flux:menu>
                                         {{-- Progress Report --}}
                                         @if ($this->canAddProgressReport($proposal))
-                                            <flux:menu.item icon="document-chart-bar"
-                                                x-data
+                                            <flux:menu.item icon="document-chart-bar" x-data
                                                 x-on:click="$dispatch('open-add-progress-report', { proposalId: {{ $proposal->id }} })"
                                                 class="text-emerald-600 dark:text-emerald-400">
                                                 Upload Progress Report
@@ -230,8 +235,7 @@ new #[Title('Research Proposals')] class extends Component {
                                         @endif
 
                                         @if ($proposal->progressReport && $this->canEdit($proposal->progressReport->status))
-                                            <flux:menu.item icon="pencil-square"
-                                                x-data
+                                            <flux:menu.item icon="pencil-square" x-data
                                                 x-on:click="$dispatch('open-edit-progress-report', { id: {{ $proposal->progressReport->id }} })">
                                                 Edit Progress Report
                                             </flux:menu.item>
@@ -239,8 +243,7 @@ new #[Title('Research Proposals')] class extends Component {
 
                                         {{-- Final Report --}}
                                         @if ($this->canAddFinalReport($proposal))
-                                            <flux:menu.item icon="document-check"
-                                                x-data
+                                            <flux:menu.item icon="document-check" x-data
                                                 x-on:click="$dispatch('open-add-final-report', { proposalId: {{ $proposal->id }} })"
                                                 class="text-blue-600 dark:text-blue-400">
                                                 Upload Final Report
@@ -248,8 +251,7 @@ new #[Title('Research Proposals')] class extends Component {
                                         @endif
 
                                         @if ($proposal->finalReport && $this->canEdit($proposal->finalReport->status))
-                                            <flux:menu.item icon="pencil-square"
-                                                x-data
+                                            <flux:menu.item icon="pencil-square" x-data
                                                 x-on:click="$dispatch('open-edit-final-report', { id: {{ $proposal->finalReport->id }} })">
                                                 Edit Final Report
                                             </flux:menu.item>
@@ -257,8 +259,7 @@ new #[Title('Research Proposals')] class extends Component {
 
                                         {{-- Output --}}
                                         @if ($this->canAddOutput($proposal))
-                                            <flux:menu.item icon="trophy"
-                                                x-data
+                                            <flux:menu.item icon="trophy" x-data
                                                 x-on:click="$dispatch('open-add-output', { proposalId: {{ $proposal->id }} })"
                                                 class="text-amber-600 dark:text-amber-400">
                                                 Upload Output
@@ -266,8 +267,7 @@ new #[Title('Research Proposals')] class extends Component {
                                         @endif
 
                                         @if ($proposal->output && $this->canEdit($proposal->output->status))
-                                            <flux:menu.item icon="pencil-square"
-                                                x-data
+                                            <flux:menu.item icon="pencil-square" x-data
                                                 x-on:click="$dispatch('open-edit-output', { id: {{ $proposal->output->id }} })">
                                                 Edit Output
                                             </flux:menu.item>
@@ -276,10 +276,26 @@ new #[Title('Research Proposals')] class extends Component {
                                         {{-- Edit Proposal --}}
                                         @if ($this->canEdit($proposal->status))
                                             <flux:menu.separator />
-                                            <flux:menu.item icon="pencil-square"
-                                                x-data
+                                            <flux:menu.item icon="pencil-square" x-data
                                                 x-on:click="$dispatch('open-edit-proposal', { id: {{ $proposal->id }} })">
                                                 Edit Proposal
+                                            </flux:menu.item>
+                                        @endif
+                                        {{-- View Admin Notes --}}
+                                        @if ($proposal->adminNotes->count() > 0)
+                                            <flux:menu.item icon="chat-bubble-left-right" x-data
+                                                x-on:click="$dispatch('open-user-view-admin-notes', { id: {{ $proposal->id }}, type: 'proposal' })"
+                                                class="text-amber-600 dark:text-amber-400">
+                                                Admin Notes
+                                            </flux:menu.item>
+                                        @endif
+
+                                        {{-- View Reviewer Notes --}}
+                                        @if ($proposal->reviewerNotes->count() > 0)
+                                            <flux:menu.item icon="clipboard-document-check" x-data
+                                                x-on:click="$dispatch('open-user-view-reviewer-notes', { id: {{ $proposal->id }}, type: 'proposal' })"
+                                                class="text-violet-600 dark:text-violet-400">
+                                                Reviewer Notes
                                             </flux:menu.item>
                                         @endif
 
@@ -299,7 +315,8 @@ new #[Title('Research Proposals')] class extends Component {
                         <tr>
                             <td colspan="5" class="px-4 py-16 text-center text-slate-500 dark:text-slate-400">
                                 <div class="flex flex-col items-center gap-3">
-                                    <flux:icon :name="$theme['icon']" class="size-10 text-slate-300 dark:text-zinc-700" />
+                                    <flux:icon :name="$theme['icon']"
+                                        class="size-10 text-slate-300 dark:text-zinc-700" />
                                     <div class="flex flex-col gap-1">
                                         <span class="font-medium text-slate-700 dark:text-zinc-300">
                                             No proposals yet
@@ -336,4 +353,7 @@ new #[Title('Research Proposals')] class extends Component {
     <livewire:user.internal.proposals.edit-final-report wire:key="edit-final-research" />
     <livewire:user.internal.proposals.add-output wire:key="add-output-research" />
     <livewire:user.internal.proposals.edit-output wire:key="edit-output-research" />
+    {{-- NEW: View Notes Modals --}}
+    <livewire:user.internal.modals.view-admin-notes />
+    <livewire:user.internal.modals.view-reviewer-notes />
 </div>
