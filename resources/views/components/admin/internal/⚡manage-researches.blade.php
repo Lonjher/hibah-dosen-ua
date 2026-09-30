@@ -41,7 +41,6 @@ new #[Title('Manage Researches')] class extends Component {
     }
 
     // ═══════════════ AKSI ADMIN ═══════════════
-
     public function submit(Proposal $proposal): void
     {
         if (!in_array($proposal->status, ['pending', 'revised', 'rejected'])) {
@@ -318,6 +317,15 @@ new #[Title('Manage Researches')] class extends Component {
                                                     Submit Proposal
                                                 </flux:menu.item>
                                             @endif
+                                            {{-- View Submissions (Progress + Final + Output) --}}
+                                            @if ($proposal->progressReport || $proposal->finalReport || $proposal->output)
+                                                <flux:menu.separator />
+                                                <flux:menu.item icon="eye" x-data
+                                                    x-on:click="$dispatch('open-view-submission', { proposalId: {{ $proposal->id }} })"
+                                                    class="text-slate-700 dark:text-zinc-300">
+                                                    View Submissions
+                                                </flux:menu.item>
+                                            @endif
 
                                             {{-- ══════════ STATUS: UNDER_REVIEW ══════════ --}}
                                             @if ($proposal->status === 'under_review')
@@ -339,12 +347,12 @@ new #[Title('Manage Researches')] class extends Component {
 
                                             {{-- ══════════ TETAP: ADMIN NOTES ══════════ --}}
                                             <flux:menu.separator />
-                                             @if (!in_array($proposal->status, ['pending']))
+                                            @if (!in_array($proposal->status, ['pending']))
                                                 <flux:menu.item icon="chat-bubble-left-right" x-data
                                                     x-on:click="$dispatch('open-admin-notes', { id: {{ $proposal->id }}, type: 'proposal' })">
                                                     Admin Notes
                                                 </flux:menu.item>
-                                             @endif
+                                            @endif
 
                                             @if (in_array($proposal->status, ['under_review', 'accepted', 'rejected']))
                                                 <flux:menu.item icon="clipboard-document-check" x-data
@@ -410,4 +418,6 @@ new #[Title('Manage Researches')] class extends Component {
     <livewire:admin.internal.modals.reviewer-notes />
     <livewire:admin.internal.modals.admin-notes />
     <livewire:admin.internal.modals.view-proposal />
+    <livewire:admin.internal.modals.view-submission />
+    <livewire:admin.internal.modals.assign-reviewer-progress />
 </div>

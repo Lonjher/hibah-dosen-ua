@@ -153,12 +153,6 @@
                                 Data</span>
                             <x-sidebar-link href="reviewer.review-proposal" title="Research" icon="beaker" />
                             <x-sidebar-link href="reviewer.review-progress-report" title="Progress Report" icon="beaker" />
-                            <a href="#"
-                                class="flex items-center gap-2 px-2 py-1.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low/50 font-heading text-[11px] font-medium transition-all group dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-800/50">
-                                <flux:icon.hand-raised
-                                    class="size-4 text-outline group-hover:text-emerald-500 transition-colors shrink-0 dark:group-hover:text-emerald-400" />
-                                <span>Dedication</span>
-                            </a>
                         </div>
                     @endcan
                     @can('user')

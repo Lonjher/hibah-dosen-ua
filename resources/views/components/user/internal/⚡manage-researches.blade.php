@@ -225,62 +225,12 @@ new #[Title('Research Proposals')] class extends Component {
                                                dark:text-zinc-400 dark:hover:bg-zinc-700/60" />
 
                                     <flux:menu>
-                                        {{-- Progress Report --}}
-                                        @if ($this->canAddProgressReport($proposal))
-                                            <flux:menu.item icon="document-chart-bar" x-data
-                                                x-on:click="$dispatch('open-add-progress-report', { proposalId: {{ $proposal->id }} })"
-                                                class="text-emerald-600 dark:text-emerald-400">
-                                                Upload Progress Report
-                                            </flux:menu.item>
-                                        @endif
-
-                                        @if ($proposal->progressReport && $this->canEdit($proposal->progressReport->status))
-                                            <flux:menu.item icon="pencil-square" x-data
-                                                x-on:click="$dispatch('open-edit-progress-report', { id: {{ $proposal->progressReport->id }} })">
-                                                Edit Progress Report
-                                            </flux:menu.item>
-                                        @endif
-
-                                        {{-- Final Report --}}
-                                        @if ($this->canAddFinalReport($proposal))
-                                            <flux:menu.item icon="document-check" x-data
-                                                x-on:click="$dispatch('open-add-final-report', { proposalId: {{ $proposal->id }} })"
-                                                class="text-blue-600 dark:text-blue-400">
-                                                Upload Final Report
-                                            </flux:menu.item>
-                                        @endif
-
-                                        @if ($proposal->finalReport && $this->canEdit($proposal->finalReport->status))
-                                            <flux:menu.item icon="pencil-square" x-data
-                                                x-on:click="$dispatch('open-edit-final-report', { id: {{ $proposal->finalReport->id }} })">
-                                                Edit Final Report
-                                            </flux:menu.item>
-                                        @endif
-
-                                        {{-- Output --}}
-                                        @if ($this->canAddOutput($proposal))
-                                            <flux:menu.item icon="trophy" x-data
-                                                x-on:click="$dispatch('open-add-output', { proposalId: {{ $proposal->id }} })"
-                                                class="text-amber-600 dark:text-amber-400">
-                                                Upload Output
-                                            </flux:menu.item>
-                                        @endif
-
-                                        @if ($proposal->output && $this->canEdit($proposal->output->status))
-                                            <flux:menu.item icon="pencil-square" x-data
-                                                x-on:click="$dispatch('open-edit-output', { id: {{ $proposal->output->id }} })">
-                                                Edit Output
-                                            </flux:menu.item>
-                                        @endif
-
-                                        {{-- Edit Proposal --}}
-                                        @if ($this->canEdit($proposal->status))
-                                            <flux:menu.separator />
-                                            <flux:menu.item icon="pencil-square" x-data
-                                                x-on:click="$dispatch('open-edit-proposal', { id: {{ $proposal->id }} })">
-                                                Edit Proposal
-                                            </flux:menu.item>
-                                        @endif
+                                        <flux:menu.item icon="document-duplicate"
+                                            x-data
+                                            x-on:click="$dispatch('open-view-submission-user', { proposalId: {{ $proposal->id }} })"
+                                            class="text-slate-700 dark:text-zinc-300">
+                                            View Submissions
+                                        </flux:menu.item>
                                         {{-- View Admin Notes --}}
                                         @if ($proposal->adminNotes->count() > 0)
                                             <flux:menu.item icon="chat-bubble-left-right" x-data
@@ -356,4 +306,5 @@ new #[Title('Research Proposals')] class extends Component {
     {{-- NEW: View Notes Modals --}}
     <livewire:user.internal.modals.view-admin-notes />
     <livewire:user.internal.modals.view-reviewer-notes />
+    <livewire:user.internal.modals.view-submission />
 </div>

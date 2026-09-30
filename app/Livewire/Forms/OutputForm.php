@@ -27,7 +27,7 @@ class OutputForm extends Form
             'journal_link' => ['required', 'url', 'max:255'],
             'edition'      => ['required', 'string', 'max:255'],
             'volume'       => ['required', 'string', 'max:255'],
-            'level'        => ['required', 'string', 'in:Lokal,Nasional,Internasional'],
+            'level'        => ['required', 'string', 'in:Scopus,Sinta 1,Sinta 2,Sinta 3,Sinta 4,Sinta 5,Sinta 6'],
             'status'       => ['required', 'string', 'in:pending,revised,accepted,rejected'],
         ];
     }
@@ -52,7 +52,7 @@ class OutputForm extends Form
             'volume.max'            => 'Volume maksimal 255 karakter.',
 
             'level.required'        => 'Level wajib diisi.',
-            'level.in'              => 'Level harus Lokal, Nasional, atau Internasional.',
+            'level.in'              => 'Level harus salah satu dari: Scopus, Sinta 1-6.',
 
             'status.required'       => 'Status wajib diisi.',
             'status.in'             => 'Status tidak valid.',

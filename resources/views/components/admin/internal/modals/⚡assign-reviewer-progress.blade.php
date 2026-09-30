@@ -1,0 +1,333 @@
+<?php
+
+use App\Models\ProgressReport;
+use App\Models\User;
+use Flux\Flux;
+use Livewire\Attributes\On;
+use Livewire\Component;
+
+new class extends Component {
+    public ?int $progress_report_id = null;
+    public ?int $reviewer_id = null;
+    public string $proposal_title = '';
+    public string $keyword = '';
+
+    // Search & suggestion
+    public string $search = '';
+    public bool $hasSearched = false;
+
+    #[On('open-assign-reviewer-progress')]
+    public function load(int $id): void
+    {
+        $report = ProgressReport::with('proposal')->findOrFail($id);
+
+        // if ($report->status !== 'submitted') {
+        //     Flux::toast('Reviewer hanya dapat di-assign pada progress report berstatus submitted.', variant: 'danger');
+        //     return;
+        // }
+
+        $this->progress_report_id = $report->id;
+        $this->proposal_title     = $report->proposal?->title ?? '—';
+        $this->keyword            = $report->keyword;
+        $this->reviewer_id        = $report->reviewer_id;
+
+        $this->search = '';
+        $this->hasSearched = false;
+
+        $this->resetErrorBag();
+        $this->resetValidation();
+
+        $this->dispatch('show-assign-reviewer-progress');
+    }
+
+    public function updatedSearch(): void
+    {
+        $this->hasSearched = true;
+    }
+
+    public function selectReviewer(int $id): void
+    {
+        $this->reviewer_id = $id;
+        $this->search = '';
+        $this->hasSearched = false;
+        $this->resetErrorBag('reviewer_id');
+        $this->resetValidation('reviewer_id');
+    }
+
+    public function clearReviewer(): void
+    {
+        $this->reviewer_id = null;
+        $this->search = '';
+        $this->hasSearched = false;
+    }
+
+    public function save(): void
+    {
+        $this->validate([
+            'reviewer_id' => ['required', 'exists:users,id'],
+        ], [
+            'reviewer_id.required' => 'Reviewer wajib dipilih.',
+            'reviewer_id.exists'   => 'Reviewer tidak valid.',
+        ]);
+
+        $report = ProgressReport::findOrFail($this->progress_report_id);
+
+        // Update reviewer + status
+        ProgressReport::where('id', $report->id)->update([
+            'reviewer_id' => $this->reviewer_id,
+            'status'      => 'under_review',
+        ]);
+
+        Flux::toast('Reviewer berhasil di-assign. Status berubah ke Under Review.', variant: 'success');
+        $this->dispatch('reviewer-assigned');
+        $this->resetAll();
+    }
+
+    public function resetAll(): void
+    {
+        $this->reset(['progress_report_id', 'reviewer_id', 'proposal_title', 'keyword', 'search', 'hasSearched']);
+        $this->resetErrorBag();
+        $this->resetValidation();
+    }
+
+    public function with(): array
+    {
+        $selectedReviewer = $this->reviewer_id
+            ? User::find($this->reviewer_id)
+            : null;
+
+        $suggestions = collect();
+
+        if (! $selectedReviewer) {
+            $suggestions = User::query()
+                ->whereHas('role', fn ($q) => $q->where('role_code', 'REVIEWER'))
+                ->when($this->search, fn ($q) => $q->where(function ($q) {
+                    $q->where('full_name', 'like', "%{$this->search}%")
+                      ->orWhere('nidn', 'like', "%{$this->search}%")
+                      ->orWhere('email', 'like', "%{$this->search}%");
+                }))
+                ->orderBy('full_name')
+                ->limit(5)
+                ->get();
+        }
+
+        return [
+            'selectedReviewer' => $selectedReviewer,
+            'suggestions'      => $suggestions,
+        ];
+    }
+};
+?>
+
+<div
+    x-data="{
+        show: false,
+        errorMessage: '',
+        init() {
+            window.addEventListener('show-assign-reviewer-progress', () => {
+                this.errorMessage = '';
+                this.show = true;
+            });
+            window.addEventListener('assign-reviewer-error', (e) => { this.errorMessage = e.detail.message; });
+            window.addEventListener('reviewer-assigned', () => { this.show = false; });
+        }
+    }"
+    x-show="show" x-transition.opacity x-cloak
+    class="fixed inset-0 z-[110] flex items-end sm:items-center justify-center p-0 sm:p-4"
+    @click.self="show = false">
+
+    <div class="flex max-h-[90vh] w-full sm:max-w-lg flex-col overflow-hidden
+                bg-white dark:bg-zinc-900 rounded-t-2xl sm:rounded-xl shadow-2xl
+                border border-slate-200 dark:border-zinc-700"
+        @click.stop>
+
+        <form wire:submit.prevent="save" class="flex min-h-0 flex-1 flex-col">
+
+            {{-- HEADER --}}
+            <div class="shrink-0 bg-gradient-to-r from-violet-600 to-violet-500
+                        px-5 sm:px-6 py-4 rounded-t-2xl sm:rounded-t-xl">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="flex items-center gap-2.5 min-w-0 flex-1">
+                        <div class="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
+                            <flux:icon.user-plus class="size-4 text-white" />
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <h3 class="font-heading text-[15px] font-semibold text-white leading-tight">
+                                Assign Reviewer
+                            </h3>
+                            <p class="text-[11px] text-white/75 mt-0.5 leading-snug">
+                                Pilih reviewer untuk progress report ini.
+                            </p>
+                        </div>
+                    </div>
+                    <button type="button" @click="show = false"
+                        class="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center
+                               text-white/80 hover:text-white hover:bg-white/10 transition-colors">
+                        <flux:icon.x-mark class="size-4" />
+                    </button>
+                </div>
+            </div>
+
+            {{-- BODY --}}
+            <div class="flex-1 overflow-y-auto px-5 sm:px-6 py-5 space-y-4">
+
+                <template x-if="errorMessage">
+                    <div class="flex items-start gap-2 p-3 rounded-lg
+                                bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800">
+                        <flux:icon.exclamation-triangle class="size-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+                        <p class="text-[11px] text-rose-700 dark:text-rose-300" x-text="errorMessage"></p>
+                    </div>
+                </template>
+
+                {{-- Proposal Info --}}
+                <div class="rounded-lg border border-slate-200 dark:border-zinc-700
+                            bg-slate-50 dark:bg-zinc-800/40 p-3">
+                    <p class="text-[10px] font-medium text-slate-500 dark:text-zinc-400 uppercase tracking-wider">
+                        Progress Report
+                    </p>
+                    <p class="text-[12px] font-semibold text-slate-900 dark:text-zinc-100 mt-1 line-clamp-2">
+                        {{ $proposal_title }}
+                    </p>
+                    <div class="mt-1.5">
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-semibold
+                                     bg-violet-100 text-violet-700
+                                     dark:bg-violet-900/40 dark:text-violet-300">
+                            <flux:icon.tag class="size-2.5" />
+                            {{ $keyword }}
+                        </span>
+                    </div>
+                </div>
+
+                {{-- Pilih Reviewer --}}
+                <div>
+                    <label class="block text-[12px] font-medium text-slate-700 dark:text-zinc-300 mb-1.5">
+                        Pilih Reviewer <span class="text-rose-500">*</span>
+                    </label>
+
+                    @if ($selectedReviewer)
+                        {{-- Selected state --}}
+                        <div class="rounded-lg border border-violet-300 dark:border-violet-700
+                                    bg-violet-50 dark:bg-violet-900/20 p-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-lg bg-violet-200 dark:bg-violet-800/50
+                                            flex items-center justify-center text-[12px] font-bold
+                                            text-violet-700 dark:text-violet-300 shrink-0">
+                                    {{ strtoupper(substr($selectedReviewer->full_name, 0, 1)) }}
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-[12px] font-semibold text-violet-900 dark:text-violet-100 truncate">
+                                        {{ $selectedReviewer->full_name }}
+                                    </p>
+                                    <p class="text-[10px] text-violet-600 dark:text-violet-400">
+                                        {{ $selectedReviewer->nidn }}
+                                    </p>
+                                </div>
+                                <button type="button" wire:click="clearReviewer"
+                                    class="shrink-0 w-7 h-7 rounded-md flex items-center justify-center
+                                           text-violet-600 dark:text-violet-400
+                                           hover:bg-violet-100 dark:hover:bg-violet-900/40 transition-colors"
+                                    title="Ganti reviewer">
+                                    <flux:icon.x-mark class="size-4" />
+                                </button>
+                            </div>
+                        </div>
+
+                        <button type="button" wire:click="clearReviewer"
+                            class="mt-2 text-[11px] text-violet-600 dark:text-violet-400
+                                   hover:underline font-medium">
+                            Ganti reviewer lain?
+                        </button>
+                    @else
+                        {{-- Search state --}}
+                        <div class="relative">
+                            <div class="relative">
+                                <flux:icon.magnifying-glass
+                                    class="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400 pointer-events-none" />
+                                <input type="text"
+                                    wire:model.live.debounce.200ms="search"
+                                    placeholder="Cari nama, NIDN, atau email..."
+                                    autofocus
+                                    class="block w-full rounded-md shadow-sm text-[12px] pl-9 pr-3
+                                           border-slate-300 dark:border-zinc-600 bg-white dark:bg-zinc-800
+                                           text-slate-900 dark:text-zinc-100
+                                           placeholder:text-slate-400 dark:placeholder-zinc-500
+                                           focus:border-violet-500 focus:ring-violet-500 py-2.5" />
+                            </div>
+
+                            {{-- Suggestion List --}}
+                            <div class="mt-2 rounded-lg border border-slate-200 dark:border-zinc-700
+                                        bg-white dark:bg-zinc-800 overflow-hidden shadow-sm">
+
+                                @forelse ($suggestions as $reviewer)
+                                    <button type="button"
+                                        wire:key="suggestion-{{ $reviewer->id }}"
+                                        wire:click="selectReviewer({{ $reviewer->id }})"
+                                        class="w-full flex items-center gap-3 px-3 py-2.5
+                                               text-left transition-colors
+                                               hover:bg-violet-50 dark:hover:bg-violet-900/20
+                                               {{ ! $loop->last ? 'border-b border-slate-100 dark:border-zinc-700' : '' }}">
+                                        <div class="w-9 h-9 rounded-lg
+                                                    bg-violet-100 dark:bg-violet-900/40
+                                                    flex items-center justify-center text-[11px] font-bold
+                                                    text-violet-700 dark:text-violet-300 shrink-0">
+                                            {{ strtoupper(substr($reviewer->full_name, 0, 1)) }}
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-[12px] font-medium text-slate-900 dark:text-zinc-100 truncate">
+                                                {{ $reviewer->full_name }}
+                                            </p>
+                                            <p class="text-[10px] text-slate-500 dark:text-zinc-400 truncate">
+                                                {{ $reviewer->nidn }} · {{ $reviewer->email }}
+                                            </p>
+                                        </div>
+                                        <flux:icon.chevron-right class="size-3.5 text-slate-400 shrink-0" />
+                                    </button>
+                                @empty
+                                    <div class="px-3 py-6 text-center">
+                                        @if ($search)
+                                            <flux:icon.user-minus class="size-8 text-slate-300 dark:text-zinc-600 mx-auto mb-2" />
+                                            <p class="text-[11px] text-slate-500 dark:text-zinc-400">
+                                                Tidak ada reviewer ditemukan.
+                                            </p>
+                                            <p class="text-[10px] text-slate-400 dark:text-zinc-500 mt-1">
+                                                Coba kata kunci lain.
+                                            </p>
+                                        @else
+                                            <flux:icon.user-group class="size-8 text-slate-300 dark:text-zinc-600 mx-auto mb-2" />
+                                            <p class="text-[11px] text-slate-500 dark:text-zinc-400">
+                                                Ketik untuk mencari reviewer.
+                                            </p>
+                                        @endif
+                                    </div>
+                                @endforelse
+
+                                @if ($suggestions->isNotEmpty())
+                                    <div class="px-3 py-2 bg-slate-50 dark:bg-zinc-900/50
+                                                border-t border-slate-100 dark:border-zinc-700">
+                                        <p class="text-[10px] text-slate-500 dark:text-zinc-400 text-center">
+                                            Menampilkan maksimal 5 hasil
+                                        </p>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    @endif
+
+                    @error('reviewer_id')<p class="mt-1.5 text-[11px] text-rose-600">{{ $message }}</p>@enderror
+                </div>
+            </div>
+
+            {{-- FOOTER --}}
+            <div class="shrink-0 flex flex-col-reverse sm:flex-row sm:justify-end gap-2
+                        px-5 sm:px-6 py-4 border-t border-slate-200 dark:border-zinc-700
+                        bg-white dark:bg-zinc-900 rounded-b-2xl sm:rounded-b-xl">
+                <flux:button type="button" @click="show = false" variant="ghost" size="sm">Batal</flux:button>
+                <flux:button type="submit" variant="primary" size="sm"
+                    wire:loading.attr="disabled" wire:target="save">
+                    <span wire:loading.remove wire:target="save">Assign Reviewer</span>
+                    <span wire:loading.flex wire:target="save">Menyimpan...</span>
+                </flux:button>
+            </div>
+        </form>
+    </div>
+</div>

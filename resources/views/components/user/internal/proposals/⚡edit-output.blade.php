@@ -150,13 +150,17 @@ new class extends Component {
                         </label>
                         <select wire:model="form.level"
                             class="block w-full rounded-md shadow-sm text-[12px]
-                                   border-slate-300 dark:border-zinc-600 bg-white dark:bg-zinc-800
-                                   text-slate-900 dark:text-zinc-100
-                                   focus:border-blue-500 focus:ring-blue-500 py-2 px-3">
-                            <option value="">— Pilih —</option>
-                            <option value="Lokal">Lokal</option>
-                            <option value="Nasional">Nasional</option>
-                            <option value="Internasional">Internasional</option>
+                                border-slate-300 dark:border-zinc-600 bg-white dark:bg-zinc-800
+                                text-slate-900 dark:text-zinc-100
+                                focus:border-emerald-500 focus:ring-emerald-500 py-2 px-3">
+                            <option value="">— Pilih Level —</option>
+                            <option value="Scopus">Scopus</option>
+                            <option value="Sinta 1">Sinta 1</option>
+                            <option value="Sinta 2">Sinta 2</option>
+                            <option value="Sinta 3">Sinta 3</option>
+                            <option value="Sinta 4">Sinta 4</option>
+                            <option value="Sinta 5">Sinta 5</option>
+                            <option value="Sinta 6">Sinta 6</option>
                         </select>
                     </div>
                 </div>
