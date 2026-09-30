@@ -74,7 +74,7 @@ class UserSeeder extends Seeder
             'phone_number'      => '6285156752478',
             'email'             => 'user@ua.ac.id',
             'email_verified_at' => now(),
-            'password'          => Hash::make('19930404'),
+            'password'          => Hash::make('password'),
             'role_id'           => $userRole,
         ]);
 

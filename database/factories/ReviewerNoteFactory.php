@@ -27,19 +27,21 @@ class ReviewerNoteFactory extends Factory
         ];
     }
 
-    public function forProposal(?Proposal $proposal = null): static
+    public function forProposal(?Proposal $proposal = null, ?User $reviewer = null): static
     {
         return $this->state(fn () => [
             'noteable_id'   => $proposal?->id ?? Proposal::factory(),
             'noteable_type' => 'proposal',
+            'reviewer_id'   => $reviewer?->id ?? User::factory()->reviewer(),
         ]);
     }
 
-    public function forProgressReport(?ProgressReport $report = null): static
+    public function forProgressReport(?ProgressReport $report = null, ?User $reviewer = null): static
     {
         return $this->state(fn () => [
             'noteable_id'   => $report?->id ?? ProgressReport::factory(),
             'noteable_type' => 'progress_report',
+            'reviewer_id'   => $reviewer?->id ?? User::factory()->reviewer(),
         ]);
     }
 

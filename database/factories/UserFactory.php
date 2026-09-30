@@ -25,7 +25,7 @@ class UserFactory extends Factory
             'birthday'          => fake()->dateTimeBetween('-60 years', '-25 years')->format('Y-m-d'),
             'gender'            => fake()->randomElement(['laki-laki', 'perempuan']),
             'address'           => fake()->address(),
-            'phone_number'      => '628'.fake()->numerify('##########'),
+            'phone_number'      => '628' . fake()->numerify('##########'),
             'avatar'            => null,
             'email'             => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
@@ -35,14 +35,6 @@ class UserFactory extends Factory
         ];
     }
 
-    public function unverified(): static
-    {
-        return $this->state(fn () => ['email_verified_at' => null]);
-    }
-
-    /**
-     * Assign role by role_code (UPPERCASE).
-     */
     public function role(string $roleCode): static
     {
         $roleId = Role::query()->where('role_code', $roleCode)->value('id');
@@ -50,23 +42,8 @@ class UserFactory extends Factory
         return $this->state(fn () => ['role_id' => $roleId]);
     }
 
-    public function superAdmin(): static
-    {
-        return $this->role('SUPERADMIN');
-    }
-
-    public function admin(): static
-    {
-        return $this->role('ADMIN');
-    }
-
-    public function reviewer(): static
-    {
-        return $this->role('REVIEWER');
-    }
-
-    public function user(): static
-    {
-        return $this->role('USER');
-    }
+    public function superAdmin(): static { return $this->role('SUPERADMIN'); }
+    public function admin(): static      { return $this->role('ADMIN'); }
+    public function reviewer(): static   { return $this->role('REVIEWER'); }
+    public function user(): static       { return $this->role('USER'); }
 }

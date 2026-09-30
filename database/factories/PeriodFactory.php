@@ -14,13 +14,24 @@ class PeriodFactory extends Factory
 
     public function definition(): array
     {
-        $year = fake()->numberBetween(2024, 2030);
+        $year = fake()->numberBetween(2021, 2025);
+        $isGanjil = fake()->boolean();
+
+        $periode = ($isGanjil ? 'Ganjil' : 'Genap') . " {$year}/" . ($year + 1);
+
+        $openFrom = $isGanjil
+            ? "{$year}-08-01"
+            : ($year + 1) . "-02-01";
+
+        $openTo = $isGanjil
+            ? "{$year}-10-31"
+            : ($year + 1) . "-04-30";
 
         return [
-            'periode'   => "Ganjil {$year}/".($year + 1),
+            'periode'   => $periode,
             'is_active' => false,
-            'open_from' => now()->subMonth(),
-            'open_to'   => now()->addMonths(2),
+            'open_from' => $openFrom,
+            'open_to'   => $openTo,
         ];
     }
 
@@ -29,8 +40,15 @@ class PeriodFactory extends Factory
         return $this->state(fn () => ['is_active' => true]);
     }
 
-    public function inactive(): static
+    /**
+     * Set periode ke tahun spesifik
+     */
+    public function forYear(int $year, bool $ganjil = true): static
     {
-        return $this->state(fn () => ['is_active' => false]);
+        return $this->state(fn () => [
+            'periode'   => ($ganjil ? 'Ganjil' : 'Genap') . " {$year}/" . ($year + 1),
+            'open_from' => $ganjil ? "{$year}-08-01" : ($year + 1) . "-02-01",
+            'open_to'   => $ganjil ? "{$year}-10-31" : ($year + 1) . "-04-30",
+        ]);
     }
 }

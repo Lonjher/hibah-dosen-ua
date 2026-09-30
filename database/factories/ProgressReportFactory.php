@@ -21,8 +21,8 @@ class ProgressReportFactory extends Factory
             'reviewer_id' => null,
             'summary'     => fake()->paragraph(5),
             'keyword'     => implode(', ', fake()->words(3)),
-            'report_path' => 'progress-reports/'.fake()->uuid().'.pdf',
-            'ppt_path'    => 'progress-reports/'.fake()->uuid().'.pptx',
+            'report_path' => 'progress-reports/dummy-' . fake()->uuid() . '.pdf',
+            'ppt_path'    => 'progress-reports/dummy-' . fake()->uuid() . '.pptx',
             'status'      => 'pending',
             'reviewed_at' => null,
         ];
@@ -35,7 +35,7 @@ class ProgressReportFactory extends Factory
 
     public function submitted(): static
     {
-        return $this->state(fn () => ['status' => 'submitted']);
+        return $this->state(fn () => ['status' => 'submitted', 'reviewer_id' => null]);
     }
 
     public function underReview(): static
@@ -44,6 +44,11 @@ class ProgressReportFactory extends Factory
             'status'      => 'under_review',
             'reviewer_id' => User::factory()->reviewer(),
         ]);
+    }
+
+    public function revised(): static
+    {
+        return $this->state(fn () => ['status' => 'revised']);
     }
 
     public function accepted(): static
@@ -62,10 +67,5 @@ class ProgressReportFactory extends Factory
             'reviewer_id' => User::factory()->reviewer(),
             'reviewed_at' => now(),
         ]);
-    }
-
-    public function revised(): static
-    {
-        return $this->state(fn () => ['status' => 'revised']);
     }
 }

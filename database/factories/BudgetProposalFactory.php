@@ -16,15 +16,15 @@ class BudgetProposalFactory extends Factory
     public function definition(): array
     {
         $items = [
-            'Honorarium Ketua', 'Honorarium Anggota', 'Bahan Habis Pakai',
-            'Perjalanan Dinas', 'Sewa Alat', 'Publikasi',
-            'Konsumsi Rapat', 'ATK', 'Lain-lain',
+            'Honorarium Ketua', 'Honorarium Anggota',
+            'Bahan Habis Pakai', 'Perjalanan Dinas',
+            'Sewa Alat', 'Publikasi', 'ATK', 'Konsumsi',
         ];
 
         return [
             'proposal_id' => Proposal::factory(),
             'item_name'   => fake()->randomElement($items),
-            'amount'      => fake()->numberBetween(500_000, 5_000_000),
+            'amount'      => rand(500_000, 5_000_000),
         ];
     }
 }
