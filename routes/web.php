@@ -16,7 +16,7 @@ Route::view('/', 'welcome')->name('home');
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth', 'must.verify.email'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------

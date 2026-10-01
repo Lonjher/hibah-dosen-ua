@@ -1,3 +1,4 @@
+{{-- resources/views/emails/email-verification-link.blade.php --}}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,15 +7,14 @@
     <title>Verify Your Email</title>
 </head>
 <body style="font-family: 'DM Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-             padding: 24px; background: #f4f4f5; margin: 0; -webkit-font-smoothing: antialiased;">
+             padding: 24px; background: #f4f4f5; margin: 0;">
 
     <div style="max-width: 480px; margin: 0 auto;">
 
-        {{-- Card --}}
         <div style="background: #ffffff; padding: 32px; border-radius: 12px;
                     border: 1px solid #e4e4e7;">
 
-            {{-- Logo / Brand --}}
+            {{-- Logo --}}
             <div style="text-align: center; margin: 0 0 24px;">
                 <div style="display: inline-block; width: 48px; height: 48px;
                             background: linear-gradient(135deg, #10b981 0%, #14b8a6 100%);
@@ -26,59 +26,52 @@
                 </div>
                 <p style="font-family: 'Manrope', system-ui, sans-serif;
                           margin: 12px 0 0; font-size: 13px; font-weight: 600;
-                          color: #18181b; letter-spacing: -0.01em;">
+                          color: #18181b;">
                     {{ config('app.name', 'Hibah Dosen') }}
                 </p>
             </div>
 
-            {{-- Divider --}}
             <div style="height: 1px; background: #f4f4f5; margin: 0 0 24px;"></div>
 
-            {{-- Heading --}}
             <h1 style="font-family: 'Manrope', system-ui, sans-serif;
-                       font-size: 18px; line-height: 1.3; margin: 0 0 12px;
-                       color: #18181b; font-weight: 600; letter-spacing: -0.01em;">
+                       font-size: 18px; margin: 0 0 12px; color: #18181b; font-weight: 600;">
                 Verify Your Email
             </h1>
 
-            {{-- Body --}}
             <p style="color: #52525b; font-size: 14px; line-height: 1.6; margin: 0 0 24px;">
                 Hello <strong style="color: #18181b;">{{ $userName }}</strong>,<br>
-                Use the verification code below to confirm your email address and activate your account.
+                Click the button below to verify your email address and activate your account.
             </p>
 
-            {{-- Code Box --}}
-            <div style="background: #ecfdf5; border: 1px solid #a7f3d0;
-                        border-radius: 12px; padding: 20px 12px; margin: 0 0 20px;">
-                <p style="font-size: 10px; font-weight: 600; text-transform: uppercase;
-                          letter-spacing: 0.1em; text-align: center;
-                          color: #059669; margin: 0 0 8px;">
-                    Verification Code
-                </p>
-                <div style="font-family: ui-monospace, 'SF Mono', Menlo, monospace;
-                            font-size: 32px; font-weight: 700; letter-spacing: 8px;
-                            text-align: center; color: #065f46;
-                            padding: 0 0 0 8px;">
-                    {{ $code }}
-                </div>
+            {{-- CTA --}}
+            <div style="text-align: center; margin: 24px 0;">
+                <a href="{{ $verificationUrl }}"
+                   style="display: inline-block; padding: 12px 28px;
+                          background: linear-gradient(135deg, #10b981 0%, #14b8a6 100%);
+                          color: #ffffff; text-decoration: none; border-radius: 8px;
+                          font-size: 14px; font-weight: 600;">
+                    Verify Email Address
+                </a>
             </div>
 
-            {{-- Notice --}}
+            <p style="color: #71717a; font-size: 12px; margin: 0 0 8px;">
+                Or copy and paste this link into your browser:
+            </p>
+            <p style="color: #059669; font-size: 11px; word-break: break-all; margin: 0 0 24px;
+                      font-family: ui-monospace, monospace;">
+                {{ $verificationUrl }}
+            </p>
+
             <div style="border-top: 1px solid #f4f4f5; padding-top: 16px;">
                 <p style="color: #a1a1aa; font-size: 12px; line-height: 1.6; margin: 0;">
-                    This code will expire in <strong style="color: #71717a;">15 minutes</strong>.
-                    If you did not request this code, you can safely ignore this email.
+                    This link will expire in <strong>60 minutes</strong>.
+                    If you did not request this, you can safely ignore this email.
                 </p>
             </div>
         </div>
 
-        {{-- Footer --}}
-        <p style="text-align: center; color: #a1a1aa; font-size: 11px;
-                  line-height: 1.6; margin: 16px 0 0;">
+        <p style="text-align: center; color: #a1a1aa; font-size: 11px; margin: 16px 0 0;">
             © {{ date('Y') }} {{ config('app.name', 'Hibah Dosen') }}. All rights reserved.
-        </p>
-        <p style="text-align: center; color: #d4d4d8; font-size: 10px; margin: 4px 0 0;">
-            This is an automated message, please do not reply.
         </p>
     </div>
 </body>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Verify Your Email</title>
+    <title>Reset Your Password</title>
 </head>
 <body style="font-family: 'DM Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
              padding: 24px; background: #f4f4f5; margin: 0; -webkit-font-smoothing: antialiased;">
@@ -38,36 +38,41 @@
             <h1 style="font-family: 'Manrope', system-ui, sans-serif;
                        font-size: 18px; line-height: 1.3; margin: 0 0 12px;
                        color: #18181b; font-weight: 600; letter-spacing: -0.01em;">
-                Verify Your Email
+                Reset Your Password
             </h1>
 
             {{-- Body --}}
-            <p style="color: #52525b; font-size: 14px; line-height: 1.6; margin: 0 0 24px;">
+            <p style="color: #52525b; font-size: 14px; line-height: 1.6; margin: 0 0 20px;">
                 Hello <strong style="color: #18181b;">{{ $userName }}</strong>,<br>
-                Use the verification code below to confirm your email address and activate your account.
+                We received a request to reset the password for your account. Click the button below to continue.
             </p>
 
-            {{-- Code Box --}}
-            <div style="background: #ecfdf5; border: 1px solid #a7f3d0;
-                        border-radius: 12px; padding: 20px 12px; margin: 0 0 20px;">
-                <p style="font-size: 10px; font-weight: 600; text-transform: uppercase;
-                          letter-spacing: 0.1em; text-align: center;
-                          color: #059669; margin: 0 0 8px;">
-                    Verification Code
-                </p>
-                <div style="font-family: ui-monospace, 'SF Mono', Menlo, monospace;
-                            font-size: 32px; font-weight: 700; letter-spacing: 8px;
-                            text-align: center; color: #065f46;
-                            padding: 0 0 0 8px;">
-                    {{ $code }}
-                </div>
+            {{-- CTA Button --}}
+            <div style="text-align: center; margin: 24px 0;">
+                <a href="{{ $resetUrl }}"
+                   style="display: inline-block; padding: 12px 28px;
+                          background: linear-gradient(135deg, #10b981 0%, #14b8a6 100%);
+                          color: #ffffff; text-decoration: none; border-radius: 8px;
+                          font-size: 14px; font-weight: 600; letter-spacing: 0.01em;">
+                    Reset Password
+                </a>
             </div>
+
+            {{-- Fallback Link --}}
+            <p style="color: #71717a; font-size: 12px; line-height: 1.6; margin: 0 0 8px;">
+                Or copy and paste the following link into your browser:
+            </p>
+            <p style="color: #059669; font-size: 11px; line-height: 1.5;
+                      word-break: break-all; margin: 0 0 24px;
+                      font-family: ui-monospace, 'SF Mono', Menlo, monospace;">
+                {{ $resetUrl }}
+            </p>
 
             {{-- Notice --}}
             <div style="border-top: 1px solid #f4f4f5; padding-top: 16px;">
                 <p style="color: #a1a1aa; font-size: 12px; line-height: 1.6; margin: 0;">
-                    This code will expire in <strong style="color: #71717a;">15 minutes</strong>.
-                    If you did not request this code, you can safely ignore this email.
+                    This link will expire in <strong style="color: #71717a;">60 minutes</strong>.
+                    If you did not request a password reset, you can safely ignore this email — your account remains secure.
                 </p>
             </div>
         </div>

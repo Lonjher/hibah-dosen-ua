@@ -30,7 +30,7 @@ class UserSeeder extends Seeder
             'gender'            => 'laki-laki',
             'address'           => 'Jl. Makan Pahlawan Guluk-guluk Sumenep',
             'phone_number'      => '6285156752475',
-            'email'             => 'super.admin@ua.ac.id',
+            'email'             => 'walid.lonjer@gmail.com',
             'email_verified_at' => now(),
             'password'          => Hash::make('19900101'),
             'role_id'           => $superAdminRole,
@@ -44,8 +44,7 @@ class UserSeeder extends Seeder
             'gender'            => 'laki-laki',
             'address'           => 'Jl. Makan Pahlawan Guluk-guluk Sumenep',
             'phone_number'      => '6285156752476',
-            'email'             => 'admin@ua.ac.id',
-            'email_verified_at' => now(),
+            'email'             => 'siaprisetppmua@gmail.com',
             'password'          => Hash::make('19910102'),
             'role_id'           => $adminRole,
         ]);
@@ -59,7 +58,6 @@ class UserSeeder extends Seeder
             'address'           => 'Jl. Makan Pahlawan Guluk-guluk Sumenep',
             'phone_number'      => '6285156752477',
             'email'             => 'reviewer@ua.ac.id',
-            'email_verified_at' => now(),
             'password'          => Hash::make('19920303'),
             'role_id'           => $reviewerRole,
         ]);
@@ -72,8 +70,7 @@ class UserSeeder extends Seeder
             'gender'            => 'laki-laki',
             'address'           => 'Jl. Makan Pahlawan Guluk-guluk Sumenep',
             'phone_number'      => '6285156752478',
-            'email'             => 'user@ua.ac.id',
-            'email_verified_at' => now(),
+            'email'             => 'turnitinlppmua@gmail.com',
             'password'          => Hash::make('password'),
             'role_id'           => $userRole,
         ]);
