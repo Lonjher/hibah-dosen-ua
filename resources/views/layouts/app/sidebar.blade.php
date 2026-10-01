@@ -123,7 +123,8 @@
                                 class="px-2 py-1 font-body text-[9px] uppercase tracking-wider text-outline font-bold dark:text-zinc-500">Internal
                                 Data</span>
                             <x-sidebar-link href="admin.internal.manage-researches" title="Research" icon="beaker" />
-                            <x-sidebar-link href="admin.internal.manage-dedications" title="Dedication" icon="hand-raised" />
+                            <x-sidebar-link href="admin.internal.manage-dedications" title="Dedication"
+                                icon="hand-raised" />
                         </div>
 
                         {{-- Group External Data --}}
@@ -166,84 +167,85 @@
                         </div>
                     @endcan
                 </div>
-
-                {{-- User Profile --}}
-                <div
-                    class="p-2 border-t border-white/60 bg-white/80 backdrop-blur-md dark:border-zinc-800 dark:bg-zinc-900/80">
-                    @auth
-                        <div
-                            class="flex items-center gap-2 p-1.5 rounded-lg bg-surface-container-low/60 dark:bg-zinc-800/60">
-                            <div
-                                class="w-7 h-7 rounded-full bg-emerald-500 text-white flex items-center justify-center font-heading font-bold text-[11px] shadow-xs shrink-0">
-                                {{ auth()->user()->initials() ?? 'DK' }}
-                            </div>
-                            <div class="flex flex-col min-w-0 flex-1">
-                                <span
-                                    class="font-heading text-[10px] font-semibold text-on-surface truncate dark:text-zinc-100">{{ auth()->user()->name }}</span>
-                                <span class="font-body text-[9px] text-on-surface-variant truncate dark:text-zinc-400">NIDN:
-                                    {{ auth()->user()->nidn ?? '...' }}</span>
-                                <div
-                                    class="flex items-center gap-1 mt-0.5 font-body text-[8px] text-emerald-600 font-bold dark:text-emerald-300">
-                                    <span>SINTA {{ auth()->user()->sinta_score ?? '...' }}</span>
-                                    <span class="text-outline-variant dark:text-zinc-600">•</span>
-                                    <span class="truncate">{{ auth()->user()->fakultas ?? '...' }}</span>
-                                </div>
-                            </div>
-                            <form method="POST" action="{{ route('logout') }}">
-                                @csrf
-                                <button type="submit"
-                                    class="p-1 text-on-surface-variant hover:text-red-500 hover:bg-surface-container rounded transition-colors dark:text-zinc-400 dark:hover:text-red-400 dark:hover:bg-zinc-800"
-                                    title="Keluar">
-                                    <flux:icon.arrow-right-start-on-rectangle class="size-4" />
-                                </button>
-                            </form>
-                        </div>
-                    @endauth
-                </div>
             </div>
         </aside>
 
         {{-- ======================= KANAN: HEADER + KONTEN ======================= --}}
         <div class="flex flex-col min-h-screen bg-surface transition-[margin] duration-200 lg:ml-48 dark:bg-zinc-950">
             <header
-                class="sticky top-0 z-30 bg-white/75 backdrop-blur-md border-b border-white/60 shadow-[0_1px_8px_rgba(0,0,0,0.04)] px-4 lg:px-6 py-2 flex items-center justify-between gap-4 dark:bg-zinc-900/75 dark:border-zinc-800">
-                {{-- Hamburger (mobile) + Breadcrumb --}}
-                <div class="flex items-center gap-2 min-w-0 font-body text-[11px]">
-                    <button type="button" x-on:click="sidebarOpen = true"
-                        class="p-1 -ml-1 rounded-md text-on-surface-variant hover:text-emerald-500 hover:bg-surface-container-high transition-colors lg:hidden dark:text-zinc-400 dark:hover:text-emerald-400 dark:hover:bg-zinc-800">
+                class="sticky top-0 z-30 bg-white/75 backdrop-blur-md border-b border-white/60
+           shadow-[0_1px_8px_rgba(0,0,0,0.04)] px-3 sm:px-4 py-2
+           flex items-center justify-between gap-2 sm:gap-4
+           dark:bg-zinc-900/75 dark:border-zinc-800">
+
+                {{-- LEFT: Hamburger (mobile) + Page title --}}
+                <div class="flex items-center gap-2 min-w-0 flex-shrink">
+                    {{-- Hamburger (mobile only) --}}
+                    <button type="button" x-on:click="sidebarOpen = true" aria-label="Buka menu"
+                        class="lg:hidden p-1.5 rounded-lg text-on-surface-variant
+                   hover:bg-green-100 hover:text-emerald-600 transition-colors
+                   dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-emerald-400">
                         <flux:icon.bars-3 class="size-5" />
                     </button>
-                    <flux:icon.academic-cap class="size-4 text-emerald-500 hidden sm:block shrink-0" />
-                    <span class="text-on-surface-variant font-medium hidden sm:inline dark:text-zinc-400">LPPM</span>
-                    <span class="text-outline-variant hidden sm:inline dark:text-zinc-600">/</span>
-                    <span class="text-on-surface-variant font-medium hidden sm:inline dark:text-zinc-400">Dosen</span>
-                    <span class="text-outline-variant hidden sm:inline dark:text-zinc-600">/</span>
-                    <span class="text-on-surface font-semibold truncate font-heading dark:text-zinc-100">Dashboard
-                        Riset & Monev</span>
+
+                    {{-- Page title --}}
+                    <div
+                        class="header-page-title font-body text-sm sm:text-base font-semibold
+                    truncate max-w-[45vw] sm:max-w-none text-zinc-800 dark:text-zinc-100">
+                        @isset($title)
+                            {{ $title }}
+                        @else
+                            {{ __('Dashboard') }}
+                        @endisset
+                    </div>
                 </div>
 
-                {{-- Search & Badges --}}
-                <div class="flex items-center gap-3 flex-1 justify-end max-w-xl">
-                    <x-input-search name="q" id="search-proposal" size="sm" placeholder="Cari usulan, skema, luaran..."
-                        value="{{ request('q') }}" />
-                    <div class="flex items-center gap-1">
-                        <livewire:period-badge />
+                {{-- RIGHT: Search + Badges + Actions --}}
+                <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
 
-                        {{-- Toggle Dark Mode --}}
-                        <button type="button"
-                            x-on:click="document.documentElement.classList.toggle('dark'); localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';"
-                            class="p-1 rounded-md text-on-surface-variant hover:text-emerald-500 hover:bg-surface-container-high transition-colors dark:text-zinc-400 dark:hover:text-emerald-400 dark:hover:bg-zinc-800">
-                            <flux:icon.sun class="size-4 hidden dark:block" />
-                            <flux:icon.moon class="size-4 dark:hidden" />
-                        </button>
-
-                        <button
-                            class="relative p-1 rounded-md text-on-surface-variant hover:text-emerald-500 hover:bg-surface-container-high transition-colors dark:text-zinc-400 dark:hover:text-emerald-400 dark:hover:bg-zinc-800">
-                            <flux:icon.bell class="size-4" />
-                            <span
-                                class="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500 ring-2 ring-surface-container-lowest dark:ring-zinc-800"></span>
-                        </button>
+                    {{-- Search: full on md+, icon only on small screens --}}
+                    <div class="hidden md:block">
+                        <x-input-search name="q" id="search-proposal" size="md"
+                            placeholder="Cari usulan, skema, luaran..." value="{{ request('q') }}" />
                     </div>
+                    <button type="button"
+                        class="md:hidden p-1.5 rounded-md text-on-surface-variant
+                   hover:text-emerald-500 hover:bg-surface-container-high transition-colors
+                   dark:text-zinc-400 dark:hover:text-emerald-400 dark:hover:bg-zinc-800"
+                        aria-label="Cari">
+                        <flux:icon.magnifying-glass class="size-4" />
+                    </button>
+
+                    {{-- Period badge: hide on xs, show from sm --}}
+                    <div class="hidden sm:block">
+                        <livewire:period-badge />
+                    </div>
+
+                    {{-- Dark mode toggle --}}
+                    <button type="button"
+                        x-on:click="document.documentElement.classList.toggle('dark');
+                        localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';"
+                        aria-label="Ganti tema"
+                        class="p-1.5 rounded-md text-on-surface-variant
+                   hover:text-emerald-500 hover:bg-surface-container-high transition-colors
+                   dark:text-zinc-400 dark:hover:text-emerald-400 dark:hover:bg-zinc-800">
+                        <flux:icon.sun class="size-4 hidden dark:block" />
+                        <flux:icon.moon class="size-4 dark:hidden" />
+                    </button>
+
+                    {{-- Notifications --}}
+                    <button type="button" aria-label="Notifikasi"
+                        class="relative p-1.5 rounded-md text-on-surface-variant
+                   hover:text-emerald-500 hover:bg-surface-container-high transition-colors
+                   dark:text-zinc-400 dark:hover:text-emerald-400 dark:hover:bg-zinc-800">
+                        <flux:icon.bell class="size-4" />
+                        <span
+                            class="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500
+                         ring-2 ring-surface-container-lowest dark:ring-zinc-800"></span>
+                    </button>
+
+                    {{-- User menu: desktop only --}}
+                    <x-desktop-user-menu class="hidden lg:block ms-1" avatar="{{ auth()->user()->avatar }}" />
                 </div>
             </header>
 

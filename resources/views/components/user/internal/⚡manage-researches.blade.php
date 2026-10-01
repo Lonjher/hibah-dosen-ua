@@ -79,6 +79,30 @@ new #[Title('Research Proposals')] class extends Component {
         return $p->finalReport?->status === 'accepted' && !$p->output;
     }
 
+    /**
+     * Ambil periode aktif yang masih dalam rentang open_from - open_to.
+     */
+    public function activeOpenPeriod(): ?\App\Models\Period
+    {
+        return \App\Models\Period::query()->where('is_active', true)->whereDate('open_from', '<=', now())->whereDate('open_to', '>=', now())->first();
+    }
+
+    /**
+     * Cek apakah user bisa menambah proposal sekarang.
+     */
+    public function canCreateProposal(): bool
+    {
+        return $this->activeOpenPeriod() !== null;
+    }
+
+    /**
+     * Ambil periode aktif (apapun status rentangnya).
+     */
+    public function activePeriod(): ?\App\Models\Period
+    {
+        return \App\Models\Period::query()->where('is_active', true)->first();
+    }
+
     public function with(): array
     {
         $proposals = Proposal::query()
@@ -95,8 +119,15 @@ new #[Title('Research Proposals')] class extends Component {
             ->latest()
             ->paginate(10);
 
+        $canCreate = $this->canCreateProposal();
+        $openPeriod = $this->activeOpenPeriod();
+        $activePeriod = $this->activePeriod();
+
         return [
             'proposals' => $proposals,
+            'canCreate' => $canCreate,
+            'openPeriod' => $openPeriod,
+            'activePeriod' => $activePeriod,
             'theme' => $this->isResearch ? ['icon' => 'beaker', 'color' => 'emerald', 'label' => 'Penelitian'] : ['icon' => 'heart', 'color' => 'rose', 'label' => 'Pengabdian'],
         ];
     }
@@ -104,7 +135,75 @@ new #[Title('Research Proposals')] class extends Component {
 ?>
 
 <div class="p-4 sm:p-6 space-y-6">
+    {{-- ══════════ PERIOD INFO BANNER ══════════ --}}
+    @if ($activePeriod)
+        @php
+            $isOpen = $canCreate;
+            $bannerColor = $isOpen ? 'emerald' : 'amber';
+        @endphp
 
+        <div
+            class="rounded-2xl border border-{{ $bannerColor }}-200 dark:border-{{ $bannerColor }}-800
+                bg-gradient-to-r from-{{ $bannerColor }}-50 to-{{ $bannerColor }}-50/50
+                dark:from-{{ $bannerColor }}-900/20 dark:to-{{ $bannerColor }}-900/10
+                p-3.5 flex items-start sm:items-center gap-3">
+            <div
+                class="w-9 h-9 rounded-xl bg-{{ $bannerColor }}-100 dark:bg-{{ $bannerColor }}-900/40
+                    flex items-center justify-center shrink-0">
+                <flux:icon :name="$isOpen ? 'calendar-days' : 'lock-closed'"
+                    class="size-4 text-{{ $bannerColor }}-600 dark:text-{{ $bannerColor }}-400" />
+            </div>
+            <div class="flex-1 min-w-0">
+                <p
+                    class="text-[10px] font-semibold uppercase tracking-wider
+                      text-{{ $bannerColor }}-700 dark:text-{{ $bannerColor }}-300">
+                    {{ $isOpen ? 'Pendaftaran Dibuka' : 'Pendaftaran Ditutup' }}
+                </p>
+                <p class="text-[12px] font-semibold text-slate-900 dark:text-white mt-0.5">
+                    {{ $activePeriod->periode }}
+                </p>
+                <p class="text-[10px] text-slate-500 dark:text-zinc-400 mt-0.5">
+                    @if ($isOpen)
+                        Dibuka sampai <span
+                            class="font-semibold">{{ $activePeriod->open_to?->format('d M Y') ?? '—' }}</span>
+                    @elseif ($activePeriod->open_from && $activePeriod->open_from->isFuture())
+                        Akan dibuka pada <span
+                            class="font-semibold">{{ $activePeriod->open_from->format('d M Y') }}</span>
+                    @elseif ($activePeriod->open_to && $activePeriod->open_to->isPast())
+                        Ditutup pada <span class="font-semibold">{{ $activePeriod->open_to->format('d M Y') }}</span>
+                    @endif
+                </p>
+            </div>
+            @if ($isOpen)
+                <span
+                    class="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full
+                         bg-{{ $bannerColor }}-500 text-white text-[10px] font-semibold shrink-0">
+                    <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+                    Buka
+                </span>
+            @endif
+        </div>
+    @else
+        {{-- Tidak ada periode aktif --}}
+        <div
+            class="rounded-2xl border border-rose-200 dark:border-rose-800
+                bg-rose-50 dark:bg-rose-900/20 p-3.5
+                flex items-start sm:items-center gap-3">
+            <div
+                class="w-9 h-9 rounded-xl bg-rose-100 dark:bg-rose-900/40
+                    flex items-center justify-center shrink-0">
+                <flux:icon.exclamation-triangle class="size-4 text-rose-600 dark:text-rose-400" />
+            </div>
+            <div class="flex-1 min-w-0">
+                <p class="text-[10px] font-semibold uppercase tracking-wider text-rose-700 dark:text-rose-300">
+                    Tidak Ada Periode Aktif
+                </p>
+                <p class="text-[11px] text-rose-600 dark:text-rose-400 mt-0.5">
+                    Anda tidak dapat menambah proposal saat ini. Silakan hubungi admin.
+                </p>
+            </div>
+        </div>
+    @endif
     <x-dashboard-header :icon="$theme['icon']" title="Research Proposals" leading="Manage your research proposals." />
 
     <div
@@ -150,10 +249,43 @@ new #[Title('Research Proposals')] class extends Component {
                 <x-input-search name="search" id="search-proposal" wire:model.live.debounce.300ms="search"
                     placeholder="Search title, keywords..." max-width="max-w-sm" class="w-full sm:w-md" />
 
-                <flux:button icon="plus" x-data x-on:click="$dispatch('open-add-proposal')" variant="primary"
-                    size="sm" class="shrink-0 w-full sm:w-auto justify-center">
-                    New Proposal
-                </flux:button>
+                {{-- Tombol New Proposal --}}
+                @if ($canCreate)
+                    <flux:button icon="plus" x-data x-on:click="$dispatch('open-add-proposal')" variant="primary"
+                        size="sm" class="shrink-0 w-full sm:w-auto justify-center">
+                        New Proposal
+                    </flux:button>
+                @else
+                    <div class="relative group shrink-0 w-full sm:w-auto">
+                        <flux:button icon="plus" disabled variant="primary" size="sm"
+                            class="w-full sm:w-auto justify-center cursor-not-allowed opacity-50">
+                            New Proposal
+                        </flux:button>
+
+                        {{-- Tooltip --}}
+                        <div
+                            class="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2
+                    opacity-0 group-hover:opacity-100 transition-opacity duration-200
+                    bg-slate-900 dark:bg-zinc-700 text-white text-[10px] rounded-md
+                    px-2.5 py-1.5 whitespace-nowrap z-50 shadow-lg">
+                            @if (!$activePeriod)
+                                Tidak ada periode aktif. Hubungi admin.
+                            @elseif ($activePeriod->open_from && $activePeriod->open_from->isFuture())
+                                Pendaftaran dibuka pada
+                                {{ $activePeriod->open_from->format('d M Y') }}
+                            @elseif ($activePeriod->open_to && $activePeriod->open_to->isPast())
+                                Pendaftaran sudah ditutup pada
+                                {{ $activePeriod->open_to->format('d M Y') }}
+                            @else
+                                Pendaftaran proposal sedang tidak dibuka.
+                            @endif
+                            <div
+                                class="absolute top-full left-1/2 -translate-x-1/2
+                        border-4 border-transparent border-t-slate-900 dark:border-t-zinc-700">
+                            </div>
+                        </div>
+                    </div>
+                @endif
             </div>
         </div>
 
@@ -225,8 +357,7 @@ new #[Title('Research Proposals')] class extends Component {
                                                dark:text-zinc-400 dark:hover:bg-zinc-700/60" />
 
                                     <flux:menu>
-                                        <flux:menu.item icon="document-duplicate"
-                                            x-data
+                                        <flux:menu.item icon="document-duplicate" x-data
                                             x-on:click="$dispatch('open-view-submission-user', { proposalId: {{ $proposal->id }} })"
                                             class="text-slate-700 dark:text-zinc-300">
                                             View Submissions
