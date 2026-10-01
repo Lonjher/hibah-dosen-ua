@@ -1,7 +1,5 @@
 @blaze(fold: true, unsafe: [
-    // attributes
     'icon:trailing', 'icon:leading', 'icon:variant', 'mask:dynamic',
-    // flux:with-field props
     'name', 'label', 'badge',
     'description', 'description:trailing',
     'label:badge', 'label:aside', 'label:trailing',
@@ -65,45 +63,36 @@ $countOfTrailingIcons = collect([
     (bool) $expandable,
 ])->filter()->count();
 
-$iconClasses = Flux::classes()
-    ->add($iconVariant === 'outline' ? 'size-5' : '')
-    ;
+$isDateType = in_array($type, ['date', 'datetime-local', 'time', 'month', 'week'], true);
+
+$iconClasses = Flux::classes()->add('size-3.5');
 
 $inputLoadingClasses = Flux::classes()
     ->add(match ($countOfTrailingIcons) {
-        0 => 'pe-10',
-        1 => 'pe-16',
-        2 => 'pe-23',
-        3 => 'pe-30',
-        4 => 'pe-37',
-        5 => 'pe-44',
-        6 => 'pe-51',
-    })
-    ;
+        0 => 'pe-7', 1 => 'pe-12', 2 => 'pe-17', 3 => 'pe-22',
+        4 => 'pe-27', 5 => 'pe-32', 6 => 'pe-37',
+    });
 
 $classes = Flux::classes()
     ->add('w-full border block disabled:shadow-none dark:shadow-none')
     ->add('appearance-none')
     ->add(match ($size) {
-        default => 'text-base sm:text-sm rounded-lg py-2.5 h-10 leading-[1.375rem]',
-        'sm' => 'text-sm rounded-md py-1.5 h-8 leading-[1.125rem]',
-        'xs' => 'text-xs rounded-md py-1.5 h-6 leading-[1.125rem]',
+        default => 'text-xs rounded-full py-1 h-7 leading-[1rem]',
+        'sm'    => 'text-[11px] rounded-full py-0.5 h-6 leading-[0.875rem]',
+        'xs'    => 'text-[10px] rounded py-0 h-5 leading-[0.75rem]',
+        'lg'    => 'text-sm rounded-full py-1.5 h-8 leading-[1.125rem]',
+        'xl'    => 'text-base rounded-lg py-2.5 h-10 leading-[1.375rem]',
     })
     ->add(match ($hasLeadingIcon) {
-        true => 'ps-10',
-        false => 'ps-3',
+        true  => 'ps-7',
+        false => 'ps-2',
     })
     ->add(match ($countOfTrailingIcons) {
-        0 => 'pe-3',
-        1 => 'pe-10',
-        2 => 'pe-16',
-        3 => 'pe-23',
-        4 => 'pe-30',
-        5 => 'pe-37',
-        6 => 'pe-44',
+        0 => 'pe-2', 1 => 'pe-7', 2 => 'pe-12', 3 => 'pe-17',
+        4 => 'pe-22', 5 => 'pe-27', 6 => 'pe-32',
     })
     ->add(match ($variant) {
-        'outline' => 'bg-stone-50 dark:bg-white/10 dark:disabled:bg-white/[7%]',
+        'outline' => 'dark:bg-white/10 dark:disabled:bg-white/[7%]',
         'filled'  => 'bg-zinc-800/5 dark:bg-white/10 dark:disabled:bg-white/[7%]',
     })
     ->add(match ($variant) {
@@ -117,9 +106,7 @@ $classes = Flux::classes()
     ->add(match ($variant) {
         'outline' => 'data-invalid:shadow-none data-invalid:border-rose-500 focus:data-invalid:border-rose-500 dark:data-invalid:border-rose-400 dark:focus:data-invalid:border-rose-400 data-invalid:ring-rose-500/40 dark:data-invalid:ring-rose-400/40',
         'filled' => 'data-invalid:border-rose-500'
-    })
-    ->add($attributes->pluck('class:input'))
-    ;
+    })->add($isDateType ? 'flux-input-date' : '');
 @endphp
 
 <?php if ($type === 'file'): ?>
@@ -130,11 +117,15 @@ $classes = Flux::classes()
     <flux:with-field :$attributes :$name>
         <div {{ $attributes->only('class')->class('w-full relative block group/input') }} data-flux-input>
             <?php if (is_string($iconLeading) && $iconLeading !== ''): ?>
-                <div class="pointer-events-none absolute top-0 bottom-0 border-s border-transparent flex items-center justify-center text-xs text-stone-400 dark:text-stone-500 ps-3 start-0">
+               <div class="pointer-events-none absolute start-0 z-10 -translate-y-1/2 flex items-center justify-center ps-2 text-xs leading-none text-stone-400 dark:text-stone-500 {{ $isDateType ? 'top-[calc(50%-2px)]' : 'top-1/2' }}">
                     <flux:icon :icon="$iconLeading" :variant="$iconVariant" :class="$iconClasses" />
                 </div>
+                <?php elseif ($iconLeading): ?>
+                <div {{ $iconLeading->attributes->class('absolute top-1/2 start-0 z-10 -translate-y-1/2 flex items-center justify-center ps-2 text-xs leading-none text-stone-400 dark:text-stone-500') }}>
+                    {{ $iconLeading }}
+                </div>
             <?php elseif ($iconLeading): ?>
-                <div {{ $iconLeading->attributes->class('absolute top-0 bottom-0 border-s border-transparent flex items-center justify-center text-xs text-stone-400 dark:text-stone-500 ps-3 start-0') }}>
+                <div {{ $iconLeading->attributes->class('absolute inset-y-0 start-0 z-10 flex items-center justify-center ps-2 border-s border-transparent text-xs leading-none text-stone-400 dark:text-stone-500') }}>
                     {{ $iconLeading }}
                 </div>
             <?php endif; ?>
@@ -157,7 +148,7 @@ $classes = Flux::classes()
             >
 
             <?php if ($loading || $countOfTrailingIcons > 0): ?>
-                <div class="absolute top-0 bottom-0 flex items-center gap-x-1.5 pe-2 border-e border-transparent end-0 text-xs text-stone-400">
+                <div class="absolute inset-y-0 end-0 flex items-center gap-x-1 pe-1 border-e border-transparent text-xs leading-none text-stone-400 pointer-events-none [&>*]:pointer-events-auto">
                     <?php if ($loading): ?>
                         <flux:icon name="loading" :variant="$iconVariant" :class="$iconClasses" wire:loading :wire:target="$wireTarget" />
                     <?php endif; ?>
@@ -167,7 +158,7 @@ $classes = Flux::classes()
                     <?php endif; ?>
 
                     <?php if ($kbd): ?>
-                        <span class="pointer-events-none last:pe-2">{{ $kbd }}</span>
+                        <span class="pointer-events-none last:pe-1">{{ $kbd }}</span>
                     <?php endif; ?>
 
                     <?php if ($expandable): ?>
@@ -197,16 +188,6 @@ $classes = Flux::classes()
     </flux:with-field>
 <?php else: ?>
     <button {{ $attributes->merge(['type' => 'button'])->class([$classes, 'w-full relative flex']) }}>
-        <?php if (is_string($iconLeading) && $iconLeading !== ''): ?>
-            <div class="absolute top-0 bottom-0 flex items-center justify-center text-xs text-stone-400 dark:text-stone-500 ps-3 start-0">
-                <flux:icon :icon="$iconLeading" :variant="$iconVariant" :class="$iconClasses" />
-            </div>
-        <?php elseif ($iconLeading): ?>
-            <div {{ $iconLeading->attributes->class('absolute top-0 bottom-0 flex items-center justify-center text-xs text-stone-400 dark:text-stone-500 ps-3 start-0') }}>
-                {{ $iconLeading }}
-            </div>
-        <?php endif; ?>
-
         <?php if ($attributes->has('placeholder')): ?>
             <div class="block self-center text-start flex-1 font-medium text-stone-400 dark:text-stone-500">
                 {{ $attributes->get('placeholder') }}
@@ -218,17 +199,17 @@ $classes = Flux::classes()
         <?php endif; ?>
 
         <?php if ($kbd): ?>
-            <div class="absolute top-0 bottom-0 flex items-center justify-center text-xs text-stone-400 pe-4 end-0">
+            <div class="absolute inset-y-0 end-0 flex items-center justify-center pe-2 text-xs leading-none text-stone-400">
                 {{ $kbd }}
             </div>
         <?php endif; ?>
 
         <?php if (is_string($iconTrailing) && $iconTrailing !== ''): ?>
-            <div class="absolute top-0 bottom-0 flex items-center justify-center text-xs text-stone-400 pe-3 end-0">
+            <div class="absolute inset-y-0 end-0 flex items-center justify-center pe-2 text-xs leading-none text-stone-400">
                 <flux:icon :icon="$iconTrailing" :variant="$iconVariant" :class="$iconClasses" />
             </div>
         <?php elseif ($iconTrailing): ?>
-            <div {{ $iconTrailing->attributes->class('absolute top-0 bottom-0 flex items-center justify-center text-xs text-stone-400 pe-2 end-0') }}>
+            <div {{ $iconTrailing->attributes->class('absolute inset-y-0 end-0 flex items-center justify-center pe-1 text-xs leading-none text-stone-400') }}>
                 {{ $iconTrailing }}
             </div>
         <?php endif; ?>

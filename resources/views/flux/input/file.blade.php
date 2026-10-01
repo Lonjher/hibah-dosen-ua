@@ -16,11 +16,8 @@ extract(Flux::forwardedAttributes($attributes, [
 
 @php
 $classes = Flux::classes()
-    ->add('w-full flex items-center gap-4')
+    ->add('w-full flex items-center gap-3')
     ->add('[[data-flux-input-group]_&]:items-stretch [[data-flux-input-group]_&]:gap-0')
-
-    // NOTE: We need to add relative positioning here to prevent odd overflow behaviors because of
-    // "sr-only": https://github.com/tailwindlabs/tailwindcss/discussions/12429
     ->add('relative')
     ;
 
@@ -41,14 +38,14 @@ $classes = Flux::classes()
 >
     <input
         x-ref="input"
-        x-on:click.stop {{-- Without this, the parent element's click listener will ".prevent" the file input from being clicked... --}}
+        x-on:click.stop
         type="file"
         class="sr-only"
         tabindex="-1"
         {{ $attributes }} {{ $multiple ? 'multiple' : '' }} @if($name)name="{{ $name }}"@endif
     >
 
-    <flux:button as="div" class="cursor-pointer" :$size aria-hidden="true">
+    <flux:button as="div" class="cursor-pointer" size="xs" aria-hidden="true">
         <?php if ($multiple) : ?>
             {!! __('Choose files') !!}
         <?php else : ?>
@@ -59,8 +56,8 @@ $classes = Flux::classes()
     <div
         x-ref="name"
         @class([
-            'cursor-default select-none truncate whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400 font-medium',
-            '[[data-flux-input-group]_&]:flex-1 [[data-flux-input-group]_&]:border-e [[data-flux-input-group]_&]:border-y [[data-flux-input-group]_&]:shadow-xs [[data-flux-input-group]_&]:border-zinc-200 dark:[[data-flux-input-group]_&]:border-zinc-600 [[data-flux-input-group]_&]:px-4 [[data-flux-input-group]_&]:bg-white dark:[[data-flux-input-group]_&]:bg-zinc-700 [[data-flux-input-group]_&]:flex [[data-flux-input-group]_&]:items-center dark:[[data-flux-input-group]_&]:text-zinc-300',
+            'cursor-default select-none truncate whitespace-nowrap text-xs text-zinc-500 dark:text-zinc-400 font-medium',
+            '[[data-flux-input-group]_&]:flex-1 [[data-flux-input-group]_&]:border-e [[data-flux-input-group]_&]:border-y [[data-flux-input-group]_&]:shadow-xs [[data-flux-input-group]_&]:border-zinc-200 dark:[[data-flux-input-group]_&]:border-zinc-600 [[data-flux-input-group]_&]:px-2.5 [[data-flux-input-group]_&]:bg-white dark:[[data-flux-input-group]_&]:bg-zinc-700 [[data-flux-input-group]_&]:flex [[data-flux-input-group]_&]:items-center dark:[[data-flux-input-group]_&]:text-zinc-300',
         ])
         aria-hidden="true"
     >

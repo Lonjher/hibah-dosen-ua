@@ -12,7 +12,7 @@
 
 @php
 $classes = Flux::classes()
-    ->add('w-full flex')
+    ->add('w-full flex items-stretch')
     ->add('*:data-flux-input:grow')
     ->add([
         // With the external borders, let's always make sure the first and last children have outside borders.

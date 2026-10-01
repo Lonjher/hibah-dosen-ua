@@ -8,7 +8,7 @@
 @php
 $attributes = $attributes->merge([
     'variant' => 'subtle',
-    'class' => '-me-1',
+    'class' => '-me-0.5',
     'square' => true,
     'size' => null,
 ]);
@@ -16,7 +16,7 @@ $attributes = $attributes->merge([
 
 <flux:button
     :$attributes
-    :size="$size === 'sm' || $size === 'xs' ? 'xs' : 'sm'"
+    :size="$size === 'lg' || $size === 'xl' ? 'sm' : 'xs'"
 >
-    <flux:icon.chevron-down :variant="$iconVariant" />
+    <flux:icon.chevron-down :variant="$iconVariant" class="size-3.5" />
 </flux:button>
