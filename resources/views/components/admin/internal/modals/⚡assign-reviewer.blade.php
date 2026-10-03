@@ -10,36 +10,34 @@ new class extends Component {
     public ?int $proposal_id = null;
     public ?int $reviewer_id = null;
     public string $proposal_title = '';
-
-    // Search
     public string $search = '';
     public bool $hasSearched = false;
 
     #[On('open-assign-reviewer')]
     public function load(int $id): void
     {
-        $proposal = Proposal::findOrFail($id);
+        $proposal = Proposal::find($id);
+
+        if (! $proposal) {
+            Flux::toast('Proposal not found.', variant: 'danger');
+            return;
+        }
 
         if ($proposal->status !== 'submitted') {
-            Flux::toast('Reviewer hanya dapat di-assign pada proposal berstatus submitted.', variant: 'danger');
+            Flux::toast('Reviewer can only be assigned to submitted proposals.', variant: 'danger');
             return;
         }
 
         $this->proposal_id    = $proposal->id;
         $this->proposal_title = $proposal->title;
         $this->reviewer_id    = $proposal->reviewer_id;
-
-        // Reset search
-        $this->search = '';
-        $this->hasSearched = false;
+        $this->search         = '';
+        $this->hasSearched    = false;
 
         $this->resetErrorBag();
         $this->resetValidation();
-
         $this->dispatch('show-assign-reviewer');
     }
-
-    // ═══════════════ Search & Suggestion ═══════════════
 
     public function updatedSearch(): void
     {
@@ -52,7 +50,6 @@ new class extends Component {
         $this->search = '';
         $this->hasSearched = false;
         $this->resetErrorBag('reviewer_id');
-        $this->resetValidation('reviewer_id');
     }
 
     public function clearReviewer(): void
@@ -62,27 +59,29 @@ new class extends Component {
         $this->hasSearched = false;
     }
 
-    // ═══════════════ Save ═══════════════
-
     public function save(): void
     {
         $this->validate([
             'reviewer_id' => ['required', 'exists:users,id'],
         ], [
-            'reviewer_id.required' => 'Reviewer wajib dipilih.',
-            'reviewer_id.exists'   => 'Reviewer tidak valid.',
+            'reviewer_id.required' => 'Reviewer is required.',
+            'reviewer_id.exists'   => 'Reviewer is invalid.',
         ]);
 
-        $proposal = Proposal::findOrFail($this->proposal_id);
+        $proposal = Proposal::find($this->proposal_id);
+        if (! $proposal) {
+            Flux::toast('Proposal not found.', variant: 'danger');
+            return;
+        }
 
-        // Update reviewer + ubah status ke under_review
         $proposal->update([
             'reviewer_id' => $this->reviewer_id,
             'status'      => 'under_review',
         ]);
 
-        Flux::toast('Reviewer berhasil di-assign. Status berubah ke Under Review.', variant: 'success');
+        Flux::toast('Reviewer assigned. Status changed to Under Review.', variant: 'success');
         $this->dispatch('reviewer-assigned');
+        $this->dispatch('close-assign-reviewer-modal');
         $this->resetAll();
     }
 
@@ -93,25 +92,18 @@ new class extends Component {
         $this->resetValidation();
     }
 
-    // ═══════════════ Render ═══════════════
-
     public function with(): array
     {
-        $selectedReviewer = $this->reviewer_id
-            ? User::find($this->reviewer_id)
-            : null;
+        $selectedReviewer = $this->reviewer_id ? User::find($this->reviewer_id) : null;
 
         $suggestions = collect();
-
-        // Selalu query jika belum ada reviewer terpilih
         if (! $selectedReviewer) {
             $suggestions = User::query()
                 ->whereHas('role', fn ($q) => $q->where('role_code', 'REVIEWER'))
-                ->when($this->search, fn ($q) => $q->where(function ($q) {
-                    $q->where('full_name', 'like', "%{$this->search}%")
-                      ->orWhere('nidn', 'like', "%{$this->search}%")
-                      ->orWhere('email', 'like', "%{$this->search}%");
-                }))
+                ->when($this->search, fn ($q) => $q->where(fn ($q) => $q
+                    ->where('full_name', 'like', "%{$this->search}%")
+                    ->orWhere('nidn', 'like', "%{$this->search}%")
+                    ->orWhere('email', 'like', "%{$this->search}%")))
                 ->orderBy('full_name')
                 ->limit(5)
                 ->get();
@@ -134,197 +126,249 @@ new class extends Component {
                 this.errorMessage = '';
                 this.show = true;
             });
-            window.addEventListener('assign-reviewer-error', (e) => { this.errorMessage = e.detail.message; });
-            window.addEventListener('reviewer-assigned', () => { this.show = false; });
+            window.addEventListener('close-assign-reviewer-modal', () => {
+                this.show = false;
+            });
+            window.addEventListener('assign-reviewer-error', (e) => {
+                this.errorMessage = e.detail.message;
+            });
         }
     }"
-    x-show="show" x-transition.opacity x-cloak
-    class="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4"
+    x-show="show"
+    x-transition.opacity
+    x-cloak
+    x-on:keydown.escape.window="show = false"
+    class="fixed inset-0 z-[110] flex items-end sm:items-center justify-center p-0 sm:p-4"
     @click.self="show = false">
 
-    <div class="flex max-h-[90vh] w-full sm:max-w-lg flex-col overflow-hidden
-                bg-white dark:bg-zinc-900 rounded-t-2xl sm:rounded-xl shadow-2xl
-                border border-slate-200 dark:border-zinc-700"
+    <div
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+        x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+        x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+        class="flex max-h-[92vh] w-full sm:max-w-md flex-col overflow-hidden
+               bg-white dark:bg-zinc-900 rounded-t-2xl sm:rounded-xl shadow-2xl
+               border border-slate-200 dark:border-zinc-700"
         @click.stop>
 
         <form wire:submit.prevent="save" class="flex min-h-0 flex-1 flex-col">
 
-            {{-- ══════════ HEADER ══════════ --}}
-            <div class="shrink-0 bg-gradient-to-r from-violet-600 to-violet-500
-                        px-5 sm:px-6 py-4 rounded-t-2xl sm:rounded-t-xl">
+            {{-- HEADER --}}
+            <div class="shrink-0 bg-gradient-to-r from-violet-600 to-violet-500 px-4 py-3">
                 <div class="flex items-start justify-between gap-3">
-                    <div class="flex items-center gap-2.5 min-w-0 flex-1">
-                        <div class="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
-                            <flux:icon.user-plus class="size-4 text-white" />
+                    <div class="flex items-center gap-2 min-w-0">
+                        <div class="w-7 h-7 rounded-md bg-white/20 flex items-center justify-center shrink-0">
+                            <flux:icon.user-plus class="size-3.5 text-white" />
                         </div>
-                        <div class="min-w-0 flex-1">
-                            <h3 class="font-heading text-[15px] font-semibold text-white leading-tight">
+                        <div class="min-w-0">
+                            <h3 class="text-[13px] font-semibold text-white leading-tight">
                                 Assign Reviewer
                             </h3>
-                            <p class="text-[11px] text-white/75 mt-0.5 leading-snug">
-                                Pilih reviewer untuk proposal ini.
+                            <p class="text-[10.5px] text-white/75 mt-0.5 leading-tight">
+                                Select a reviewer for this proposal
                             </p>
                         </div>
                     </div>
                     <button type="button" @click="show = false"
-                        class="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center
+                        aria-label="Close"
+                        class="shrink-0 w-6 h-6 rounded-md flex items-center justify-center
                                text-white/80 hover:text-white hover:bg-white/10 transition-colors">
-                        <flux:icon.x-mark class="size-4" />
+                        <flux:icon.x-mark class="size-3.5" />
                     </button>
                 </div>
             </div>
 
-            {{-- ══════════ BODY ══════════ --}}
-            <div class="flex-1 overflow-y-auto px-5 sm:px-6 py-5 space-y-4">
+            {{-- BODY --}}
+            <div class="flex-1 overflow-y-auto px-4 py-4 space-y-3">
 
                 <template x-if="errorMessage">
-                    <div class="flex items-start gap-2 p-3 rounded-lg
-                                bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800">
-                        <flux:icon.exclamation-triangle class="size-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
-                        <p class="text-[11px] text-rose-700 dark:text-rose-300" x-text="errorMessage"></p>
+                    <div class="flex items-start gap-2 p-2.5 rounded-md
+                                bg-rose-50 dark:bg-rose-900/20
+                                border border-rose-200 dark:border-rose-800">
+                        <flux:icon.exclamation-triangle
+                            class="size-3.5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+                        <p class="text-[10.5px] leading-relaxed
+                                  text-rose-700 dark:text-rose-300"
+                            x-text="errorMessage"></p>
                     </div>
                 </template>
 
                 {{-- Proposal Info --}}
-                <div class="rounded-lg border border-slate-200 dark:border-zinc-700
-                            bg-slate-50 dark:bg-zinc-800/40 p-3">
-                    <p class="text-[10px] font-medium text-slate-500 dark:text-zinc-400 uppercase tracking-wider">
+                <div class="rounded-md border border-slate-200 dark:border-zinc-700/70
+                            bg-slate-50 dark:bg-zinc-800/40 px-2.5 py-2">
+                    <p class="text-[9.5px] uppercase tracking-wider font-semibold
+                              text-slate-500 dark:text-zinc-400">
                         Proposal
                     </p>
-                    <p class="text-[12px] font-semibold text-slate-900 dark:text-zinc-100 mt-1 line-clamp-2">
+                    <p class="mt-1 text-[11px] font-semibold leading-tight line-clamp-2
+                              text-slate-900 dark:text-zinc-100">
                         {{ $proposal_title }}
                     </p>
                 </div>
 
-                {{-- ══════════ Pilih Reviewer ══════════ --}}
+                {{-- Reviewer Selection --}}
                 <div>
-                    <label class="block text-[12px] font-medium text-slate-700 dark:text-zinc-300 mb-1.5">
-                        Pilih Reviewer <span class="text-rose-500">*</span>
+                    <label class="block text-[11px] font-medium text-slate-700 dark:text-zinc-300 mb-1.5">
+                        Select Reviewer <span class="text-rose-500">*</span>
                     </label>
 
-                    {{-- ══════════ SELECTED STATE ══════════ --}}
                     @if ($selectedReviewer)
-                        <div class="rounded-lg border border-violet-300 dark:border-violet-700
-                                    bg-violet-50 dark:bg-violet-900/20 p-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-lg bg-violet-200 dark:bg-violet-800/50
-                                            flex items-center justify-center text-[12px] font-bold
-                                            text-violet-700 dark:text-violet-300 shrink-0">
+                        {{-- Selected --}}
+                        <div class="rounded-md border border-violet-300 dark:border-violet-700
+                                    bg-violet-50 dark:bg-violet-900/20 px-2.5 py-2">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-8 h-8 rounded-md shrink-0
+                                            bg-violet-200 dark:bg-violet-800/50
+                                            flex items-center justify-center
+                                            text-[11px] font-bold
+                                            text-violet-700 dark:text-violet-300">
                                     {{ strtoupper(substr($selectedReviewer->full_name, 0, 1)) }}
                                 </div>
                                 <div class="flex-1 min-w-0">
-                                    <p class="text-[12px] font-semibold text-violet-900 dark:text-violet-100 truncate">
+                                    <p class="text-[11px] font-semibold truncate
+                                              text-violet-900 dark:text-violet-100">
                                         {{ $selectedReviewer->full_name }}
                                     </p>
-                                    <p class="text-[10px] text-violet-600 dark:text-violet-400">
+                                    <p class="text-[9.5px] text-violet-600 dark:text-violet-400">
                                         {{ $selectedReviewer->nidn }}
                                     </p>
                                 </div>
                                 <button type="button" wire:click="clearReviewer"
-                                    class="shrink-0 w-7 h-7 rounded-md flex items-center justify-center
+                                    aria-label="Change reviewer"
+                                    class="shrink-0 w-6 h-6 rounded-md flex items-center justify-center
                                            text-violet-600 dark:text-violet-400
-                                           hover:bg-violet-100 dark:hover:bg-violet-900/40 transition-colors"
-                                    title="Ganti reviewer">
-                                    <flux:icon.x-mark class="size-4" />
+                                           hover:bg-violet-100 dark:hover:bg-violet-900/40 transition-colors">
+                                    <flux:icon.x-mark class="size-3.5" />
                                 </button>
                             </div>
                         </div>
 
                         <button type="button" wire:click="clearReviewer"
-                            class="mt-2 text-[11px] text-violet-600 dark:text-violet-400
-                                   hover:underline font-medium">
-                            Ganti reviewer lain?
+                            class="mt-1.5 text-[10.5px] font-medium
+                                   text-violet-600 dark:text-violet-400 hover:underline">
+                            Change reviewer?
                         </button>
                     @else
-                        {{-- ══════════ SEARCH & SUGGESTION STATE ══════════ --}}
+                        {{-- Search --}}
                         <div class="relative">
-                            <div class="relative">
-                                <flux:icon.magnifying-glass
-                                    class="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400 pointer-events-none" />
-                                <input type="text"
-                                    wire:model.live.debounce.200ms="search"
-                                    placeholder="Cari nama, NIDN, atau email..."
-                                    autofocus
-                                    class="block w-full rounded-md shadow-sm text-[12px] pl-9 pr-3
-                                           border-slate-300 dark:border-zinc-600 bg-white dark:bg-zinc-800
-                                           text-slate-900 dark:text-zinc-100
-                                           placeholder:text-slate-400 dark:placeholder-zinc-500
-                                           focus:border-violet-500 focus:ring-violet-500 py-2.5" />
-                            </div>
+                            <flux:icon.magnifying-glass
+                                class="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5
+                                       text-slate-400 pointer-events-none" />
+                            <input type="text"
+                                wire:model.live.debounce.200ms="search"
+                                placeholder="Search by name, NIDN, or email..."
+                                autofocus
+                                class="block w-full rounded-md shadow-sm text-[11px] pl-8 pr-2.5
+                                       border-slate-300 dark:border-zinc-600
+                                       bg-white dark:bg-zinc-800
+                                       text-slate-900 dark:text-zinc-100
+                                       placeholder:text-slate-400 dark:placeholder:text-zinc-500
+                                       focus:ring-1 focus:ring-violet-500 focus:border-violet-500
+                                       py-2 transition-colors" />
+                        </div>
 
-                            {{-- Suggestion List --}}
-                            <div class="mt-2 rounded-lg border border-slate-200 dark:border-zinc-700
-                                        bg-white dark:bg-zinc-800 overflow-hidden shadow-sm">
+                        {{-- Suggestions --}}
+                        <div class="mt-2 rounded-md border border-slate-200 dark:border-zinc-700
+                                    bg-white dark:bg-zinc-800 overflow-hidden">
 
-                                @forelse ($suggestions as $reviewer)
-                                    <button type="button"
-                                        wire:key="suggestion-{{ $reviewer->id }}"
-                                        wire:click="selectReviewer({{ $reviewer->id }})"
-                                        class="w-full flex items-center gap-3 px-3 py-2.5
-                                               text-left transition-colors
-                                               hover:bg-violet-50 dark:hover:bg-violet-900/20
-                                               {{ ! $loop->last ? 'border-b border-slate-100 dark:border-zinc-700' : '' }}">
-                                        <div class="w-9 h-9 rounded-lg
-                                                    bg-violet-100 dark:bg-violet-900/40
-                                                    flex items-center justify-center text-[11px] font-bold
-                                                    text-violet-700 dark:text-violet-300 shrink-0">
-                                            {{ strtoupper(substr($reviewer->full_name, 0, 1)) }}
-                                        </div>
-                                        <div class="flex-1 min-w-0">
-                                            <p class="text-[12px] font-medium text-slate-900 dark:text-zinc-100 truncate">
-                                                {{ $reviewer->full_name }}
-                                            </p>
-                                            <p class="text-[10px] text-slate-500 dark:text-zinc-400 truncate">
-                                                {{ $reviewer->nidn }} · {{ $reviewer->email }}
-                                            </p>
-                                        </div>
-                                        <flux:icon.chevron-right class="size-3.5 text-slate-400 shrink-0" />
-                                    </button>
-                                @empty
-                                    <div class="px-3 py-6 text-center">
-                                        @if ($search)
-                                            <flux:icon.user-minus class="size-8 text-slate-300 dark:text-zinc-600 mx-auto mb-2" />
-                                            <p class="text-[11px] text-slate-500 dark:text-zinc-400">
-                                                Tidak ada reviewer ditemukan.
-                                            </p>
-                                            <p class="text-[10px] text-slate-400 dark:text-zinc-500 mt-1">
-                                                Coba kata kunci lain.
-                                            </p>
-                                        @else
-                                            <flux:icon.user-group class="size-8 text-slate-300 dark:text-zinc-600 mx-auto mb-2" />
-                                            <p class="text-[11px] text-slate-500 dark:text-zinc-400">
-                                                Ketik untuk mencari reviewer.
-                                            </p>
-                                        @endif
+                            @forelse ($suggestions as $reviewer)
+                                <button type="button"
+                                    wire:key="suggestion-{{ $reviewer->id }}"
+                                    wire:click="selectReviewer({{ $reviewer->id }})"
+                                    class="w-full flex items-center gap-2.5 px-2.5 py-2
+                                           text-left transition-colors
+                                           hover:bg-violet-50 dark:hover:bg-violet-900/20
+                                           {{ ! $loop->last ? 'border-b border-slate-100 dark:border-zinc-700/70' : '' }}">
+                                    <div class="w-7 h-7 rounded-md shrink-0
+                                                bg-violet-100 dark:bg-violet-900/40
+                                                flex items-center justify-center
+                                                text-[10px] font-bold
+                                                text-violet-700 dark:text-violet-300">
+                                        {{ strtoupper(substr($reviewer->full_name, 0, 1)) }}
                                     </div>
-                                @endforelse
-
-                                @if ($suggestions->isNotEmpty())
-                                    <div class="px-3 py-2 bg-slate-50 dark:bg-zinc-900/50
-                                                border-t border-slate-100 dark:border-zinc-700">
-                                        <p class="text-[10px] text-slate-500 dark:text-zinc-400 text-center">
-                                            Menampilkan maksimal 5 hasil
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-[11px] font-medium truncate
+                                                  text-slate-900 dark:text-zinc-100">
+                                            {{ $reviewer->full_name }}
+                                        </p>
+                                        <p class="text-[9.5px] truncate
+                                                  text-slate-500 dark:text-zinc-500">
+                                            {{ $reviewer->nidn }} · {{ $reviewer->email }}
                                         </p>
                                     </div>
-                                @endif
-                            </div>
+                                    <flux:icon.chevron-right class="size-3 text-slate-400 shrink-0" />
+                                </button>
+                            @empty
+                                <div class="px-3 py-5 text-center">
+                                    @if ($search)
+                                        <flux:icon.user-minus class="size-6 mx-auto mb-1.5
+                                            text-slate-300 dark:text-zinc-600" />
+                                        <p class="text-[10.5px] text-slate-500 dark:text-zinc-400">
+                                            No reviewer found
+                                        </p>
+                                        <p class="text-[9.5px] text-slate-400 dark:text-zinc-500 mt-0.5">
+                                            Try a different keyword
+                                        </p>
+                                    @else
+                                        <flux:icon.user-group class="size-6 mx-auto mb-1.5
+                                            text-slate-300 dark:text-zinc-600" />
+                                        <p class="text-[10.5px] text-slate-500 dark:text-zinc-400">
+                                            Type to search reviewers
+                                        </p>
+                                    @endif
+                                </div>
+                            @endforelse
+
+                            @if ($suggestions->isNotEmpty())
+                                <div class="px-2.5 py-1.5 bg-slate-50 dark:bg-zinc-900/50
+                                            border-t border-slate-100 dark:border-zinc-700/70">
+                                    <p class="text-[9.5px] text-slate-500 dark:text-zinc-400 text-center">
+                                        Showing up to 5 results
+                                    </p>
+                                </div>
+                            @endif
                         </div>
                     @endif
 
-                    @error('reviewer_id')<p class="mt-1.5 text-[11px] text-rose-600">{{ $message }}</p>@enderror
+                    @error('reviewer_id')
+                        <p class="mt-1.5 text-[10.5px] text-rose-600">{{ $message }}</p>
+                    @enderror
                 </div>
             </div>
 
-            {{-- ══════════ FOOTER ══════════ --}}
-            <div class="shrink-0 flex flex-col-reverse sm:flex-row sm:justify-end gap-2
-                        px-5 sm:px-6 py-4 border-t border-slate-200 dark:border-zinc-700
-                        bg-white dark:bg-zinc-900 rounded-b-2xl sm:rounded-b-xl">
-                <flux:button type="button" @click="show = false" variant="ghost" size="sm">Batal</flux:button>
-                <flux:button type="submit" variant="primary" size="sm"
-                    wire:loading.attr="disabled" wire:target="save">
+            {{-- FOOTER --}}
+            <div class="shrink-0 flex flex-col-reverse sm:flex-row sm:justify-end gap-1.5
+                        px-4 py-3 border-t border-slate-200 dark:border-zinc-700
+                        bg-slate-50/50 dark:bg-zinc-900/50">
+
+                <button type="button" @click="show = false"
+                    class="w-full sm:w-auto px-3 py-1.5 text-[11px] font-medium rounded-md
+                           text-slate-700 dark:text-zinc-300
+                           bg-white dark:bg-zinc-800
+                           border border-slate-300 dark:border-zinc-600
+                           hover:bg-slate-50 dark:hover:bg-zinc-700
+                           transition-colors">
+                    Cancel
+                </button>
+
+                <button type="submit"
+                    wire:loading.attr="disabled"
+                    wire:target="save"
+                    class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5
+                           px-3 py-1.5 text-[11px] font-medium rounded-md text-white
+                           bg-violet-600 hover:bg-violet-700
+                           disabled:opacity-60 disabled:cursor-wait
+                           transition-colors">
+                    <svg wire:loading wire:target="save"
+                         class="animate-spin size-3" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" opacity=".25"/>
+                        <path d="M4 12a8 8 0 018-8" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+                    </svg>
                     <span wire:loading.remove wire:target="save">Assign Reviewer</span>
-                    <span wire:loading.flex wire:target="save">Menyimpan...</span>
-                </flux:button>
+                    <span wire:loading wire:target="save">Saving...</span>
+                </button>
             </div>
         </form>
     </div>

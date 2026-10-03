@@ -47,26 +47,23 @@ Route::middleware(['auth', 'must.verify.email'])->group(function () {
     |--------------------------------------------------------------------------
     */
     Route::middleware('can:superadminOrAdmin')->prefix('admin')->name('admin.')->group(function () {
-
-        // ─── Resource Management ───
         Route::livewire('manage-periods', 'admin.manage-periods')
             ->name('manage-periods');
-
         Route::livewire('manage-schemes', 'admin.manage-schemes')
             ->name('manage-schemes');
-
         Route::livewire('manage-reviewers', 'admin.manage-reviewers')
             ->name('manage-reviewers');
-
         Route::livewire('manage-users', 'admin.manage-users')
             ->name('manage-users');
-
-        // ─── Internal: Researches & Dedications ───
         Route::livewire('internal/manage-researches', 'admin.internal.manage-researches')
             ->name('internal.manage-researches');
-
         Route::livewire('internal/manage-dedications', 'admin.internal.manage-dedications')
             ->name('internal.manage-dedications');
+
+        Route::livewire('information/manage-information', 'admin.manage-information')
+            ->name('manage-information');
+        Route::livewire('download/manage-download', 'admin.manage-download')
+            ->name('manage-download');
     });
 
     /*

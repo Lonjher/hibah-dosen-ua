@@ -14,8 +14,7 @@
 @php
 $iconClasses = Flux::classes()
     ->add('ms-auto text-zinc-400 [[data-flux-menu-item]:hover_&]:text-current')
-    // When using the outline icon variant, we need to size it down to match the default icon sizes...
-    ->add($iconVariant === 'outline' ? 'size-5' : '');
+    ->add($iconVariant === 'outline' ? 'size-4' : 'size-3');
 @endphp
 
 <ui-submenu data-flux-menu-submenu>
@@ -34,7 +33,7 @@ $iconClasses = Flux::classes()
         </x-slot:suffix>
     </flux:menu.item>
 
-    <flux:menu :keep-open="$keepOpen">
+    <flux:menu :keep-open="$keepOpen" class="[:where(&)]:min-w-[8rem] [:where(&)]:max-w-[min(16rem,calc(100vw-1rem))]">
         {{ $slot }}
     </flux:menu>
 </ui-submenu>

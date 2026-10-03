@@ -9,22 +9,23 @@ use Livewire\Component;
 
 new class extends Component {
     public AdminNoteForm $form;
-
     public ?int $proposal_id = null;
     public string $proposal_title = '';
     public ?AdminNote $lastNote = null;
-    public ?int $reviewer_id = null;
 
     #[On('open-admin-note-revision')]
     public function load(int $id): void
     {
-        $proposal = Proposal::with('reviewer')->findOrFail($id);
+        $proposal = Proposal::find($id);
+
+        if (! $proposal) {
+            Flux::toast('Proposal not found.', variant: 'danger');
+            return;
+        }
 
         $this->proposal_id    = $proposal->id;
         $this->proposal_title = $proposal->title;
-        $this->reviewer_id    = $proposal->reviewer_id;
 
-        // Ambil admin note terakhir
         $this->lastNote = AdminNote::query()
             ->where('noteable_id', $proposal->id)
             ->where('noteable_type', 'proposal')
@@ -32,7 +33,6 @@ new class extends Component {
             ->latest()
             ->first();
 
-        // Setup form
         $this->form->reset();
         $this->form->admin_id      = auth()->id();
         $this->form->noteable_id   = $proposal->id;
@@ -40,37 +40,37 @@ new class extends Component {
 
         $this->resetErrorBag();
         $this->resetValidation();
-
         $this->dispatch('show-admin-note-revision');
     }
 
     public function save(): void
     {
-        // Validasi: comment wajib diisi untuk revisi
         $this->validate([
             'form.comment' => ['required', 'string', 'min:5'],
         ], [
-            'form.comment.required' => 'Catatan revisi wajib diisi.',
-            'form.comment.min'      => 'Catatan revisi minimal 5 karakter.',
+            'form.comment.required' => 'Revision note is required.',
+            'form.comment.min'      => 'Revision note must be at least 5 characters.',
         ]);
 
-        $proposal = Proposal::findOrFail($this->proposal_id);
+        $proposal = Proposal::find($this->proposal_id);
+        if (! $proposal) {
+            Flux::toast('Proposal not found.', variant: 'danger');
+            return;
+        }
 
-        // 1. Buat AdminNote
         $this->form->create();
-
-        // 2. Update status ke revised
         $proposal->update(['status' => 'revised']);
 
-        Flux::toast('Proposal dikembalikan untuk revisi.', variant: 'success');
+        Flux::toast('Proposal sent back for revision.', variant: 'success');
         $this->dispatch('proposal-revised');
+        $this->dispatch('close-admin-note-revision-modal');
         $this->resetAll();
     }
 
     public function resetAll(): void
     {
         $this->form->reset();
-        $this->reset(['proposal_id', 'proposal_title', 'lastNote', 'reviewer_id']);
+        $this->reset(['proposal_id', 'proposal_title', 'lastNote']);
         $this->form->admin_id      = auth()->id();
         $this->form->noteable_type = 'proposal';
         $this->resetErrorBag();
@@ -88,94 +88,118 @@ new class extends Component {
                 this.errorMessage = '';
                 this.show = true;
             });
-            window.addEventListener('admin-note-revision-error', (e) => { this.errorMessage = e.detail.message; });
-            window.addEventListener('proposal-revised', () => { this.show = false; });
+            window.addEventListener('close-admin-note-revision-modal', () => {
+                this.show = false;
+            });
+            window.addEventListener('admin-note-revision-error', (e) => {
+                this.errorMessage = e.detail.message;
+            });
         }
     }"
-    x-show="show" x-transition.opacity x-cloak
-    class="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4"
+    x-show="show"
+    x-transition.opacity
+    x-cloak
+    x-on:keydown.escape.window="show = false"
+    class="fixed inset-0 z-[110] flex items-end sm:items-center justify-center p-0 sm:p-4"
     @click.self="show = false">
 
-    <div class="flex max-h-[90vh] w-full sm:max-w-lg flex-col overflow-hidden
-                bg-white dark:bg-zinc-900 rounded-t-2xl sm:rounded-xl shadow-2xl
-                border border-slate-200 dark:border-zinc-700"
+    <div
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+        x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+        x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+        class="flex max-h-[92vh] w-full sm:max-w-md flex-col overflow-hidden
+               bg-white dark:bg-zinc-900 rounded-t-2xl sm:rounded-xl shadow-2xl
+               border border-slate-200 dark:border-zinc-700"
         @click.stop>
 
         <form wire:submit.prevent="save" class="flex min-h-0 flex-1 flex-col">
 
             {{-- HEADER --}}
-            <div class="shrink-0 bg-gradient-to-r from-amber-600 to-amber-500
-                        px-5 sm:px-6 py-4 rounded-t-2xl sm:rounded-t-xl">
+            <div class="shrink-0 bg-gradient-to-r from-amber-600 to-amber-500 px-4 py-3">
                 <div class="flex items-start justify-between gap-3">
-                    <div class="flex items-center gap-2.5 min-w-0 flex-1">
-                        <div class="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
-                            <flux:icon.arrow-path class="size-4 text-white" />
+                    <div class="flex items-center gap-2 min-w-0">
+                        <div class="w-7 h-7 rounded-md bg-white/20 flex items-center justify-center shrink-0">
+                            <flux:icon.arrow-path class="size-3.5 text-white" />
                         </div>
-                        <div class="min-w-0 flex-1">
-                            <h3 class="font-heading text-[15px] font-semibold text-white leading-tight">
+                        <div class="min-w-0">
+                            <h3 class="text-[13px] font-semibold text-white leading-tight">
                                 Request Revision
                             </h3>
-                            <p class="text-[11px] text-white/75 mt-0.5 leading-snug">
-                                Berikan catatan revisi untuk pengusul.
+                            <p class="text-[10.5px] text-white/75 mt-0.5 leading-tight">
+                                Provide revision notes for the author
                             </p>
                         </div>
                     </div>
                     <button type="button" @click="show = false"
-                        class="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center
+                        aria-label="Close"
+                        class="shrink-0 w-6 h-6 rounded-md flex items-center justify-center
                                text-white/80 hover:text-white hover:bg-white/10 transition-colors">
-                        <flux:icon.x-mark class="size-4" />
+                        <flux:icon.x-mark class="size-3.5" />
                     </button>
                 </div>
             </div>
 
             {{-- BODY --}}
-            <div class="flex-1 overflow-y-auto px-5 sm:px-6 py-5 space-y-4">
+            <div class="flex-1 overflow-y-auto px-4 py-4 space-y-3">
 
                 <template x-if="errorMessage">
-                    <div class="flex items-start gap-2 p-3 rounded-lg
-                                bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800">
-                        <flux:icon.exclamation-triangle class="size-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
-                        <p class="text-[11px] text-rose-700 dark:text-rose-300" x-text="errorMessage"></p>
+                    <div class="flex items-start gap-2 p-2.5 rounded-md
+                                bg-rose-50 dark:bg-rose-900/20
+                                border border-rose-200 dark:border-rose-800">
+                        <flux:icon.exclamation-triangle
+                            class="size-3.5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+                        <p class="text-[10.5px] leading-relaxed
+                                  text-rose-700 dark:text-rose-300"
+                            x-text="errorMessage"></p>
                     </div>
                 </template>
 
                 {{-- Proposal Info --}}
-                <div class="rounded-lg border border-slate-200 dark:border-zinc-700
-                            bg-slate-50 dark:bg-zinc-800/40 p-3">
-                    <p class="text-[10px] font-medium text-slate-500 dark:text-zinc-400 uppercase tracking-wider">
+                <div class="rounded-md border border-slate-200 dark:border-zinc-700/70
+                            bg-slate-50 dark:bg-zinc-800/40 px-2.5 py-2">
+                    <p class="text-[9.5px] uppercase tracking-wider font-semibold
+                              text-slate-500 dark:text-zinc-400">
                         Proposal
                     </p>
-                    <p class="text-[12px] font-semibold text-slate-900 dark:text-zinc-100 mt-1 line-clamp-2">
+                    <p class="mt-1 text-[11px] font-semibold leading-tight line-clamp-2
+                              text-slate-900 dark:text-zinc-100">
                         {{ $proposal_title }}
                     </p>
                 </div>
 
-                {{-- Last Admin Note --}}
+                {{-- Last note --}}
                 @if ($lastNote)
-                    <div class="rounded-lg border border-amber-200 dark:border-amber-800
-                                bg-amber-50 dark:bg-amber-900/20 p-3">
-                        <div class="flex items-center gap-2 mb-1.5">
-                            <flux:icon.clock class="size-3 text-amber-600 dark:text-amber-400" />
-                            <p class="text-[10px] font-semibold text-amber-800 dark:text-amber-300 uppercase tracking-wider">
-                                Catatan Sebelumnya
+                    <div class="rounded-md border border-amber-200 dark:border-amber-800
+                                bg-amber-50 dark:bg-amber-900/20 px-2.5 py-2">
+                        <div class="flex items-center gap-1.5 mb-1">
+                            <flux:icon.clock class="size-2.5 text-amber-600 dark:text-amber-400" />
+                            <p class="text-[9.5px] font-semibold uppercase tracking-wider
+                                      text-amber-800 dark:text-amber-300">
+                                Previous Note
                             </p>
                         </div>
-                        <div class="flex items-center gap-2 mb-1">
-                            <span class="text-[10px] font-medium text-amber-800 dark:text-amber-300">
+                        <div class="flex items-center gap-1.5 mb-1 text-[9.5px]">
+                            <span class="font-medium text-amber-800 dark:text-amber-300">
                                 {{ $lastNote->admin?->full_name ?? 'Admin' }}
                             </span>
-                            <span class="text-[9px] text-amber-600 dark:text-amber-400">
+                            <span class="w-0.5 h-0.5 rounded-full bg-current opacity-60"></span>
+                            <span class="text-amber-600 dark:text-amber-400">
                                 {{ $lastNote->created_at?->diffForHumans() }}
                             </span>
                         </div>
                         @if ($lastNote->comment)
-                            <p class="text-[11px] text-amber-900 dark:text-amber-100 whitespace-pre-wrap">
+                            <p class="text-[10.5px] leading-relaxed whitespace-pre-wrap
+                                      text-amber-900 dark:text-amber-100">
                                 {{ $lastNote->comment }}
                             </p>
                         @endif
                         @if ($lastNote->recommendation)
-                            <p class="text-[10px] text-amber-700 dark:text-amber-300 mt-1">
-                                <span class="font-semibold">Rekomendasi:</span> {{ $lastNote->recommendation }}
+                            <p class="mt-1 text-[9.5px] text-amber-700 dark:text-amber-300">
+                                <span class="font-semibold">Recommendation:</span>
+                                {{ $lastNote->recommendation }}
                             </p>
                         @endif
                     </div>
@@ -183,43 +207,75 @@ new class extends Component {
 
                 {{-- Comment --}}
                 <div>
-                    <label class="block text-[12px] font-medium text-slate-700 dark:text-zinc-300 mb-1">
-                        Catatan Revisi <span class="text-rose-500">*</span>
+                    <label class="block text-[11px] font-medium text-slate-700 dark:text-zinc-300 mb-1">
+                        Revision Note <span class="text-rose-500">*</span>
                     </label>
                     <textarea wire:model="form.comment" rows="4"
-                        placeholder="Contoh: Metodologi perlu diperjelas, tambahkan referensi terbaru..."
-                        class="block w-full rounded-md shadow-sm text-[12px]
-                               border-slate-300 dark:border-zinc-600 bg-white dark:bg-zinc-800
+                        placeholder="e.g. Methodology needs clarification, add recent references..."
+                        class="block w-full rounded-md shadow-sm text-[11.5px]
+                               border-slate-300 dark:border-zinc-600
+                               bg-white dark:bg-zinc-800
                                text-slate-900 dark:text-zinc-100
-                               focus:border-amber-500 focus:ring-amber-500 py-2 px-3"></textarea>
-                    @error('form.comment')<p class="mt-1 text-[11px] text-rose-600">{{ $message }}</p>@enderror
+                               placeholder:text-slate-400 dark:placeholder:text-zinc-500
+                               focus:ring-1 focus:ring-amber-500 focus:border-amber-500
+                               py-1.5 px-2.5 resize-none transition-colors"></textarea>
+                    @error('form.comment')
+                        <p class="mt-1 text-[10.5px] text-rose-600">{{ $message }}</p>
+                    @enderror
                 </div>
 
                 {{-- Recommendation --}}
                 <div>
-                    <label class="block text-[12px] font-medium text-slate-700 dark:text-zinc-300 mb-1">
-                        Rekomendasi <span class="text-slate-400">(opsional)</span>
+                    <label class="block text-[11px] font-medium text-slate-700 dark:text-zinc-300 mb-1">
+                        Recommendation
+                        <span class="text-slate-400 dark:text-zinc-500 font-normal">(optional)</span>
                     </label>
                     <input type="text" wire:model="form.recommendation"
-                        placeholder="Contoh: Fokus pada perbaikan Bab 3"
-                        class="block w-full rounded-md shadow-sm text-[12px]
-                               border-slate-300 dark:border-zinc-600 bg-white dark:bg-zinc-800
+                        placeholder="e.g. Focus on fixing Chapter 3"
+                        class="block w-full rounded-md shadow-sm text-[11.5px]
+                               border-slate-300 dark:border-zinc-600
+                               bg-white dark:bg-zinc-800
                                text-slate-900 dark:text-zinc-100
-                               focus:border-amber-500 focus:ring-amber-500 py-2 px-3" />
-                    @error('form.recommendation')<p class="mt-1 text-[11px] text-rose-600">{{ $message }}</p>@enderror
+                               placeholder:text-slate-400 dark:placeholder:text-zinc-500
+                               focus:ring-1 focus:ring-amber-500 focus:border-amber-500
+                               py-1.5 px-2.5 transition-colors" />
+                    @error('form.recommendation')
+                        <p class="mt-1 text-[10.5px] text-rose-600">{{ $message }}</p>
+                    @enderror
                 </div>
             </div>
 
             {{-- FOOTER --}}
-            <div class="shrink-0 flex flex-col-reverse sm:flex-row sm:justify-end gap-2
-                        px-5 sm:px-6 py-4 border-t border-slate-200 dark:border-zinc-700
-                        bg-white dark:bg-zinc-900 rounded-b-2xl sm:rounded-b-xl">
-                <flux:button type="button" @click="show = false" variant="ghost" size="sm">Batal</flux:button>
-                <flux:button type="submit" variant="primary" size="sm"
-                    wire:loading.attr="disabled" wire:target="save">
-                    <span wire:loading.remove wire:target="save">Kirim Revisi</span>
-                    <span wire:loading.flex wire:target="save">Menyimpan...</span>
-                </flux:button>
+            <div class="shrink-0 flex flex-col-reverse sm:flex-row sm:justify-end gap-1.5
+                        px-4 py-3 border-t border-slate-200 dark:border-zinc-700
+                        bg-slate-50/50 dark:bg-zinc-900/50">
+
+                <button type="button" @click="show = false"
+                    class="w-full sm:w-auto px-3 py-1.5 text-[11px] font-medium rounded-md
+                           text-slate-700 dark:text-zinc-300
+                           bg-white dark:bg-zinc-800
+                           border border-slate-300 dark:border-zinc-600
+                           hover:bg-slate-50 dark:hover:bg-zinc-700
+                           transition-colors">
+                    Cancel
+                </button>
+
+                <button type="submit"
+                    wire:loading.attr="disabled"
+                    wire:target="save"
+                    class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5
+                           px-3 py-1.5 text-[11px] font-medium rounded-md text-white
+                           bg-amber-600 hover:bg-amber-700
+                           disabled:opacity-60 disabled:cursor-wait
+                           transition-colors">
+                    <svg wire:loading wire:target="save"
+                         class="animate-spin size-3" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" opacity=".25"/>
+                        <path d="M4 12a8 8 0 018-8" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+                    </svg>
+                    <span wire:loading.remove wire:target="save">Send Revision</span>
+                    <span wire:loading wire:target="save">Saving...</span>
+                </button>
             </div>
         </form>
     </div>

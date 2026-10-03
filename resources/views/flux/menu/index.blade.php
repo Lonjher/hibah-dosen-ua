@@ -2,14 +2,24 @@
 
 @php
     $classes = Flux::classes()
-        ->add('[:where(&)]:min-w-38 p-2 m-0')
-        ->add('rounded-2xl')
+        // ── Ukuran: fit konten, jangan ada minimum ──
+        ->add('!w-max !min-w-0')
+        ->add('!max-w-[min(18rem,calc(100vw-1rem))]')
+
+        // ── Reset native popover default ──
+        ->add('m-0 p-1')
+
+        // ── Visual ──
+        ->add('rounded-lg')
         ->add('border border-white/60 dark:border-zinc-700/60')
-        ->add('bg-white/75 dark:bg-zinc-800/75')
+        ->add('bg-white/80 dark:bg-zinc-800/80')
         ->add('backdrop-blur-2xl backdrop-saturate-150')
-        ->add('shadow-xl shadow-slate-900/10 dark:shadow-black/50')
+        ->add('shadow-lg shadow-slate-900/10 dark:shadow-black/50')
         ->add('ring-1 ring-black/5 dark:ring-white/5')
-        ->add('text-[12px] leading-tight')
+
+        // ── Tipografi & Overflow ──
+        ->add('text-[11px] leading-tight')
+        ->add('overflow-hidden')
         ->add('focus:outline-hidden');
 @endphp
 

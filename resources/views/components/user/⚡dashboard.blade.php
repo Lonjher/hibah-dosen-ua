@@ -252,81 +252,18 @@ new #[Title('Dashboard')] class extends Component {
 
         {{-- Resources / Info --}}
         <div class="space-y-4">
-
-            {{-- Info Terbaru --}}
-            <div class="rounded-2xl border border-slate-200 dark:border-zinc-800
-                        bg-white dark:bg-zinc-900 p-4 shadow-sm">
-                <div class="flex items-center gap-2 mb-3">
-                    <flux:icon.megaphone class="size-4 text-blue-600 dark:text-blue-400" />
-                    <h3 class="font-heading text-sm font-semibold text-slate-900 dark:text-white">
-                        Informasi Terbaru
-                    </h3>
-                </div>
-                <div class="space-y-2">
-                    <div class="p-2.5 rounded-lg bg-blue-50 dark:bg-blue-900/20
-                                border border-blue-200 dark:border-blue-800">
-                        <p class="text-[11px] font-semibold text-blue-800 dark:text-blue-300">
-                            Pendaftaran Hibah 2025/2026 Dibuka
-                        </p>
-                        <p class="text-[10px] text-blue-600 dark:text-blue-400 mt-0.5">
-                            Periode pengajuan: 1 Sept - 30 Okt 2025
-                        </p>
-                    </div>
-                    <div class="p-2.5 rounded-lg bg-violet-50 dark:bg-violet-900/20
-                                border border-violet-200 dark:border-violet-800">
-                        <p class="text-[11px] font-semibold text-violet-800 dark:text-violet-300">
-                            Update Format Proposal
-                        </p>
-                        <p class="text-[10px] text-violet-600 dark:text-violet-400 mt-0.5">
-                            Template baru wajib digunakan mulai periode ini.
-                        </p>
-                    </div>
-                </div>
-            </div>
+            <livewire:user.information-feed
+                :limit="3"
+                :refresh-interval="30"
+                storage-key="dismissed_important_info"
+                wire:key="info-all" />
 
             {{-- Download Resources --}}
-            <div class="rounded-2xl border border-slate-200 dark:border-zinc-800
-                        bg-white dark:bg-zinc-900 p-4 shadow-sm">
-                <div class="flex items-center gap-2 mb-3">
-                    <flux:icon.arrow-down-tray class="size-4 text-emerald-600 dark:text-emerald-400" />
-                    <h3 class="font-heading text-sm font-semibold text-slate-900 dark:text-white">
-                        Unduhan
-                    </h3>
-                </div>
-                <div class="space-y-1.5">
-                    @php
-                        $resources = [
-                            ['label' => 'Pedoman Hibah 2025', 'file' => 'pedoman-2025.pdf', 'size' => '2.4 MB'],
-                            ['label' => 'Template Proposal', 'file' => 'template-proposal.docx', 'size' => '256 KB'],
-                            ['label' => 'Template Progress Report', 'file' => 'template-progress.docx', 'size' => '180 KB'],
-                            ['label' => 'Template Final Report', 'file' => 'template-final.docx', 'size' => '198 KB'],
-                        ];
-                    @endphp
-
-                    @foreach ($resources as $r)
-                        <a href="{{ asset('resources/'.$r['file']) }}" download
-                            class="flex items-center gap-2 p-2 rounded-lg
-                                   hover:bg-emerald-50 dark:hover:bg-emerald-900/20
-                                   border border-transparent hover:border-emerald-200 dark:hover:border-emerald-800
-                                   transition-colors group">
-                            <div class="w-7 h-7 rounded-md bg-emerald-100 dark:bg-emerald-900/30
-                                        flex items-center justify-center shrink-0
-                                        group-hover:scale-105 transition-transform">
-                                <flux:icon.document-arrow-down class="size-3.5 text-emerald-600 dark:text-emerald-400" />
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <p class="text-[11px] font-medium text-slate-800 dark:text-zinc-200 truncate">
-                                    {{ $r['label'] }}
-                                </p>
-                                <p class="text-[9px] text-slate-500 dark:text-zinc-400">
-                                    {{ $r['size'] }}
-                                </p>
-                            </div>
-                            <flux:icon.arrow-down-tray class="size-3 text-slate-400 shrink-0" />
-                        </a>
-                    @endforeach
-                </div>
-            </div>
+            <livewire:user.download-list
+                scope="dashboard"
+                layout="grouped"
+                :limit="6"
+                wire:key="dl-side" />
         </div>
     </div>
 </div>

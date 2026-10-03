@@ -2,6 +2,7 @@
 
 use App\Models\ResearchScheme;
 use Flux\Flux;
+use Livewire\Attributes\On;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -9,9 +10,80 @@ use Livewire\WithPagination;
 new #[Title('Manage Schemes')] class extends Component {
     use WithPagination;
 
-    public $search = '';
+    public string $search = '';
 
-    public function with()
+    public function updatingSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    /* ============================================================
+     |  DELETE FLOW (modal confirmation)
+     ============================================================ */
+
+    public function confirmDelete(int $id): void
+    {
+        $scheme = ResearchScheme::find($id);
+
+        if (! $scheme) {
+            Flux::toast('Scheme not found.', variant: 'danger');
+            return;
+        }
+
+        if ($scheme->proposals()->exists()) {
+            Flux::toast('Cannot delete a scheme that has proposals.', variant: 'danger');
+            return;
+        }
+
+        $this->dispatch(
+            'confirm-delete',
+            title: 'Delete Scheme?',
+            message: 'You are about to delete:',
+            subject: $scheme->name,
+            note: 'This action cannot be undone.',
+            confirmLabel: 'Delete',
+            cancelLabel: 'Cancel',
+            action: 'deleteScheme',
+            payload: ['id' => $scheme->id],
+        );
+    }
+
+    #[On('delete-confirmed')]
+    public function handleDeleteConfirmed(string $action, array $payload = []): void
+    {
+        if ($action === 'deleteScheme') {
+            $this->deleteScheme($payload['id'] ?? null);
+        }
+    }
+
+    public function deleteScheme(?int $id): void
+    {
+        if (! $id) return;
+
+        $scheme = ResearchScheme::find($id);
+        if (! $scheme) return;
+
+        if ($scheme->proposals()->exists()) {
+            Flux::toast('Cannot delete a scheme that has proposals.', variant: 'danger');
+            return;
+        }
+
+        try {
+            $name = $scheme->name;
+            $scheme->delete();
+            Flux::toast("Scheme '{$name}' deleted.", variant: 'success');
+            $this->resetPage();
+        } catch (\Throwable $e) {
+            report($e);
+            Flux::toast('Failed to delete scheme.', variant: 'danger');
+        }
+    }
+
+    /* ============================================================
+     |  QUERY
+     ============================================================ */
+
+    public function with(): array
     {
         $schemes = ResearchScheme::query()
             ->when($this->search, fn ($q) => $q->where(function ($q) {
@@ -23,148 +95,192 @@ new #[Title('Manage Schemes')] class extends Component {
 
         return ['schemes' => $schemes];
     }
-
-    public function delete(ResearchScheme $scheme)
-    {
-        if ($scheme->proposals()->exists()) {
-            Flux::toast('Tidak dapat menghapus skema yang memiliki proposal.', variant: 'danger');
-            return;
-        }
-
-        $scheme->delete();
-        Flux::toast('Skema dihapus.');
-    }
 };
 ?>
 
-<div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950 p-3 sm:p-4 lg:p-6">
-    <div class="max-w-7xl mx-auto space-y-4">
+<div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50
+            dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950
+            p-2.5 sm:p-3 lg:p-4">
+    <div class="max-w-7xl mx-auto space-y-3">
 
+        {{-- ══════════ HEADER ══════════ --}}
         <x-dashboard-header icon="beaker" title="Manage Schemes"
             leading="Manage all research & community service schemes." />
 
-        <div class="bg-white dark:bg-zinc-900 rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-zinc-950/50 border border-slate-200 dark:border-zinc-800 overflow-hidden">
+        {{-- ══════════ MAIN CARD ══════════ --}}
+        <div class="bg-white dark:bg-zinc-900 rounded-xl
+                    shadow-sm shadow-slate-200/50 dark:shadow-zinc-950/50
+                    border border-slate-200 dark:border-zinc-800 overflow-hidden">
 
-            {{-- Toolbar --}}
-            <div class="p-3 sm:p-4 border-b border-slate-200 dark:border-zinc-800 bg-gradient-to-r from-slate-50 to-white dark:from-zinc-900 dark:to-zinc-900/50">
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            {{-- ─────── TOOLBAR ─────── --}}
+            <div class="px-2.5 sm:px-3 py-2
+                        border-b border-slate-200 dark:border-zinc-800
+                        bg-slate-50/50 dark:bg-zinc-900/50">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
 
-                    <div class="flex items-center gap-2">
-                        <div class="flex items-center justify-center w-5 h-5 rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
-                            <flux:icon.list-bullet class="size-4 text-emerald-600 dark:text-emerald-400" />
-                        </div>
-                        <p class="text-[10px] font-medium text-slate-900 dark:text-zinc-400">
-                            {{ $schemes->total() }} found
-                        </p>
+                    {{-- Left: stat pill --}}
+                    <div class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md
+                                bg-emerald-50 dark:bg-emerald-900/20
+                                border border-emerald-100 dark:border-emerald-900/40
+                                w-fit">
+                        <flux:icon.beaker class="size-3 text-emerald-600 dark:text-emerald-400" />
+                        <span class="text-[10.5px] font-semibold text-emerald-700 dark:text-emerald-300">
+                            {{ $schemes->total() }}
+                        </span>
+                        <span class="text-[10px] text-emerald-600/70 dark:text-emerald-400/70">
+                            schemes
+                        </span>
                     </div>
 
-                    <div class="flex gap-2">
-                        <div class="flex-1 sm:flex-none sm:w-64">
+                    {{-- Right: search + new --}}
+                    <div class="flex items-center gap-1.5 w-full sm:w-auto">
+                        <div class="flex-1 sm:flex-none sm:w-56">
                             <x-input-search name="q" wire:model.live="search" id="search-scheme"
-                                placeholder="Cari skema..." class="w-full text-xs" />
+                                placeholder="Search schemes..."
+                                class="w-full !text-[10.5px]" />
                         </div>
-                        <flux:button icon="plus" x-data
-                            x-on:click="$dispatch('open-add-scheme')"
-                            variant="primary" size="xs"
-                            class="shrink-0 shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30 transition-shadow text-xs">
-                            <span class="hidden sm:inline">Tambah Skema</span>
-                            <span class="sm:hidden">Tambah</span>
+                        <flux:button icon="plus" variant="primary" size="xs"
+                            x-data x-on:click="$dispatch('open-add-scheme')"
+                            class="shrink-0 !text-[10.5px]">
+                            New
                         </flux:button>
                     </div>
                 </div>
             </div>
 
-            {{-- Table --}}
+            {{-- ─────── TABLE ─────── --}}
             <div class="overflow-x-auto">
-                <table class="w-full">
+                <table class="w-full min-w-[560px]">
                     <thead>
-                        <tr class="bg-slate-50 dark:bg-zinc-900/50 border-b border-slate-200 dark:border-zinc-800">
-                            <th class="px-3 sm:px-4 py-2.5 text-left">
-                                <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-700 dark:text-zinc-300">Scheme</span>
+                        <tr class="bg-slate-50/80 dark:bg-zinc-900/50
+                                   border-b border-slate-200 dark:border-zinc-800">
+                            <th class="px-3 py-1.5 text-left text-[9.5px] font-semibold uppercase tracking-wider
+                                       text-slate-500 dark:text-zinc-400">
+                                Scheme
                             </th>
-                            <th class="hidden md:table-cell px-3 sm:px-4 py-2.5 text-left">
-                                <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-700 dark:text-zinc-300">Budget Limit</span>
+                            <th class="hidden md:table-cell px-3 py-1.5 text-left text-[9.5px] font-semibold uppercase tracking-wider
+                                       text-slate-500 dark:text-zinc-400">
+                                Budget Limit
                             </th>
-                            <th class="px-3 sm:px-4 py-2.5 text-left">
-                                <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-700 dark:text-zinc-300">Status</span>
+                            <th class="px-3 py-1.5 text-left text-[9.5px] font-semibold uppercase tracking-wider
+                                       text-slate-500 dark:text-zinc-400">
+                                Status
                             </th>
-                            <th class="px-3 sm:px-4 py-2.5 text-right">
-                                <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-700 dark:text-zinc-300">Action</span>
+                            <th class="px-3 py-1.5 text-right text-[9.5px] font-semibold uppercase tracking-wider
+                                       text-slate-500 dark:text-zinc-400">
+                                Action
                             </th>
                         </tr>
                     </thead>
 
-                    <tbody class="divide-y divide-slate-200 dark:divide-zinc-800">
+                    <tbody class="divide-y divide-slate-100 dark:divide-zinc-800/70">
                         @forelse ($schemes as $scheme)
-                            <tr class="group hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors duration-150">
+                            <tr wire:key="scheme-{{ $scheme->id }}"
+                                class="group transition-colors duration-150
+                                       hover:bg-slate-50/70 dark:hover:bg-zinc-800/40">
 
-                                <td class="px-3 sm:px-4 py-2.5">
+                                {{-- SCHEME --}}
+                                <td class="px-3 py-2">
                                     <div class="flex items-center gap-2">
-                                        <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-100 to-teal-50 dark:from-emerald-900/30 dark:to-teal-900/20 group-hover:scale-105 transition-transform">
-                                            <flux:icon.beaker class="size-3.5 text-emerald-600 dark:text-emerald-400" />
+                                        <div class="w-7 h-7 rounded-md shrink-0
+                                                    bg-gradient-to-br from-emerald-100 to-teal-50
+                                                    dark:from-emerald-900/30 dark:to-teal-900/20
+                                                    flex items-center justify-center
+                                                    ring-1 ring-white/40 dark:ring-zinc-800/40
+                                                    group-hover:scale-105 transition-transform">
+                                            <flux:icon.beaker
+                                                class="size-3.5 text-emerald-600 dark:text-emerald-400" />
                                         </div>
-                                        <div>
-                                            <p class="text-xs font-semibold text-slate-900 dark:text-white">
+                                        <div class="min-w-0">
+                                            <p class="text-[11.5px] font-semibold leading-tight truncate
+                                                      text-slate-900 dark:text-white">
                                                 {{ $scheme->name }}
                                             </p>
-                                            <p class="text-[10px] text-slate-500 dark:text-zinc-400 mt-0.5">
-                                                {{ $scheme->code }}
-                                            </p>
+                                            <div class="mt-0.5 flex items-center gap-1.5
+                                                        text-[9.5px] text-slate-500 dark:text-zinc-500">
+                                                <span class="px-1 rounded bg-slate-100 dark:bg-zinc-800
+                                                             text-slate-600 dark:text-zinc-400 font-semibold">
+                                                    {{ $scheme->code }}
+                                                </span>
+                                                {{-- Budget limit on mobile --}}
+                                                <span class="md:hidden">·</span>
+                                                <span class="md:hidden">
+                                                    Rp {{ number_format((int) $scheme->budget_limit, 0, ',', '.') }}
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
                                 </td>
 
-                                <td class="hidden md:table-cell px-3 sm:px-4 py-2.5">
-                                    <span class="text-[11px] font-medium text-slate-700 dark:text-zinc-300">
+                                {{-- BUDGET --}}
+                                <td class="hidden md:table-cell px-3 py-2">
+                                    <span class="text-[10.5px] font-medium
+                                                 text-slate-700 dark:text-zinc-300">
                                         Rp {{ number_format((int) $scheme->budget_limit, 0, ',', '.') }}
                                     </span>
                                 </td>
 
-                                <td class="px-3 sm:px-4 py-2.5">
+                                {{-- STATUS --}}
+                                <td class="px-3 py-2">
                                     @if ($scheme->is_active)
-                                        <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 text-[10px] font-semibold">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                            Aktif
+                                        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full
+                                                     bg-emerald-100 dark:bg-emerald-900/30
+                                                     text-emerald-700 dark:text-emerald-300
+                                                     text-[9.5px] font-semibold w-fit">
+                                            <span class="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></span>
+                                            Active
                                         </span>
                                     @else
-                                        <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 text-[10px] font-medium">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-                                            Nonaktif
+                                        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full
+                                                     bg-slate-100 dark:bg-zinc-800
+                                                     text-slate-600 dark:text-zinc-400
+                                                     text-[9.5px] font-medium w-fit">
+                                            <span class="w-1 h-1 rounded-full bg-slate-400 dark:bg-zinc-600"></span>
+                                            Inactive
                                         </span>
                                     @endif
                                 </td>
 
-                                <td class="px-3 sm:px-4 py-2.5 text-right">
+                                {{-- ACTION --}}
+                                <td class="px-3 py-2 text-right">
                                     <flux:dropdown position="bottom" align="end">
                                         <flux:button size="xs" variant="ghost" icon="ellipsis-horizontal"
-                                            class="rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100 dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-zinc-800" />
+                                            class="!p-1 rounded-md text-slate-400
+                                                   hover:bg-slate-100 hover:text-slate-600
+                                                   dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-zinc-300
+                                                   opacity-60 group-hover:opacity-100
+                                                   transition-opacity" />
 
-                                        <flux:menu class="min-w-[160px] text-xs">
+                                        <flux:menu class="!text-[11px]">
                                             <flux:menu.item icon="pencil-square" x-data
                                                 x-on:click="$dispatch('open-edit-scheme', { id: {{ $scheme->id }} })">
-                                                Edit Skema
+                                                Edit Scheme
                                             </flux:menu.item>
                                             <flux:menu.separator />
                                             <flux:menu.item variant="danger" icon="trash"
-                                                wire:click="delete({{ $scheme->id }})"
-                                                wire:confirm="Yakin ingin menghapus skema ini?">
-                                                Hapus Skema
+                                                wire:click="confirmDelete({{ $scheme->id }})">
+                                                Delete Scheme
                                             </flux:menu.item>
                                         </flux:menu>
                                     </flux:dropdown>
                                 </td>
                             </tr>
+
                         @empty
+                            {{-- EMPTY STATE ── --}}
                             <tr>
-                                <td colspan="4" class="px-3 sm:px-4 py-12">
-                                    <div class="flex flex-col items-center justify-center gap-3 text-center">
-                                        <div class="flex items-center justify-center w-14 h-14 rounded-xl bg-slate-100 dark:bg-zinc-800">
-                                            <flux:icon.beaker class="size-7 text-slate-400 dark:text-zinc-600" />
+                                <td colspan="4" class="px-4 py-10">
+                                    <div class="flex flex-col items-center gap-2 text-center">
+                                        <div class="w-11 h-11 rounded-lg bg-slate-100 dark:bg-zinc-800
+                                                    flex items-center justify-center">
+                                            <flux:icon.beaker class="size-5 text-slate-400 dark:text-zinc-600" />
                                         </div>
                                         <div>
-                                            <p class="text-sm font-semibold text-slate-900 dark:text-white">Belum ada skema</p>
-                                            <p class="text-[11px] text-slate-500 dark:text-zinc-400 mt-1">
-                                                Klik "Tambah Skema" untuk membuat skema baru
+                                            <p class="text-[12px] font-semibold text-slate-900 dark:text-white">
+                                                No schemes yet
+                                            </p>
+                                            <p class="text-[10.5px] text-slate-500 dark:text-zinc-400 mt-0.5">
+                                                Click "New" to create your first scheme.
                                             </p>
                                         </div>
                                     </div>
@@ -175,14 +291,18 @@ new #[Title('Manage Schemes')] class extends Component {
                 </table>
             </div>
 
+            {{-- ─────── PAGINATION ─────── --}}
             @if ($schemes->hasPages())
-                <div class="px-3 sm:px-4 py-3 border-t border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900/50">
+                <div class="px-3 py-2 border-t border-slate-200 dark:border-zinc-800
+                            bg-slate-50/50 dark:bg-zinc-900/50">
                     {{ $schemes->links() }}
                 </div>
             @endif
         </div>
     </div>
 
+    {{-- ══════════ MODALS ══════════ --}}
+    <x-confirm-delete />
     <livewire:admin.schemes.add-scheme />
     <livewire:admin.schemes.edit-scheme />
 </div>

@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Proposal;
+use Flux\Flux;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
@@ -11,16 +12,23 @@ new class extends Component {
     #[On('open-view-proposal')]
     public function load(int $id): void
     {
-        $this->proposal_id = $id;
-        $this->proposal = Proposal::with([
+        $proposal = Proposal::with([
             'author',
             'researchScheme',
             'period',
             'reviewer',
             'budgetProposals',
-            'adminNotes' => fn ($q) => $q->latest(),
-            'reviewerNotes' => fn ($q) => $q->latest(),
-        ])->findOrFail($id);
+            'adminNotes'    => fn ($q) => $q->latest()->with('admin'),
+            'reviewerNotes' => fn ($q) => $q->latest()->with('reviewer'),
+        ])->find($id);
+
+        if (! $proposal) {
+            Flux::toast('Proposal not found.', variant: 'danger');
+            return;
+        }
+
+        $this->proposal_id = $id;
+        $this->proposal    = $proposal;
 
         $this->dispatch('show-view-proposal');
     }
@@ -39,7 +47,9 @@ new class extends Component {
             'budgetTotal'     => $budgetTotal,
             'budgetLimit'     => $budgetLimit,
             'budgetRemaining' => $budgetLimit - $budgetTotal,
-            'budgetPercent'   => $budgetLimit > 0 ? min(round(($budgetTotal / $budgetLimit) * 100, 1), 100) : 0,
+            'budgetPercent'   => $budgetLimit > 0
+                ? min(round(($budgetTotal / $budgetLimit) * 100, 1), 100)
+                : 0,
         ];
     }
 };
@@ -52,160 +62,254 @@ new class extends Component {
             window.addEventListener('show-view-proposal', () => { this.show = true; });
         }
     }"
-    x-show="show" x-transition.opacity x-cloak
+    x-show="show"
+    x-transition.opacity
+    x-cloak
+    x-on:keydown.escape.window="show = false"
     class="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4"
     @click.self="show = false">
 
-    <div class="flex max-h-[90vh] w-full sm:max-w-3xl flex-col overflow-hidden
-                bg-white dark:bg-zinc-900 rounded-t-2xl sm:rounded-xl shadow-2xl
-                border border-slate-200 dark:border-zinc-700"
+    <div
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+        x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+        x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+        class="flex max-h-[92vh] w-full sm:max-w-2xl flex-col overflow-hidden
+               bg-white dark:bg-zinc-900 rounded-t-2xl sm:rounded-xl shadow-2xl
+               border border-slate-200 dark:border-zinc-700"
         @click.stop>
 
         @if ($proposal)
             @php $meta = $proposal->statusMeta(); @endphp
 
-            {{-- HEADER --}}
-            <div class="shrink-0 bg-gradient-to-r from-slate-700 to-slate-600
-                        px-5 sm:px-6 py-4 rounded-t-2xl sm:rounded-t-xl">
+            {{-- ══════════ HEADER (indigo → violet) ══════════ --}}
+            <div class="shrink-0 bg-gradient-to-r from-indigo-600 to-violet-500 px-4 py-3">
                 <div class="flex items-start justify-between gap-3">
-                    <div class="flex items-center gap-2.5 min-w-0 flex-1">
-                        <div class="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
-                            <flux:icon.eye class="size-4 text-white" />
+                    <div class="flex items-center gap-2 min-w-0 flex-1">
+                        <div class="w-7 h-7 rounded-md bg-white/20 flex items-center justify-center shrink-0">
+                            <flux:icon.eye class="size-3.5 text-white" />
                         </div>
                         <div class="min-w-0 flex-1">
-                            <h3 class="font-heading text-[15px] font-semibold text-white leading-tight line-clamp-2">
+                            <h3 class="text-[13px] font-semibold text-white leading-tight line-clamp-2">
                                 {{ $proposal->title }}
                             </h3>
-                            <div class="flex items-center gap-2 mt-1">
-                                <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full {{ $meta['class'] }}">
+                            <div class="flex items-center gap-1.5 mt-1 flex-wrap">
+                                <span class="text-[9.5px] font-semibold px-1.5 py-0.5 rounded-full {{ $meta['class'] }}">
                                     {{ $meta['label'] }}
                                 </span>
-                                <span class="text-[10px] text-white/70">
-                                    {{ $proposal->is_research ? 'Penelitian' : 'Pengabdian' }}
+                                <span class="text-[9.5px] text-white/75">
+                                    {{ $proposal->is_research ? 'Research' : 'Dedication' }}
                                 </span>
                             </div>
                         </div>
                     </div>
                     <button type="button" @click="show = false"
-                        class="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center
+                        aria-label="Close"
+                        class="shrink-0 w-6 h-6 rounded-md flex items-center justify-center
                                text-white/80 hover:text-white hover:bg-white/10 transition-colors">
-                        <flux:icon.x-mark class="size-4" />
+                        <flux:icon.x-mark class="size-3.5" />
                     </button>
                 </div>
             </div>
 
-            {{-- BODY --}}
-            <div class="flex-1 overflow-y-auto px-5 sm:px-6 py-5 space-y-4">
+            {{-- ══════════ BODY ══════════ --}}
+            <div class="flex-1 overflow-y-auto px-4 py-4 space-y-3">
 
-                {{-- Metadata --}}
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div class="rounded-lg border border-slate-200 dark:border-zinc-700
-                                bg-slate-50 dark:bg-zinc-800/40 p-3">
-                        <p class="text-[10px] font-medium text-slate-500 dark:text-zinc-400 uppercase tracking-wider">Author</p>
-                        <p class="text-[12px] font-semibold text-slate-900 dark:text-zinc-100 mt-1">
+                {{-- ─────── METADATA ─────── --}}
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                    <div class="rounded-md border border-indigo-100 dark:border-indigo-900/40
+                                bg-indigo-50/50 dark:bg-indigo-900/10 px-2.5 py-2">
+                        <div class="flex items-center gap-1 mb-0.5">
+                            <flux:icon.user class="size-2.5 text-indigo-500 dark:text-indigo-400" />
+                            <p class="text-[9px] uppercase tracking-wider font-semibold
+                                      text-indigo-600 dark:text-indigo-400">
+                                Author
+                            </p>
+                        </div>
+                        <p class="text-[11px] font-semibold truncate
+                                  text-slate-900 dark:text-zinc-100">
                             {{ $proposal->author?->full_name ?? '—' }}
                         </p>
                     </div>
-                    <div class="rounded-lg border border-slate-200 dark:border-zinc-700
-                                bg-slate-50 dark:bg-zinc-800/40 p-3">
-                        <p class="text-[10px] font-medium text-slate-500 dark:text-zinc-400 uppercase tracking-wider">Reviewer</p>
-                        <p class="text-[12px] font-semibold text-slate-900 dark:text-zinc-100 mt-1">
-                            {{ $proposal->reviewer?->full_name ?? 'Belum di-assign' }}
+
+                    <div class="rounded-md border border-violet-100 dark:border-violet-900/40
+                                bg-violet-50/50 dark:bg-violet-900/10 px-2.5 py-2">
+                        <div class="flex items-center gap-1 mb-0.5">
+                            <flux:icon.clipboard-document-check class="size-2.5 text-violet-500 dark:text-violet-400" />
+                            <p class="text-[9px] uppercase tracking-wider font-semibold
+                                      text-violet-600 dark:text-violet-400">
+                                Reviewer
+                            </p>
+                        </div>
+                        <p class="text-[11px] font-semibold truncate
+                                  text-slate-900 dark:text-zinc-100">
+                            {{ $proposal->reviewer?->full_name ?? 'Not assigned' }}
                         </p>
                     </div>
-                    <div class="rounded-lg border border-slate-200 dark:border-zinc-700
-                                bg-slate-50 dark:bg-zinc-800/40 p-3">
-                        <p class="text-[10px] font-medium text-slate-500 dark:text-zinc-400 uppercase tracking-wider">Skema</p>
-                        <p class="text-[12px] font-semibold text-slate-900 dark:text-zinc-100 mt-1">
+
+                    <div class="rounded-md border border-sky-100 dark:border-sky-900/40
+                                bg-sky-50/50 dark:bg-sky-900/10 px-2.5 py-2">
+                        <div class="flex items-center gap-1 mb-0.5">
+                            <flux:icon.beaker class="size-2.5 text-sky-500 dark:text-sky-400" />
+                            <p class="text-[9px] uppercase tracking-wider font-semibold
+                                      text-sky-600 dark:text-sky-400">
+                                Scheme
+                            </p>
+                        </div>
+                        <p class="text-[11px] font-semibold truncate
+                                  text-slate-900 dark:text-zinc-100">
                             {{ $proposal->researchScheme?->name ?? '—' }}
                         </p>
                     </div>
-                    <div class="rounded-lg border border-slate-200 dark:border-zinc-700
-                                bg-slate-50 dark:bg-zinc-800/40 p-3">
-                        <p class="text-[10px] font-medium text-slate-500 dark:text-zinc-400 uppercase tracking-wider">Periode</p>
-                        <p class="text-[12px] font-semibold text-slate-900 dark:text-zinc-100 mt-1">
+
+                    <div class="rounded-md border border-amber-100 dark:border-amber-900/40
+                                bg-amber-50/50 dark:bg-amber-900/10 px-2.5 py-2">
+                        <div class="flex items-center gap-1 mb-0.5">
+                            <flux:icon.calendar-days class="size-2.5 text-amber-500 dark:text-amber-400" />
+                            <p class="text-[9px] uppercase tracking-wider font-semibold
+                                      text-amber-600 dark:text-amber-400">
+                                Period
+                            </p>
+                        </div>
+                        <p class="text-[11px] font-semibold truncate
+                                  text-slate-900 dark:text-zinc-100">
                             {{ $proposal->period?->periode ?? '—' }}
                         </p>
                     </div>
                 </div>
 
-                {{-- Keywords --}}
-                <div>
-                    <p class="text-[10px] font-medium text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-1">Keywords</p>
-                    <div class="flex flex-wrap gap-1.5">
-                        @foreach (array_filter(array_map('trim', explode(',', $proposal->keywords ?? ''))) as $kw)
-                            <span class="text-[10px] px-2 py-0.5 rounded-full
-                                         bg-slate-100 dark:bg-zinc-800
-                                         text-slate-700 dark:text-zinc-300">
-                                {{ $kw }}
-                            </span>
-                        @endforeach
+                {{-- ─────── KEYWORDS ─────── --}}
+                @php
+                    $keywords = array_filter(array_map('trim', explode(',', $proposal->keywords ?? '')));
+                @endphp
+
+                @if (count($keywords) > 0)
+                    <div>
+                        <div class="flex items-center gap-1.5 mb-1.5">
+                            <flux:icon.tag class="size-3 text-indigo-500 dark:text-indigo-400" />
+                            <p class="text-[9.5px] uppercase tracking-wider font-semibold
+                                      text-slate-500 dark:text-zinc-400">
+                                Keywords
+                            </p>
+                        </div>
+                        <div class="flex flex-wrap gap-1">
+                            @foreach ($keywords as $kw)
+                                <span class="text-[9.5px] px-1.5 py-0.5 rounded-md font-medium
+                                             bg-indigo-50 dark:bg-indigo-900/20
+                                             text-indigo-700 dark:text-indigo-300
+                                             border border-indigo-100 dark:border-indigo-900/40">
+                                    {{ $kw }}
+                                </span>
+                            @endforeach
+                        </div>
                     </div>
-                </div>
+                @endif
 
-                {{-- Summary --}}
+                {{-- ─────── SUMMARY ─────── --}}
                 <div>
-                    <p class="text-[10px] font-medium text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-1">Ringkasan</p>
-                    <p class="text-[11px] text-slate-700 dark:text-zinc-300 leading-relaxed whitespace-pre-wrap">
-                        {{ $proposal->summary }}
-                    </p>
-                </div>
-
-                {{-- Budget --}}
-                <div>
-                    <div class="flex items-center justify-between mb-2">
-                        <p class="text-[10px] font-medium text-slate-500 dark:text-zinc-400 uppercase tracking-wider">Anggaran</p>
-                        <p class="text-[11px] font-bold text-slate-900 dark:text-zinc-100">
-                            Rp {{ number_format($budgetTotal, 0, ',', '.') }}
-                            <span class="text-slate-400 font-normal">/ Rp {{ number_format($budgetLimit, 0, ',', '.') }}</span>
+                    <div class="flex items-center gap-1.5 mb-1.5">
+                        <flux:icon.document-text class="size-3 text-indigo-500 dark:text-indigo-400" />
+                        <p class="text-[9.5px] uppercase tracking-wider font-semibold
+                                  text-slate-500 dark:text-zinc-400">
+                            Summary
                         </p>
                     </div>
-                    <div class="h-1.5 rounded-full bg-slate-200 dark:bg-zinc-700 overflow-hidden mb-2">
-                        <div class="h-full rounded-full bg-emerald-500" style="width: {{ $budgetPercent }}%"></div>
+                    <div class="rounded-md border border-slate-200 dark:border-zinc-700/70
+                                bg-slate-50 dark:bg-zinc-800/40
+                                px-2.5 py-2
+                                text-[10.5px] leading-relaxed whitespace-pre-wrap
+                                text-slate-700 dark:text-zinc-300
+                                max-h-40 overflow-y-auto">
+                        {{ $proposal->summary }}
                     </div>
-                    <div class="space-y-1.5">
+                </div>
+
+                {{-- ─────── BUDGET ─────── --}}
+                <div>
+                    <div class="flex items-center justify-between gap-2 mb-1.5">
+                        <div class="flex items-center gap-1.5">
+                            <flux:icon.banknotes class="size-3 text-emerald-500 dark:text-emerald-400" />
+                            <p class="text-[9.5px] uppercase tracking-wider font-semibold
+                                      text-slate-500 dark:text-zinc-400">
+                                Budget
+                            </p>
+                        </div>
+                        <p class="text-[10.5px] font-bold text-slate-900 dark:text-zinc-100">
+                            Rp {{ number_format($budgetTotal, 0, ',', '.') }}
+                            <span class="text-slate-400 dark:text-zinc-500 font-normal text-[9.5px]">
+                                / Rp {{ number_format($budgetLimit, 0, ',', '.') }}
+                            </span>
+                        </p>
+                    </div>
+
+                    <div class="h-1.5 rounded-full bg-slate-200 dark:bg-zinc-700 overflow-hidden mb-2">
+                        <div class="h-full rounded-full
+                                    bg-gradient-to-r from-indigo-500 to-violet-500
+                                    transition-all duration-500"
+                            style="width: {{ $budgetPercent }}%"></div>
+                    </div>
+
+                    <div class="space-y-1">
                         @forelse ($proposal->budgetProposals as $item)
-                            <div class="flex items-center justify-between gap-3 p-2 rounded-md
-                                        bg-slate-50 dark:bg-zinc-800/40">
-                                <span class="text-[11px] text-slate-700 dark:text-zinc-300 truncate">
+                            <div class="flex items-center justify-between gap-3 px-2 py-1.5 rounded-md
+                                        bg-slate-50 dark:bg-zinc-800/40
+                                        border border-slate-100 dark:border-zinc-800/60">
+                                <span class="text-[10.5px] text-slate-700 dark:text-zinc-300 truncate">
                                     {{ $item->item_name }}
                                 </span>
-                                <span class="text-[11px] font-medium text-slate-900 dark:text-zinc-100 whitespace-nowrap">
+                                <span class="text-[10.5px] font-semibold whitespace-nowrap
+                                             text-slate-900 dark:text-zinc-100">
                                     Rp {{ number_format($item->amount, 0, ',', '.') }}
                                 </span>
                             </div>
                         @empty
-                            <p class="text-[11px] text-slate-400 dark:text-zinc-500 italic">Belum ada item anggaran.</p>
+                            <p class="text-[10.5px] text-slate-400 dark:text-zinc-500 italic text-center py-3">
+                                No budget items yet.
+                            </p>
                         @endforelse
                     </div>
                 </div>
 
-                {{-- Admin Notes --}}
+                {{-- ─────── ADMIN NOTES ─────── --}}
                 @if ($proposal->adminNotes->isNotEmpty())
                     <div>
-                        <p class="text-[10px] font-medium text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-2">
-                            Admin Notes ({{ $proposal->adminNotes->count() }})
-                        </p>
-                        <div class="space-y-2">
+                        <div class="flex items-center gap-1.5 mb-1.5">
+                            <flux:icon.chat-bubble-left-right class="size-3 text-amber-500 dark:text-amber-400" />
+                            <p class="text-[9.5px] uppercase tracking-wider font-semibold
+                                      text-slate-500 dark:text-zinc-400">
+                                Admin Notes
+                            </p>
+                            <span class="text-[9px] font-bold px-1.5 rounded-full
+                                         bg-amber-100 text-amber-700
+                                         dark:bg-amber-900/40 dark:text-amber-300">
+                                {{ $proposal->adminNotes->count() }}
+                            </span>
+                        </div>
+                        <div class="space-y-1.5">
                             @foreach ($proposal->adminNotes as $note)
-                                <div class="rounded-lg border border-amber-200 dark:border-amber-800
-                                            bg-amber-50 dark:bg-amber-900/20 p-2.5">
-                                    <div class="flex items-center gap-2 mb-1">
-                                        <span class="text-[10px] font-medium text-amber-800 dark:text-amber-300">
+                                <div class="rounded-md border border-amber-200 dark:border-amber-800/60
+                                            bg-amber-50 dark:bg-amber-900/15 px-2.5 py-2">
+                                    <div class="flex items-center gap-1.5 mb-1 text-[9.5px]">
+                                        <span class="font-semibold text-amber-800 dark:text-amber-300">
                                             {{ $note->admin?->full_name ?? 'Admin' }}
                                         </span>
-                                        <span class="text-[9px] text-amber-600 dark:text-amber-400">
+                                        <span class="w-0.5 h-0.5 rounded-full bg-current opacity-60"></span>
+                                        <span class="text-amber-600 dark:text-amber-400">
                                             {{ $note->created_at?->diffForHumans() }}
                                         </span>
                                     </div>
                                     @if ($note->comment)
-                                        <p class="text-[11px] text-amber-900 dark:text-amber-100 whitespace-pre-wrap">
+                                        <p class="text-[10.5px] leading-relaxed whitespace-pre-wrap
+                                                  text-amber-900 dark:text-amber-100">
                                             {{ $note->comment }}
                                         </p>
                                     @endif
                                     @if ($note->recommendation)
-                                        <p class="text-[10px] text-amber-700 dark:text-amber-300 mt-1">
-                                            <span class="font-semibold">Rekomendasi:</span> {{ $note->recommendation }}
+                                        <p class="mt-1 text-[9.5px] text-amber-700 dark:text-amber-300">
+                                            <span class="font-semibold">Recommendation:</span>
+                                            {{ $note->recommendation }}
                                         </p>
                                     @endif
                                 </div>
@@ -214,37 +318,57 @@ new class extends Component {
                     </div>
                 @endif
 
-                {{-- Reviewer Notes --}}
+                {{-- ─────── REVIEWER NOTES ─────── --}}
                 @if ($proposal->reviewerNotes->isNotEmpty())
                     <div>
-                        <p class="text-[10px] font-medium text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-2">
-                            Reviewer Notes ({{ $proposal->reviewerNotes->count() }})
-                        </p>
-                        <div class="space-y-2">
+                        <div class="flex items-center gap-1.5 mb-1.5">
+                            <flux:icon.clipboard-document-check class="size-3 text-violet-500 dark:text-violet-400" />
+                            <p class="text-[9.5px] uppercase tracking-wider font-semibold
+                                      text-slate-500 dark:text-zinc-400">
+                                Reviewer Notes
+                            </p>
+                            <span class="text-[9px] font-bold px-1.5 rounded-full
+                                         bg-violet-100 text-violet-700
+                                         dark:bg-violet-900/40 dark:text-violet-300">
+                                {{ $proposal->reviewerNotes->count() }}
+                            </span>
+                        </div>
+                        <div class="space-y-1.5">
                             @foreach ($proposal->reviewerNotes as $note)
-                                <div class="rounded-lg border border-violet-200 dark:border-violet-800
-                                            bg-violet-50 dark:bg-violet-900/20 p-2.5">
-                                    <div class="flex items-center gap-2 mb-1">
-                                        <span class="text-[10px] font-medium text-violet-800 dark:text-violet-300">
+                                <div class="rounded-md border border-violet-200 dark:border-violet-800/60
+                                            bg-violet-50 dark:bg-violet-900/15 px-2.5 py-2">
+                                    <div class="flex items-center gap-1.5 mb-1 flex-wrap text-[9.5px]">
+                                        <span class="font-semibold text-violet-800 dark:text-violet-300">
                                             {{ $note->reviewer?->full_name ?? 'Reviewer' }}
                                         </span>
-                                        <span class="text-[9px] text-violet-600 dark:text-violet-400">
+                                        <span class="w-0.5 h-0.5 rounded-full bg-current opacity-60"></span>
+                                        <span class="text-violet-600 dark:text-violet-400">
                                             {{ $note->created_at?->diffForHumans() }}
                                         </span>
                                         @if ($note->is_approved)
-                                            <span class="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
-                                                Approved
+                                            <span class="ml-auto text-[9px] px-1.5 py-0.5 rounded-full font-semibold
+                                                         bg-emerald-100 text-emerald-700
+                                                         dark:bg-emerald-900/40 dark:text-emerald-300">
+                                                ✓ Approved
+                                            </span>
+                                        @else
+                                            <span class="ml-auto text-[9px] px-1.5 py-0.5 rounded-full font-semibold
+                                                         bg-amber-100 text-amber-700
+                                                         dark:bg-amber-900/40 dark:text-amber-300">
+                                                Revision
                                             </span>
                                         @endif
                                     </div>
                                     @if ($note->comment)
-                                        <p class="text-[11px] text-violet-900 dark:text-violet-100 whitespace-pre-wrap">
+                                        <p class="text-[10.5px] leading-relaxed whitespace-pre-wrap
+                                                  text-violet-900 dark:text-violet-100">
                                             {{ $note->comment }}
                                         </p>
                                     @endif
                                     @if ($note->recommendation)
-                                        <p class="text-[10px] text-violet-700 dark:text-violet-300 mt-1">
-                                            <span class="font-semibold">Rekomendasi:</span> {{ $note->recommendation }}
+                                        <p class="mt-1 text-[9.5px] text-violet-700 dark:text-violet-300">
+                                            <span class="font-semibold">Recommendation:</span>
+                                            {{ $note->recommendation }}
                                         </p>
                                     @endif
                                 </div>
@@ -254,11 +378,19 @@ new class extends Component {
                 @endif
             </div>
 
-            {{-- FOOTER --}}
-            <div class="shrink-0 flex justify-end gap-2
-                        px-5 sm:px-6 py-4 border-t border-slate-200 dark:border-zinc-700
-                        bg-white dark:bg-zinc-900 rounded-b-2xl sm:rounded-b-xl">
-                <flux:button type="button" @click="show = false" variant="ghost" size="sm">Tutup</flux:button>
+            {{-- ══════════ FOOTER ══════════ --}}
+            <div class="shrink-0 flex justify-end gap-1.5
+                        px-4 py-3 border-t border-slate-200 dark:border-zinc-700
+                        bg-slate-50/50 dark:bg-zinc-900/50">
+                <button type="button" @click="show = false"
+                    class="px-3 py-1.5 text-[11px] font-medium rounded-md
+                           text-slate-700 dark:text-zinc-300
+                           bg-white dark:bg-zinc-800
+                           border border-slate-300 dark:border-zinc-600
+                           hover:bg-slate-50 dark:hover:bg-zinc-700
+                           transition-colors">
+                    Close
+                </button>
             </div>
         @endif
     </div>

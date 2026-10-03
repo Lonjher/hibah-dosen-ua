@@ -18,9 +18,17 @@ new class extends Component {
     #[On('open-edit-admin')]
     public function load(int $id): void
     {
-        $user = User::findOrFail($id);
+        $user = User::find($id);
+
+        if (! $user) {
+            Flux::toast('Admin not found.', variant: 'danger');
+            return;
+        }
+
         $this->editingId = $id;
         $this->form->setUser($user);
+        $this->resetErrorBag();
+        $this->resetValidation();
         $this->dispatch('show-edit-admin');
     }
 
@@ -28,12 +36,19 @@ new class extends Component {
     {
         try {
             $this->form->update();
-            Flux::toast('Admin berhasil diperbarui.');
-            $this->dispatch('admin-updated', message: 'Admin berhasil diperbarui.');
+
+            Flux::toast('Admin updated successfully.', variant: 'success');
+            $this->dispatch('admin-updated', message: 'Admin updated successfully.');
+            $this->dispatch('close-edit-admin-modal');
+
             $this->editingId = null;
+
         } catch (\Illuminate\Validation\ValidationException $e) {
             $this->dispatch('admin-error', message: $e->getMessage());
             throw $e;
+        } catch (\Throwable $e) {
+            report($e);
+            $this->dispatch('admin-error', message: 'Failed to update admin. Please try again.');
         }
     }
 };
@@ -48,205 +63,285 @@ new class extends Component {
                 this.errorMessage = '';
                 this.show = true;
             });
-            window.addEventListener('admin-error', (e) => { this.errorMessage = e.detail.message; });
-            window.addEventListener('admin-updated', () => { this.show = false; });
+            window.addEventListener('close-edit-admin-modal', () => {
+                this.show = false;
+            });
+            window.addEventListener('admin-error', (e) => {
+                this.errorMessage = e.detail.message;
+            });
         }
     }"
-    x-show="show" x-transition.opacity x-cloak
+    x-show="show"
+    x-transition.opacity
+    x-cloak
+    x-on:keydown.escape.window="show = false"
     class="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4"
     @click.self="show = false">
 
-    <div class="flex max-h-[90vh] w-full sm:max-w-2xl flex-col overflow-hidden
-                bg-white dark:bg-zinc-900 rounded-t-2xl sm:rounded-xl shadow-2xl
-                border border-slate-200 dark:border-zinc-700" @click.stop>
+    <div
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+        x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+        x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+        class="flex max-h-[92vh] w-full sm:max-w-lg flex-col overflow-hidden
+               bg-white dark:bg-zinc-900 rounded-t-2xl sm:rounded-xl shadow-2xl
+               border border-slate-200 dark:border-zinc-700"
+        @click.stop>
 
         <form wire:submit.prevent="save" class="flex min-h-0 flex-1 flex-col">
 
-            <div class="shrink-0 bg-gradient-to-r from-blue-600 to-blue-500
-                        px-5 sm:px-6 py-4 rounded-t-2xl sm:rounded-t-xl">
+            {{-- ══════════ HEADER ══════════ --}}
+            <div class="shrink-0 bg-gradient-to-r from-blue-600 to-blue-500 px-4 py-3">
                 <div class="flex items-start justify-between gap-3">
-                    <div class="flex items-center gap-2.5 min-w-0 flex-1">
-                        <div class="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
-                            <flux:icon.pencil-square class="size-4 text-white" />
+                    <div class="flex items-center gap-2 min-w-0">
+                        <div class="w-7 h-7 rounded-md bg-white/20 flex items-center justify-center shrink-0">
+                            <flux:icon.pencil-square class="size-3.5 text-white" />
                         </div>
-                        <div class="min-w-0 flex-1">
-                            <h3 class="font-heading text-[15px] font-semibold text-white leading-tight">
+                        <div class="min-w-0">
+                            <h3 class="text-[13px] font-semibold text-white leading-tight">
                                 Edit Admin
                             </h3>
-                            <p class="text-[11px] text-white/75 mt-0.5 leading-snug">
-                                Perbarui data administrator.
+                            <p class="text-[10.5px] text-white/75 mt-0.5 leading-tight">
+                                Update the administrator details
                             </p>
                         </div>
                     </div>
                     <button type="button" @click="show = false"
-                        class="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center
-                               text-white/80 hover:text-white hover:bg-white/10 transition-colors">
-                        <flux:icon.x-mark class="size-4" />
+                        aria-label="Close"
+                        class="shrink-0 w-6 h-6 rounded-md flex items-center justify-center
+                               text-white/80 hover:text-white hover:bg-white/10
+                               transition-colors">
+                        <flux:icon.x-mark class="size-3.5" />
                     </button>
                 </div>
             </div>
 
-            <div class="flex-1 overflow-y-auto px-5 sm:px-6 py-5 space-y-4">
+            {{-- ══════════ BODY ══════════ --}}
+            <div class="flex-1 overflow-y-auto px-4 py-4 space-y-3">
 
+                {{-- Global Error --}}
                 <template x-if="errorMessage">
-                    <div class="flex items-start gap-2 p-3 rounded-lg
-                                bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800">
-                        <flux:icon.exclamation-triangle class="size-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
-                        <p class="text-[11px] text-rose-700 dark:text-rose-300" x-text="errorMessage"></p>
+                    <div class="flex items-start gap-2 p-2.5 rounded-md
+                                bg-rose-50 dark:bg-rose-900/20
+                                border border-rose-200 dark:border-rose-800">
+                        <flux:icon.exclamation-triangle
+                            class="size-3.5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+                        <p class="text-[10.5px] leading-relaxed
+                                  text-rose-700 dark:text-rose-300"
+                            x-text="errorMessage"></p>
                     </div>
                 </template>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {{-- NIDN + Full Name --}}
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <div>
-                        <label class="block text-[12px] font-medium text-slate-700 dark:text-zinc-300 mb-1">
+                        <label class="block text-[11px] font-medium text-slate-700 dark:text-zinc-300 mb-1">
                             NIDN <span class="text-rose-500">*</span>
                         </label>
                         <input type="text" wire:model="form.nidn"
-                            class="block w-full rounded-md shadow-sm text-[12px]
-                                   border-slate-300 dark:border-zinc-600 bg-white dark:bg-zinc-800
+                            class="block w-full rounded-md shadow-sm text-[11.5px]
+                                   border-slate-300 dark:border-zinc-600
+                                   bg-white dark:bg-zinc-800
                                    text-slate-900 dark:text-zinc-100
-                                   focus:border-blue-500 focus:ring-blue-500 py-2 px-3" />
+                                   focus:ring-1 focus:ring-blue-500 focus:border-blue-500
+                                   py-1.5 px-2.5 transition-colors" />
                         @error('form.nidn')
-                            <p class="mt-1 flex items-center gap-1 text-[11px] text-rose-600 dark:text-rose-400">
-                                <flux:icon.exclamation-circle class="size-3 shrink-0" /> {{ $message }}
+                            <p class="mt-1 flex items-center gap-1 text-[10.5px] text-rose-600">
+                                <flux:icon.exclamation-circle class="size-3 shrink-0" />
+                                {{ $message }}
                             </p>
                         @enderror
                     </div>
 
                     <div>
-                        <label class="block text-[12px] font-medium text-slate-700 dark:text-zinc-300 mb-1">
+                        <label class="block text-[11px] font-medium text-slate-700 dark:text-zinc-300 mb-1">
                             Full Name <span class="text-rose-500">*</span>
                         </label>
                         <input type="text" wire:model="form.full_name"
-                            class="block w-full rounded-md shadow-sm text-[12px]
-                                   border-slate-300 dark:border-zinc-600 bg-white dark:bg-zinc-800
+                            class="block w-full rounded-md shadow-sm text-[11.5px]
+                                   border-slate-300 dark:border-zinc-600
+                                   bg-white dark:bg-zinc-800
                                    text-slate-900 dark:text-zinc-100
-                                   focus:border-blue-500 focus:ring-blue-500 py-2 px-3" />
+                                   focus:ring-1 focus:ring-blue-500 focus:border-blue-500
+                                   py-1.5 px-2.5 transition-colors" />
                         @error('form.full_name')
-                            <p class="mt-1 flex items-center gap-1 text-[11px] text-rose-600 dark:text-rose-400">
-                                <flux:icon.exclamation-circle class="size-3 shrink-0" /> {{ $message }}
+                            <p class="mt-1 flex items-center gap-1 text-[10.5px] text-rose-600">
+                                <flux:icon.exclamation-circle class="size-3 shrink-0" />
+                                {{ $message }}
                             </p>
                         @enderror
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {{-- Email + Password --}}
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <div>
-                        <label class="block text-[12px] font-medium text-slate-700 dark:text-zinc-300 mb-1">
+                        <label class="block text-[11px] font-medium text-slate-700 dark:text-zinc-300 mb-1">
                             Email <span class="text-rose-500">*</span>
                         </label>
                         <input type="email" wire:model="form.email"
-                            class="block w-full rounded-md shadow-sm text-[12px]
-                                   border-slate-300 dark:border-zinc-600 bg-white dark:bg-zinc-800
+                            class="block w-full rounded-md shadow-sm text-[11.5px]
+                                   border-slate-300 dark:border-zinc-600
+                                   bg-white dark:bg-zinc-800
                                    text-slate-900 dark:text-zinc-100
-                                   focus:border-blue-500 focus:ring-blue-500 py-2 px-3" />
+                                   focus:ring-1 focus:ring-blue-500 focus:border-blue-500
+                                   py-1.5 px-2.5 transition-colors" />
                         @error('form.email')
-                            <p class="mt-1 flex items-center gap-1 text-[11px] text-rose-600 dark:text-rose-400">
-                                <flux:icon.exclamation-circle class="size-3 shrink-0" /> {{ $message }}
+                            <p class="mt-1 flex items-center gap-1 text-[10.5px] text-rose-600">
+                                <flux:icon.exclamation-circle class="size-3 shrink-0" />
+                                {{ $message }}
                             </p>
                         @enderror
                     </div>
 
                     <div>
-                        <label class="block text-[12px] font-medium text-slate-700 dark:text-zinc-300 mb-1">
-                            Password <span class="text-slate-400">(opsional)</span>
+                        <label class="block text-[11px] font-medium text-slate-700 dark:text-zinc-300 mb-1">
+                            Password
+                            <span class="text-slate-400 dark:text-zinc-500 font-normal">(optional)</span>
                         </label>
-                        <input type="password" wire:model="form.password" placeholder="Kosongkan jika tidak diubah"
-                            class="block w-full rounded-md shadow-sm text-[12px]
-                                   border-slate-300 dark:border-zinc-600 bg-white dark:bg-zinc-800
+                        <input type="password" wire:model="form.password"
+                            placeholder="Leave empty to keep current"
+                            class="block w-full rounded-md shadow-sm text-[11.5px]
+                                   border-slate-300 dark:border-zinc-600
+                                   bg-white dark:bg-zinc-800
                                    text-slate-900 dark:text-zinc-100
-                                   focus:border-blue-500 focus:ring-blue-500 py-2 px-3" />
+                                   placeholder:text-slate-400 dark:placeholder:text-zinc-500
+                                   focus:ring-1 focus:ring-blue-500 focus:border-blue-500
+                                   py-1.5 px-2.5 transition-colors" />
                         @error('form.password')
-                            <p class="mt-1 flex items-center gap-1 text-[11px] text-rose-600 dark:text-rose-400">
-                                <flux:icon.exclamation-circle class="size-3 shrink-0" /> {{ $message }}
+                            <p class="mt-1 flex items-center gap-1 text-[10.5px] text-rose-600">
+                                <flux:icon.exclamation-circle class="size-3 shrink-0" />
+                                {{ $message }}
                             </p>
                         @enderror
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {{-- Birthday + Gender --}}
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <div>
-                        <label class="block text-[12px] font-medium text-slate-700 dark:text-zinc-300 mb-1">
+                        <label class="block text-[11px] font-medium text-slate-700 dark:text-zinc-300 mb-1">
                             Birthday <span class="text-rose-500">*</span>
                         </label>
                         <input type="date" wire:model="form.birthday"
-                            class="block w-full rounded-md shadow-sm text-[12px]
-                                   border-slate-300 dark:border-zinc-600 bg-white dark:bg-zinc-800
+                            class="block w-full rounded-md shadow-sm text-[11.5px]
+                                   border-slate-300 dark:border-zinc-600
+                                   bg-white dark:bg-zinc-800
                                    text-slate-900 dark:text-zinc-100
-                                   focus:border-blue-500 focus:ring-blue-500 py-2 px-3 dark:[color-scheme:dark]" />
+                                   focus:ring-1 focus:ring-blue-500 focus:border-blue-500
+                                   py-1.5 px-2.5 transition-colors
+                                   dark:[color-scheme:dark]" />
                         @error('form.birthday')
-                            <p class="mt-1 flex items-center gap-1 text-[11px] text-rose-600 dark:text-rose-400">
-                                <flux:icon.exclamation-circle class="size-3 shrink-0" /> {{ $message }}
+                            <p class="mt-1 flex items-center gap-1 text-[10.5px] text-rose-600">
+                                <flux:icon.exclamation-circle class="size-3 shrink-0" />
+                                {{ $message }}
                             </p>
                         @enderror
                     </div>
 
                     <div>
-                        <label class="block text-[12px] font-medium text-slate-700 dark:text-zinc-300 mb-1">
+                        <label class="block text-[11px] font-medium text-slate-700 dark:text-zinc-300 mb-1">
                             Gender <span class="text-rose-500">*</span>
                         </label>
                         <select wire:model="form.gender"
-                            class="block w-full rounded-md shadow-sm text-[12px]
-                                   border-slate-300 dark:border-zinc-600 bg-white dark:bg-zinc-800
+                            class="block w-full rounded-md shadow-sm text-[11.5px]
+                                   border-slate-300 dark:border-zinc-600
+                                   bg-white dark:bg-zinc-800
                                    text-slate-900 dark:text-zinc-100
-                                   focus:border-blue-500 focus:ring-blue-500 py-2 px-3">
-                            <option value="">— Pilih —</option>
-                            <option value="laki-laki">Laki-laki</option>
-                            <option value="perempuan">Perempuan</option>
+                                   focus:ring-1 focus:ring-blue-500 focus:border-blue-500
+                                   py-1.5 pl-2.5 pr-6 transition-colors">
+                            <option value="">— Select —</option>
+                            <option value="laki-laki">Male</option>
+                            <option value="perempuan">Female</option>
                         </select>
                         @error('form.gender')
-                            <p class="mt-1 flex items-center gap-1 text-[11px] text-rose-600 dark:text-rose-400">
-                                <flux:icon.exclamation-circle class="size-3 shrink-0" /> {{ $message }}
+                            <p class="mt-1 flex items-center gap-1 text-[10.5px] text-rose-600">
+                                <flux:icon.exclamation-circle class="size-3 shrink-0" />
+                                {{ $message }}
                             </p>
                         @enderror
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {{-- Phone + Address --}}
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <div>
-                        <label class="block text-[12px] font-medium text-slate-700 dark:text-zinc-300 mb-1">
+                        <label class="block text-[11px] font-medium text-slate-700 dark:text-zinc-300 mb-1">
                             Phone
                         </label>
                         <input type="text" wire:model="form.phone_number"
-                            class="block w-full rounded-md shadow-sm text-[12px]
-                                   border-slate-300 dark:border-zinc-600 bg-white dark:bg-zinc-800
+                            class="block w-full rounded-md shadow-sm text-[11.5px]
+                                   border-slate-300 dark:border-zinc-600
+                                   bg-white dark:bg-zinc-800
                                    text-slate-900 dark:text-zinc-100
-                                   focus:border-blue-500 focus:ring-blue-500 py-2 px-3" />
+                                   focus:ring-1 focus:ring-blue-500 focus:border-blue-500
+                                   py-1.5 px-2.5 transition-colors" />
+                        @error('form.phone_number')
+                            <p class="mt-1 flex items-center gap-1 text-[10.5px] text-rose-600">
+                                <flux:icon.exclamation-circle class="size-3 shrink-0" />
+                                {{ $message }}
+                            </p>
+                        @enderror
                     </div>
 
                     <div>
-                        <label class="block text-[12px] font-medium text-slate-700 dark:text-zinc-300 mb-1">
+                        <label class="block text-[11px] font-medium text-slate-700 dark:text-zinc-300 mb-1">
                             Address <span class="text-rose-500">*</span>
                         </label>
                         <input type="text" wire:model="form.address"
-                            class="block w-full rounded-md shadow-sm text-[12px]
-                                   border-slate-300 dark:border-zinc-600 bg-white dark:bg-zinc-800
+                            class="block w-full rounded-md shadow-sm text-[11.5px]
+                                   border-slate-300 dark:border-zinc-600
+                                   bg-white dark:bg-zinc-800
                                    text-slate-900 dark:text-zinc-100
-                                   focus:border-blue-500 focus:ring-blue-500 py-2 px-3" />
+                                   focus:ring-1 focus:ring-blue-500 focus:border-blue-500
+                                   py-1.5 px-2.5 transition-colors" />
                         @error('form.address')
-                            <p class="mt-1 flex items-center gap-1 text-[11px] text-rose-600 dark:text-rose-400">
-                                <flux:icon.exclamation-circle class="size-3 shrink-0" /> {{ $message }}
+                            <p class="mt-1 flex items-center gap-1 text-[10.5px] text-rose-600">
+                                <flux:icon.exclamation-circle class="size-3 shrink-0" />
+                                {{ $message }}
                             </p>
                         @enderror
                     </div>
                 </div>
             </div>
 
-            <div class="shrink-0 flex flex-col-reverse sm:flex-row sm:justify-end gap-2
-                        px-5 sm:px-6 py-4 border-t border-slate-200 dark:border-zinc-700
-                        bg-white dark:bg-zinc-900 rounded-b-2xl sm:rounded-b-xl">
-                <flux:button type="button" @click="show = false" variant="ghost" size="sm">Batal</flux:button>
-                <flux:button type="submit" variant="primary" size="sm"
-                    wire:loading.attr="disabled" wire:target="save">
-                    <span wire:loading.remove wire:target="save">Update</span>
-                    <span wire:loading.flex wire:target="save" class="items-center gap-1.5">
-                        <svg class="animate-spin size-3.5" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                        </svg>
-                        Updating...
-                    </span>
-                </flux:button>
+            {{-- ══════════ FOOTER ══════════ --}}
+            <div class="shrink-0 flex flex-col-reverse sm:flex-row sm:justify-end gap-1.5
+                        px-4 py-3
+                        border-t border-slate-200 dark:border-zinc-700
+                        bg-slate-50/50 dark:bg-zinc-900/50">
+
+                <button type="button" @click="show = false"
+                    class="w-full sm:w-auto px-3 py-1.5 text-[11px] font-medium
+                           rounded-md
+                           text-slate-700 dark:text-zinc-300
+                           bg-white dark:bg-zinc-800
+                           border border-slate-300 dark:border-zinc-600
+                           hover:bg-slate-50 dark:hover:bg-zinc-700
+                           transition-colors">
+                    Cancel
+                </button>
+
+                <button type="submit"
+                    wire:loading.attr="disabled"
+                    wire:target="save"
+                    class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5
+                           px-3 py-1.5 text-[11px] font-medium rounded-md
+                           text-white
+                           bg-blue-600 hover:bg-blue-700
+                           disabled:opacity-60 disabled:cursor-wait
+                           transition-colors">
+                    <svg wire:loading wire:target="save"
+                         class="animate-spin size-3" viewBox="0 0 24 24" fill="none"
+                         xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" opacity=".25"/>
+                        <path d="M4 12a8 8 0 018-8" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+                    </svg>
+                    <span wire:loading.remove wire:target="save">Save Changes</span>
+                    <span wire:loading wire:target="save">Saving...</span>
+                </button>
             </div>
         </form>
     </div>

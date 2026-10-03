@@ -18,23 +18,24 @@ if ($kbd) $suffix = $kbd;
 
 $iconClasses = Flux::classes()
     ->add('me-2 shrink-0')
+    ->add('min-w-0')
     ->add('text-zinc-400 dark:text-zinc-500')
     ->add('transition-colors duration-100')
     ->add('group-data-active/menu-item:text-current')
-    ->add($iconVariant === 'outline' ? 'size-5' : 'size-4')
+    ->add($iconVariant === 'outline' ? 'size-4' : 'size-3.5')
     ;
 
 $trailingIconClasses = Flux::classes()
     ->add('ms-auto shrink-0 text-zinc-400 dark:text-zinc-500')
     ->add('transition-colors duration-100')
     ->add('group-data-active/menu-item:text-current')
-    ->add($iconVariant === 'outline' ? 'size-5' : 'size-3.5')
+    ->add($iconVariant === 'outline' ? 'size-4' : 'size-3')
     ;
 
 $classes = Flux::classes()
     ->add('group/menu-item flex items-center w-full select-none')
-    ->add('px-2.5 py-1.5 rounded-xl')
-    ->add('text-start text-[12px] font-medium leading-tight')
+    ->add('px-2 py-1 rounded-md')
+    ->add('text-start text-[11px] font-medium leading-tight')
     ->add('cursor-pointer focus:outline-hidden')
     ->add('transition-colors duration-100')
     ->add('[&[disabled]]:opacity-50 [&[disabled]]:pointer-events-none')
@@ -57,7 +58,7 @@ $classes = Flux::classes()
     ;
 
 $suffixClasses = Flux::classes()
-    ->add('ms-auto shrink-0 text-[10px] font-semibold tracking-wide')
+    ->add('ms-auto shrink-0 text-[9px] font-semibold tracking-wide')
     ->add('text-zinc-400 dark:text-zinc-500')
     ->add('group-data-active/menu-item:text-current')
     ;
@@ -73,10 +74,10 @@ $suffixClasses = Flux::classes()
     <?php elseif ($icon): ?>
         {{ $icon }}
     <?php else: ?>
-        <div class="w-6 hidden [[data-flux-menu]:has(>[data-flux-menu-item-has-icon])_&]:block"></div>
+        <div class="w-5 hidden [[data-flux-menu]:has(>[data-flux-menu-item-has-icon])_&]:block"></div>
     <?php endif; ?>
 
-    <span class="truncate">{{ $slot }}</span>
+    <span class="truncate min-w-0 flex-1">{{ $slot }}</span>
 
     <?php if (is_string($suffix) && $suffix !== ''): ?>
         <div class="{{ $suffixClasses }}">{{ $suffix }}</div>

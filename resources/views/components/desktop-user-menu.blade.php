@@ -1,11 +1,11 @@
 <flux:dropdown position="bottom" align="end">
-    <button class="header-user">
+    <button class="header-user sm:shadow-sm shadow-lg shadow-emerald-500/20">
         <flux:avatar circle :name="auth()->user()->full_name" color="green"
             :src="auth()->user()->avatar ? asset('storage/' . auth()->user()->avatar) : null" size="xs"
             class="shrink-0" />
         <div class="text-left">
             <div class="header-user-name">{{ auth()->user()->full_name }}</div>
-            <div class="header-user-role">{{ __(auth()->user()->role?->role_name ?? '') }}</div>
+            <div class="header-user-role text-emerald-400">{{ __(auth()->user()->role?->role_name ?? '') }}</div>
         </div>
     </button>
 
