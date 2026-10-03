@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Proposal;
+use App\Models\Period;
 use Flux\Flux;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Title;
@@ -13,17 +14,13 @@ new #[Title('Research Proposals')] class extends Component {
     public string $search = '';
     public string $statusFilter = 'all';
     public bool $isResearch = true;
-    public ?int $highlight = null;
 
-    public function mount(): void
-    {
-        $this->highlight = (int) request()->query('highlight');
-    }
 
     public function updatingSearch(): void
     {
         $this->resetPage();
     }
+
     public function updatingStatusFilter(): void
     {
         $this->resetPage();
@@ -31,14 +28,29 @@ new #[Title('Research Proposals')] class extends Component {
 
     public function confirmDelete(int $id): void
     {
-        $proposal = Proposal::where('user_id', auth()->id())->findOrFail($id);
+        $proposal = Proposal::where('user_id', auth()->id())->find($id);
 
-        if (!in_array($proposal->status, ['pending', 'revised'])) {
+        if (! $proposal) {
+            Flux::toast('Proposal tidak ditemukan.', variant: 'danger');
+            return;
+        }
+
+        if (! $this->canDelete($proposal->status)) {
             Flux::toast('Proposal ini tidak dapat dihapus.', variant: 'danger');
             return;
         }
 
-        $this->dispatch('confirm-delete', subject: $proposal->title, action: 'deleteProposal', payload: ['id' => $proposal->id], title: 'Hapus Proposal?', note: 'Tindakan ini tidak dapat dibatalkan.');
+        $this->dispatch(
+            'confirm-delete',
+            title: 'Hapus Proposal?',
+            message: 'Anda akan menghapus:',
+            subject: $proposal->title,
+            note: 'Tindakan ini tidak dapat dibatalkan dan data akan hilang permanen.',
+            confirmLabel: 'Hapus',
+            cancelLabel: 'Batal',
+            action: 'deleteProposal',
+            payload: ['id' => $proposal->id],
+        );
     }
 
     #[On('delete-confirmed')]
@@ -49,92 +61,107 @@ new #[Title('Research Proposals')] class extends Component {
         }
     }
 
-    protected function deleteProposal(?int $id): void
+    public function deleteProposal(?int $id): void
     {
-        if (!$id) {
+        if (! $id) {
+            Flux::toast('ID proposal tidak valid.', variant: 'danger');
             return;
         }
-        Proposal::where('user_id', auth()->id())
-            ->findOrFail($id)
-            ->delete();
-        Flux::toast('Proposal berhasil dihapus.', variant: 'success');
+
+        $proposal = Proposal::where('user_id', auth()->id())->find($id);
+
+        if (! $proposal) {
+            Flux::toast('Proposal tidak ditemukan atau bukan milik Anda.', variant: 'danger');
+            return;
+        }
+
+        if (! $this->canDelete($proposal->status)) {
+            Flux::toast('Proposal ini tidak dapat dihapus.', variant: 'danger');
+            return;
+        }
+
+        try {
+            $title = $proposal->title;
+            $proposal->delete();
+
+            Flux::toast("Proposal \"{$title}\" berhasil dihapus.", variant: 'success');
+            $this->resetPage();
+        } catch (\Throwable $e) {
+            report($e);
+            Flux::toast('Gagal menghapus proposal. Silakan coba lagi.', variant: 'danger');
+        }
     }
 
     public function canEdit(string $status): bool
     {
-        return in_array($status, ['pending', 'revised']);
+        return in_array($status, ['pending', 'revised'], true);
     }
 
     public function canDelete(string $status): bool
     {
-        return in_array($status, ['pending', 'revised']);
+        return in_array($status, ['pending', 'revised'], true);
     }
 
     public function canAddProgressReport(Proposal $p): bool
     {
-        return $p->status === 'accepted' && !$p->progressReport;
+        return $p->status === 'accepted' && ! $p->progressReport;
     }
 
     public function canAddFinalReport(Proposal $p): bool
     {
-        return $p->progressReport?->status === 'accepted' && !$p->finalReport;
+        return $p->progressReport?->status === 'accepted' && ! $p->finalReport;
     }
 
     public function canAddOutput(Proposal $p): bool
     {
-        return $p->finalReport?->status === 'accepted' && !$p->output;
+        return $p->finalReport?->status === 'accepted' && ! $p->output;
     }
 
-    /**
-     * Ambil periode aktif yang masih dalam rentang open_from - open_to.
-     */
-    public function activeOpenPeriod(): ?\App\Models\Period
+    public function activeOpenPeriod(): ?Period
     {
-        return \App\Models\Period::query()->where('is_active', true)->whereDate('open_from', '<=', now())->whereDate('open_to', '>=', now())->first();
+        return Period::query()
+            ->where('is_active', true)
+            ->whereDate('open_from', '<=', now())
+            ->whereDate('open_to', '>=', now())
+            ->first();
     }
 
-    /**
-     * Cek apakah user bisa menambah proposal sekarang.
-     */
+    public function activePeriod(): ?Period
+    {
+        return Period::query()->where('is_active', true)->first();
+    }
+
     public function canCreateProposal(): bool
     {
         return $this->activeOpenPeriod() !== null;
     }
 
-    /**
-     * Ambil periode aktif (apapun status rentangnya).
-     */
-    public function activePeriod(): ?\App\Models\Period
-    {
-        return \App\Models\Period::query()->where('is_active', true)->first();
-    }
-
     public function with(): array
     {
         $proposals = Proposal::query()
-            ->with(['researchScheme', 'period', 'reviewer', 'progressReport', 'finalReport', 'output', 'adminNotes', 'reviewerNotes'])
+            ->with([
+                'researchScheme', 'period', 'reviewer',
+                'progressReport', 'finalReport', 'output',
+                'adminNotes', 'reviewerNotes',
+            ])
             ->where('user_id', auth()->id())
             ->where('is_research', $this->isResearch)
-            ->when(
-                $this->search,
-                fn($q) => $q->where(function ($q) {
-                    $q->where('title', 'like', "%{$this->search}%")->orWhere('keywords', 'like', "%{$this->search}%");
-                }),
-            )
-            ->when($this->statusFilter !== 'all', fn($q) => $q->where('status', $this->statusFilter))
+            ->when($this->search, fn ($q) => $q->where(function ($q) {
+                $q->where('title', 'like', "%{$this->search}%")
+                  ->orWhere('keywords', 'like', "%{$this->search}%");
+            }))
+            ->when($this->statusFilter !== 'all', fn ($q) => $q->where('status', $this->statusFilter))
             ->latest()
             ->paginate(10);
 
-        $canCreate = $this->canCreateProposal();
-        $openPeriod = $this->activeOpenPeriod();
-        $activePeriod = $this->activePeriod();
-
         return [
-            'proposals' => $proposals,
-            'canCreate' => $canCreate,
-            'openPeriod' => $openPeriod,
-            'activePeriod' => $activePeriod,
-            'theme' => $this->isResearch ? ['icon' => 'beaker', 'color' => 'emerald', 'label' => 'Penelitian'] : ['icon' => 'heart', 'color' => 'rose', 'label' => 'Pengabdian'],
+            'proposals'    => $proposals,
+            'canCreate'    => $this->canCreateProposal(),
+            'openPeriod'   => $this->activeOpenPeriod(),
+            'activePeriod' => $this->activePeriod(),
+            'theme'        => $this->isResearch
+                ? ['icon' => 'beaker', 'color' => 'emerald', 'label' => 'Penelitian']
+                : ['icon' => 'heart',  'color' => 'rose',    'label' => 'Pengabdian'],
         ];
     }
 };
@@ -312,7 +339,7 @@ new #[Title('Research Proposals')] class extends Component {
                 <tbody class="divide-y divide-slate-100 dark:divide-zinc-800">
                     @forelse ($proposals as $proposal)
                         @php $meta = $proposal->statusMeta(); @endphp
-                        <tr class="{{ $highlight === $proposal->id ? 'bg-emerald-50 dark:bg-emerald-900/20 ring-2 ring-emerald-400' : '' }} hover:bg-{{ $theme['color'] }}-50/30 dark:hover:bg-zinc-800/50 transition-colors">
+                        <tr class="hover:bg-{{ $theme['color'] }}-50/30 dark:hover:bg-zinc-800/50 transition-colors">
 
                             <td class="px-4 py-3 max-w-md">
                                 <div class="flex flex-col gap-1 min-w-0">
@@ -389,10 +416,14 @@ new #[Title('Research Proposals')] class extends Component {
                                         {{-- Delete --}}
                                         @if ($this->canDelete($proposal->status))
                                             <flux:menu.separator />
-                                            <flux:menu.item variant="danger" icon="trash"
-                                                wire:click="confirmDelete({{ $proposal->id }})">
-                                                Delete
-                                            </flux:menu.item>
+                                            @if ($this->canDelete($proposal->status))
+                                                <flux:menu.separator />
+                                                <flux:menu.item variant="danger" icon="trash"
+                                                    wire:click="confirmDelete({{ $proposal->id }})"
+                                                    wire:key="delete-{{ $proposal->id }}">
+                                                    Delete Proposal
+                                                </flux:menu.item>
+                                            @endif
                                         @endif
                                     </flux:menu>
                                 </flux:dropdown>
@@ -430,6 +461,7 @@ new #[Title('Research Proposals')] class extends Component {
             </div>
         @endif
     </div>
+    <x-confirm-delete />
 
     {{-- ══════════ MODALS ══════════ --}}
     <livewire:user.internal.proposals.add-proposal :is-research="true" wire:key="add-proposal-research" />

@@ -1,8 +1,8 @@
 <?php
 
-use App\Models\AdminNote;
 use App\Models\Proposal;
 use Flux\Flux;
+use Livewire\Attributes\On;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -10,16 +10,102 @@ use Livewire\WithPagination;
 new #[Title('Manage Researches')] class extends Component {
     use WithPagination;
 
-    public $search = '';
-    public $statusFilter = '';
-    public ?int $highlight = null;
+    public string $search = '';
+    public string $statusFilter = '';
 
-    public function mount(): void
+    public function updatingSearch(): void
     {
-        $this->highlight = (int) request()->query('highlight');
+        $this->resetPage();
     }
 
-    public function with()
+    public function updatingStatusFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function submit(int $id): void
+    {
+        $proposal = Proposal::find($id);
+
+        if (!$proposal) {
+            Flux::toast('Proposal tidak ditemukan.', variant: 'danger');
+            return;
+        }
+
+        if (!in_array($proposal->status, ['pending', 'revised', 'rejected'], true)) {
+            Flux::toast('Proposal tidak dapat di-submit pada status ini.', variant: 'danger');
+            return;
+        }
+
+        $proposal->update(['status' => 'submitted']);
+        Flux::toast('Proposal berhasil di-submit.', variant: 'success');
+    }
+
+    public function reject(int $id): void
+    {
+        $proposal = Proposal::find($id);
+
+        if (!$proposal) {
+            Flux::toast('Proposal tidak ditemukan.', variant: 'danger');
+            return;
+        }
+
+        if ($proposal->status === 'rejected') {
+            Flux::toast('Proposal sudah ditolak.', variant: 'danger');
+            return;
+        }
+
+        $proposal->update(['status' => 'rejected']);
+        Flux::toast('Proposal ditolak.', variant: 'success');
+    }
+
+    public function confirmDelete(int $id): void
+    {
+        $proposal = Proposal::find($id);
+
+        if (!$proposal) {
+            Flux::toast('Proposal tidak ditemukan.', variant: 'danger');
+            return;
+        }
+
+        $this->dispatch('confirm-delete', title: 'Hapus Proposal?', message: 'Anda akan menghapus:', subject: $proposal->title, note: 'Tindakan ini tidak dapat dibatalkan dan data akan hilang permanen.', confirmLabel: 'Hapus', cancelLabel: 'Batal', action: 'deleteProposal', payload: ['id' => $proposal->id]);
+    }
+
+    #[On('delete-confirmed')]
+    public function handleDeleteConfirmed(string $action, array $payload = []): void
+    {
+        if ($action === 'deleteProposal') {
+            $this->deleteProposal($payload['id'] ?? null);
+        }
+    }
+
+    public function deleteProposal(?int $id): void
+    {
+        if (!$id) {
+            Flux::toast('ID proposal tidak valid.', variant: 'danger');
+            return;
+        }
+
+        $proposal = Proposal::find($id);
+
+        if (!$proposal) {
+            Flux::toast('Proposal tidak ditemukan.', variant: 'danger');
+            return;
+        }
+
+        try {
+            $title = $proposal->title;
+            $proposal->delete();
+
+            Flux::toast("Proposal \"{$title}\" berhasil dihapus.", variant: 'success');
+            $this->resetPage();
+        } catch (\Throwable $e) {
+            report($e);
+            Flux::toast('Gagal menghapus proposal. Silakan coba lagi.', variant: 'danger');
+        }
+    }
+
+    public function with(): array
     {
         $proposals = Proposal::query()
             ->with(['author', 'researchScheme', 'period', 'reviewer'])
@@ -35,44 +121,6 @@ new #[Title('Manage Researches')] class extends Component {
             ->paginate(10);
 
         return ['proposals' => $proposals];
-    }
-
-    public function updatingSearch(): void
-    {
-        $this->resetPage();
-    }
-    public function updatingStatusFilter(): void
-    {
-        $this->resetPage();
-    }
-
-    // ═══════════════ AKSI ADMIN ═══════════════
-    public function submit(Proposal $proposal): void
-    {
-        if (!in_array($proposal->status, ['pending', 'revised', 'rejected'])) {
-            Flux::toast('Proposal tidak dapat di-submit pada status ini.', variant: 'danger');
-            return;
-        }
-
-        $proposal->update(['status' => 'submitted']);
-        Flux::toast('Proposal berhasil di-submit.');
-    }
-
-    public function reject(Proposal $proposal): void
-    {
-        if ($proposal->status === 'rejected') {
-            Flux::toast('Proposal sudah ditolak.', variant: 'danger');
-            return;
-        }
-
-        $proposal->update(['status' => 'rejected']);
-        Flux::toast('Proposal ditolak.');
-    }
-
-    public function delete(Proposal $proposal): void
-    {
-        $proposal->delete();
-        Flux::toast('Proposal dihapus.');
     }
 };
 ?>
@@ -158,7 +206,7 @@ new #[Title('Manage Researches')] class extends Component {
                     <tbody class="divide-y divide-slate-200 dark:divide-zinc-800">
                         @forelse ($proposals as $proposal)
                             @php $meta = $proposal->statusMeta(); @endphp
-                            <tr class="{{ $highlight === $proposal->id ? 'bg-emerald-50 dark:bg-emerald-900/20 ring-2 ring-emerald-400' : '' }} group hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
+                            <tr class="group hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
 
                                 {{-- Research --}}
                                 <td class="px-3 sm:px-4 py-2.5">
@@ -376,17 +424,16 @@ new #[Title('Manage Researches')] class extends Component {
 
                                             {{-- ══════════ TETAP: DELETE PROPOSAL ══════════ --}}
                                             <flux:menu.item variant="danger" icon="trash"
-                                                wire:click="delete({{ $proposal->id }})"
-                                                wire:confirm="Yakin ingin menghapus proposal ini? Data akan hilang permanen.">
+                                                wire:click="confirmDelete({{ $proposal->id }})">
                                                 Delete Proposal
                                             </flux:menu.item>
-                                            </flux:menu.item>
+                                        </flux:menu>
                                     </flux:dropdown>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="px-3 sm:px-4 py-12">
+                                <td colspan="6" class="px-3 sm:px-4 py-12">
                                     <div class="flex flex-col items-center justify-center gap-3 text-center">
                                         <div
                                             class="flex items-center justify-center w-14 h-14 rounded-xl bg-slate-100 dark:bg-zinc-800">
@@ -417,7 +464,7 @@ new #[Title('Manage Researches')] class extends Component {
             @endif
         </div>
     </div>
-
+    <x-confirm-delete />
     {{-- ══════════ MODALS ══════════ --}}
     <livewire:admin.internal.modals.assign-reviewer />
     <livewire:admin.internal.modals.admin-note-revision />
@@ -427,11 +474,3 @@ new #[Title('Manage Researches')] class extends Component {
     <livewire:admin.internal.modals.view-submission />
     <livewire:admin.internal.modals.assign-reviewer-progress />
 </div>
-@script
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const el = document.querySelector('[data-highlight="true"]');
-        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    });
-</script>
-@endscript
