@@ -12,6 +12,12 @@ new #[Title('Manage Researches')] class extends Component {
 
     public $search = '';
     public $statusFilter = '';
+    public ?int $highlight = null;
+
+    public function mount(): void
+    {
+        $this->highlight = (int) request()->query('highlight');
+    }
 
     public function with()
     {
@@ -152,7 +158,7 @@ new #[Title('Manage Researches')] class extends Component {
                     <tbody class="divide-y divide-slate-200 dark:divide-zinc-800">
                         @forelse ($proposals as $proposal)
                             @php $meta = $proposal->statusMeta(); @endphp
-                            <tr class="group hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
+                            <tr class="{{ $highlight === $proposal->id ? 'bg-emerald-50 dark:bg-emerald-900/20 ring-2 ring-emerald-400' : '' }} group hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
 
                                 {{-- Research --}}
                                 <td class="px-3 sm:px-4 py-2.5">
@@ -421,3 +427,11 @@ new #[Title('Manage Researches')] class extends Component {
     <livewire:admin.internal.modals.view-submission />
     <livewire:admin.internal.modals.assign-reviewer-progress />
 </div>
+@script
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const el = document.querySelector('[data-highlight="true"]');
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+</script>
+@endscript

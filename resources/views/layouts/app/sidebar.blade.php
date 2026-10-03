@@ -174,9 +174,9 @@
         <div class="flex flex-col min-h-screen bg-surface transition-[margin] duration-200 lg:ml-48 dark:bg-zinc-950">
             <header
                 class="sticky top-0 z-30 bg-white/75 backdrop-blur-md border-b border-white/60
-           shadow-[0_1px_8px_rgba(0,0,0,0.04)] px-3 sm:px-4 py-2
-           flex items-center justify-between gap-2 sm:gap-4
-           dark:bg-zinc-900/75 dark:border-zinc-800">
+                    shadow-[0_1px_8px_rgba(0,0,0,0.04)] px-3 sm:px-4 py-2
+                    flex items-center justify-between gap-2 sm:gap-4
+                    dark:bg-zinc-900/75 dark:border-zinc-800">
 
                 {{-- LEFT: Hamburger (mobile) + Page title --}}
                 <div class="flex items-center gap-2 min-w-0 flex-shrink">
@@ -227,22 +227,14 @@
                         localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';"
                         aria-label="Ganti tema"
                         class="p-1.5 rounded-md text-on-surface-variant
-                   hover:text-emerald-500 hover:bg-surface-container-high transition-colors
-                   dark:text-zinc-400 dark:hover:text-emerald-400 dark:hover:bg-zinc-800">
+                        hover:text-emerald-500 hover:bg-surface-container-high transition-colors
+                        dark:text-zinc-400 dark:hover:text-emerald-400 dark:hover:bg-zinc-800">
                         <flux:icon.sun class="size-4 hidden dark:block" />
                         <flux:icon.moon class="size-4 dark:hidden" />
                     </button>
 
                     {{-- Notifications --}}
-                    <button type="button" aria-label="Notifikasi"
-                        class="relative p-1.5 rounded-md text-on-surface-variant
-                   hover:text-emerald-500 hover:bg-surface-container-high transition-colors
-                   dark:text-zinc-400 dark:hover:text-emerald-400 dark:hover:bg-zinc-800">
-                        <flux:icon.bell class="size-4" />
-                        <span
-                            class="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500
-                         ring-2 ring-surface-container-lowest dark:ring-zinc-800"></span>
-                    </button>
+                    <livewire:notifications.notification-bell />
 
                     {{-- User menu: desktop only --}}
                     <x-desktop-user-menu class="hidden lg:block ms-1" avatar="{{ auth()->user()->avatar }}" />

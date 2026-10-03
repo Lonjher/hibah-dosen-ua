@@ -2,6 +2,15 @@
 
 namespace App\Providers;
 
+use App\Models\FinalReport;
+use App\Models\Output;
+use App\Models\ProgressReport;
+use App\Models\Proposal;
+use App\Models\User;
+use App\Observers\FinalReportObserver;
+use App\Observers\OutputObserver;
+use App\Observers\ProgressReportObserver;
+use App\Observers\ProposalObserver;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Date;
@@ -26,11 +35,17 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Proposal::observe(ProposalObserver::class);
+        ProgressReport::observe(ProgressReportObserver::class);
+        FinalReport::observe(FinalReportObserver::class);
+        Output::observe(OutputObserver::class);
+
         Relation::enforceMorphMap([
-            'proposal'        => \App\Models\Proposal::class,
-            'progress_report' => \App\Models\ProgressReport::class,
-            'final_report'    => \App\Models\FinalReport::class,
-            'output'          => \App\Models\Output::class,
+            'user'            => User::class,
+            'proposal'        => Proposal::class,
+            'progress_report' => ProgressReport::class,
+            'final_report'    => FinalReport::class,
+            'output'          => Output::class,
         ]);
 
         $this->configureDefaults();

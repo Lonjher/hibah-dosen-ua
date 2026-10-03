@@ -6,6 +6,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Guarded;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -139,5 +140,17 @@ class User extends Authenticatable implements MustVerifyEmail
         ])->save();
 
         return true;
+    }
+
+    public static function admins(): Collection
+    {
+        return static::query()
+            ->whereHas('role', fn ($q) => $q->whereIn('role_code', ['ADMIN', 'SUPERADMIN']))
+            ->get();
+    }
+
+    public function hasAnyRole(array $roleCodes): bool
+    {
+        return in_array($this->role?->role_code, $roleCodes, true);
     }
 }

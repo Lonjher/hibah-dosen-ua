@@ -13,6 +13,12 @@ new #[Title('Research Proposals')] class extends Component {
     public string $search = '';
     public string $statusFilter = 'all';
     public bool $isResearch = true;
+    public ?int $highlight = null;
+
+    public function mount(): void
+    {
+        $this->highlight = (int) request()->query('highlight');
+    }
 
     public function updatingSearch(): void
     {
@@ -306,7 +312,7 @@ new #[Title('Research Proposals')] class extends Component {
                 <tbody class="divide-y divide-slate-100 dark:divide-zinc-800">
                     @forelse ($proposals as $proposal)
                         @php $meta = $proposal->statusMeta(); @endphp
-                        <tr class="hover:bg-{{ $theme['color'] }}-50/30 dark:hover:bg-zinc-800/50 transition-colors">
+                        <tr class="{{ $highlight === $proposal->id ? 'bg-emerald-50 dark:bg-emerald-900/20 ring-2 ring-emerald-400' : '' }} hover:bg-{{ $theme['color'] }}-50/30 dark:hover:bg-zinc-800/50 transition-colors">
 
                             <td class="px-4 py-3 max-w-md">
                                 <div class="flex flex-col gap-1 min-w-0">
