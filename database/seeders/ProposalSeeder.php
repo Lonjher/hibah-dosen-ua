@@ -41,11 +41,10 @@ class ProposalSeeder extends Seeder
 
         // Distribusi per tahun (research, dedication)
         $distribution = [
-            2021 => ['research' => 5,  'dedication' => 3],
-            2022 => ['research' => 8,  'dedication' => 5],
-            2023 => ['research' => 10, 'dedication' => 6],
-            2024 => ['research' => 12, 'dedication' => 8],
-            2025 => ['research' => 10, 'dedication' => 6],
+            2023 => ['research' => 8,  'dedication' => 5],
+            2024 => ['research' => 10, 'dedication' => 6],
+            2025 => ['research' => 12, 'dedication' => 8],
+            2026 => ['research' => 14, 'dedication' => 9],
         ];
 
         $totalProposals = 0;

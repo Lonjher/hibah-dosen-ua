@@ -9,16 +9,19 @@ class PeriodSeeder extends Seeder
 {
     public function run(): void
     {
-        // 5 tahun x 2 semester = 10 period
-        for ($year = 2021; $year <= 2025; $year++) {
-            Period::factory()->forYear($year, true)->create();   // Ganjil
-            Period::factory()->forYear($year, false)->create();  // Genap
+        $startYear = 2023;
+        $endYear   = (int) now()->year;   // 2026
+
+        // 4 tahun × 2 semester = 8 period (2023 s.d. 2026)
+        for ($year = $startYear; $year <= $endYear; $year++) {
+            Period::factory()->forYear($year, true)->create();   // Ganjil YYYY/YYYY+1
+            Period::factory()->forYear($year, false)->create();  // Genap  YYYY/YYYY+1
         }
 
-        // Set Ganjil 2025/2026 sebagai active
-        Period::where('periode', 'Ganjil 2025/2026')
-            ->update(['is_active' => true]);
+        // Set periode ganjil tahun berjalan sebagai active
+        $activePeriod = 'Ganjil ' . $endYear . '/' . ($endYear + 1);
+        Period::where('periode', $activePeriod)->update(['is_active' => true]);
 
-        $this->command->info('✅ Periods seeded: ' . Period::count());
+        $this->command->info('✅ Periods seeded: ' . Period::count() . " (aktif: {$activePeriod})");
     }
 }
