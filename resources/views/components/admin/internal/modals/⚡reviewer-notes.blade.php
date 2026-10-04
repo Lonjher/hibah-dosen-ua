@@ -91,15 +91,17 @@ new class extends Component {
         x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
         x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
         class="flex max-h-[92vh] w-full sm:max-w-md flex-col overflow-hidden
-               bg-white dark:bg-zinc-900 rounded-t-2xl sm:rounded-xl shadow-2xl
-               border border-slate-200 dark:border-zinc-700"
+               bg-white dark:bg-zinc-900 rounded-t-3xl sm:rounded-3xl shadow-2xl
+               border border-slate-200 dark:border-zinc-700
+               hover:shadow-violet-500/15 transition-shadow duration-300"
         @click.stop>
 
         {{-- ══════════ HEADER ══════════ --}}
-        <div class="shrink-0 bg-gradient-to-r from-violet-600 to-violet-500 px-4 py-3">
+        <div class="shrink-0 bg-gradient-to-r from-violet-600 to-violet-500
+                    px-4 py-3 rounded-t-3xl sm:rounded-t-3xl">
             <div class="flex items-start justify-between gap-3">
                 <div class="flex items-center gap-2 min-w-0">
-                    <div class="w-7 h-7 rounded-md bg-white/20 flex items-center justify-center shrink-0">
+                    <div class="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center shrink-0">
                         <flux:icon.clipboard-document-check class="size-3.5 text-white" />
                     </div>
                     <div class="min-w-0">
@@ -113,8 +115,10 @@ new class extends Component {
                 </div>
                 <button type="button" @click="show = false"
                     aria-label="Close"
-                    class="shrink-0 w-6 h-6 rounded-md flex items-center justify-center
-                           text-white/80 hover:text-white hover:bg-white/10 transition-colors">
+                    class="shrink-0 w-6 h-6 rounded-full flex items-center justify-center
+                           text-white/80 hover:text-white hover:bg-white/10
+                           hover:scale-110 active:scale-95
+                           transition-all duration-150">
                     <flux:icon.x-mark class="size-3.5" />
                 </button>
             </div>
@@ -125,8 +129,8 @@ new class extends Component {
 
             {{-- ─────── SUBJECT CARD ─────── --}}
             @if ($subject)
-                <div class="rounded-md border border-slate-200 dark:border-zinc-700/70
-                            bg-slate-50 dark:bg-zinc-800/40 px-2.5 py-2">
+                <div class="rounded-2xl border border-slate-200 dark:border-zinc-700/70
+                            bg-slate-50 dark:bg-zinc-800/40 px-3 py-2.5">
                     <p class="text-[9.5px] uppercase tracking-wider font-semibold
                               text-slate-500 dark:text-zinc-400">
                         Subject
@@ -139,7 +143,7 @@ new class extends Component {
                     @if ($reviewer)
                         <div class="mt-2 pt-2 flex items-center gap-2
                                     border-t border-slate-200 dark:border-zinc-700/70">
-                            <div class="w-6 h-6 rounded-md shrink-0
+                            <div class="w-6 h-6 rounded-full shrink-0
                                         bg-violet-100 dark:bg-violet-900/40
                                         flex items-center justify-center
                                         text-[9px] font-bold
@@ -172,7 +176,7 @@ new class extends Component {
                         All Notes
                     </p>
                     @if ($notes->count() > 0)
-                        <span class="text-[9px] font-bold px-1.5 rounded-full
+                        <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full
                                      bg-violet-100 text-violet-700
                                      dark:bg-violet-900/40 dark:text-violet-300">
                             {{ $notes->count() }}
@@ -182,12 +186,12 @@ new class extends Component {
 
                 @forelse ($notes as $note)
                     <div wire:key="reviewer-note-{{ $note->id }}"
-                        class="rounded-md border border-violet-200 dark:border-violet-800/60
-                               bg-violet-50 dark:bg-violet-900/15 px-2.5 py-2">
+                        class="rounded-2xl border border-violet-200 dark:border-violet-800/60
+                               bg-violet-50 dark:bg-violet-900/15 px-3 py-2.5">
 
                         {{-- Note header --}}
                         <div class="flex items-center gap-1.5 mb-1.5 flex-wrap">
-                            <div class="w-6 h-6 rounded-md shrink-0
+                            <div class="w-6 h-6 rounded-full shrink-0
                                         bg-violet-200 dark:bg-violet-800/50
                                         flex items-center justify-center
                                         text-[9px] font-bold
@@ -210,7 +214,7 @@ new class extends Component {
                             {{-- Status badge --}}
                             @if ($note->is_approved)
                                 <span class="shrink-0 inline-flex items-center gap-0.5
-                                             text-[9px] px-1.5 py-0.5 rounded-full font-semibold
+                                             text-[9px] px-2 py-0.5 rounded-full font-semibold
                                              bg-emerald-100 text-emerald-700
                                              dark:bg-emerald-900/40 dark:text-emerald-300">
                                     <flux:icon.check class="size-2.5" />
@@ -218,7 +222,7 @@ new class extends Component {
                                 </span>
                             @else
                                 <span class="shrink-0 inline-flex items-center gap-0.5
-                                             text-[9px] px-1.5 py-0.5 rounded-full font-semibold
+                                             text-[9px] px-2 py-0.5 rounded-full font-semibold
                                              bg-amber-100 text-amber-700
                                              dark:bg-amber-900/40 dark:text-amber-300">
                                     <flux:icon.arrow-path class="size-2.5" />
@@ -229,7 +233,7 @@ new class extends Component {
 
                         {{-- Comment --}}
                         @if ($note->comment)
-                            <p class="text-[10.5px] leading-relaxed whitespace-pre-wrap
+                            <p class="text-[10.5px] leading-relaxed
                                       text-violet-900 dark:text-violet-100">
                                 {{ $note->comment }}
                             </p>
@@ -248,7 +252,7 @@ new class extends Component {
                 @empty
                     {{-- Empty state --}}
                     <div class="flex flex-col items-center gap-2 py-8 text-center">
-                        <div class="w-11 h-11 rounded-lg bg-slate-100 dark:bg-zinc-800
+                        <div class="w-11 h-11 rounded-2xl bg-slate-100 dark:bg-zinc-800
                                     flex items-center justify-center">
                             <flux:icon.clipboard-document-check
                                 class="size-5 text-slate-400 dark:text-zinc-600" />
@@ -267,16 +271,18 @@ new class extends Component {
         </div>
 
         {{-- ══════════ FOOTER ══════════ --}}
-        <div class="shrink-0 flex justify-end gap-1.5
+        <div class="shrink-0 flex justify-end
                     px-4 py-3 border-t border-slate-200 dark:border-zinc-700
-                    bg-slate-50/50 dark:bg-zinc-900/50">
+                    bg-slate-50/50 dark:bg-zinc-900/50 rounded-b-3xl sm:rounded-b-3xl">
             <button type="button" @click="show = false"
-                class="px-3 py-1.5 text-[11px] font-medium rounded-md
+                class="px-3 py-1.5 text-[11px] font-medium rounded-full
                        text-slate-700 dark:text-zinc-300
                        bg-white dark:bg-zinc-800
                        border border-slate-300 dark:border-zinc-600
                        hover:bg-slate-50 dark:hover:bg-zinc-700
-                       transition-colors">
+                       shadow-sm shadow-zinc-200/40 hover:shadow-sm hover:shadow-violet-500/15
+                       hover:scale-[1.02] active:scale-[0.97]
+                       transition-all duration-150">
                 Close
             </button>
         </div>

@@ -59,18 +59,19 @@ new class extends Component {
     @click.self="show = false">
 
     <div class="flex max-h-[90vh] w-full sm:max-w-lg flex-col overflow-hidden
-                bg-white dark:bg-zinc-900 rounded-t-2xl sm:rounded-xl shadow-2xl
-                border border-slate-200 dark:border-zinc-700"
+                bg-white dark:bg-zinc-900 rounded-t-3xl sm:rounded-3xl shadow-2xl
+                border border-slate-200 dark:border-zinc-700
+                hover:shadow-amber-500/15 transition-shadow duration-300"
         @click.stop>
 
         <div class="flex min-h-0 flex-1 flex-col">
 
             {{-- HEADER --}}
             <div class="shrink-0 bg-gradient-to-r from-amber-600 to-amber-500
-                        px-5 sm:px-6 py-4 rounded-t-2xl sm:rounded-t-xl">
+                        px-5 sm:px-6 py-4 rounded-t-3xl sm:rounded-t-3xl">
                 <div class="flex items-start justify-between gap-3">
                     <div class="flex items-center gap-2.5 min-w-0 flex-1">
-                        <div class="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
+                        <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
                             <flux:icon.chat-bubble-left-right class="size-4 text-white" />
                         </div>
                         <div class="min-w-0 flex-1">
@@ -83,8 +84,11 @@ new class extends Component {
                         </div>
                     </div>
                     <button type="button" @click="show = false"
-                        class="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center
-                               text-white/80 hover:text-white hover:bg-white/10 transition-colors">
+                        aria-label="Close"
+                        class="shrink-0 w-7 h-7 rounded-full flex items-center justify-center
+                               text-white/80 hover:text-white hover:bg-white/10
+                               hover:scale-110 active:scale-95
+                               transition-all duration-150">
                         <flux:icon.x-mark class="size-4" />
                     </button>
                 </div>
@@ -95,7 +99,7 @@ new class extends Component {
 
                 {{-- Subject --}}
                 @if ($subject)
-                    <div class="rounded-lg border border-slate-200 dark:border-zinc-700
+                    <div class="rounded-2xl border border-slate-200 dark:border-zinc-700
                                 bg-slate-50 dark:bg-zinc-800/40 p-3">
                         <p class="text-[10px] font-medium text-slate-500 dark:text-zinc-400 uppercase tracking-wider">
                             Subjek
@@ -114,7 +118,7 @@ new class extends Component {
 
                     @forelse ($notes as $note)
                         <div wire:key="note-{{ $note->id }}"
-                            class="rounded-lg border border-amber-200 dark:border-amber-800
+                            class="rounded-2xl border border-amber-200 dark:border-amber-800
                                    bg-amber-50 dark:bg-amber-900/20 p-3">
                             <div class="flex items-center gap-2 mb-1.5">
                                 <div class="w-6 h-6 rounded-full bg-amber-200 dark:bg-amber-800/50
@@ -131,10 +135,14 @@ new class extends Component {
                                         · {{ $note->created_at?->diffForHumans() }}
                                     </p>
                                 </div>
+                                <span class="text-[9px] font-bold px-2 py-0.5 rounded-full uppercase
+                                            bg-amber-200 text-amber-800 dark:bg-amber-800 dark:text-amber-200">
+                                    Admin
+                                </span>
                             </div>
 
                             @if ($note->comment)
-                                <p class="text-[11px] text-amber-900 dark:text-amber-100 whitespace-pre-wrap mt-2">
+                                <p class="text-[11px] text-amber-900 dark:text-amber-100 whitespace-pre-wrap mt-2 leading-snug">
                                     {{ $note->comment }}
                                 </p>
                             @endif
@@ -149,7 +157,7 @@ new class extends Component {
                         </div>
                     @empty
                         <div class="flex flex-col items-center justify-center gap-2 py-8">
-                            <div class="w-12 h-12 rounded-xl bg-slate-100 dark:bg-zinc-800
+                            <div class="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-zinc-800
                                         flex items-center justify-center">
                                 <flux:icon.chat-bubble-left-right class="size-6 text-slate-400 dark:text-zinc-600" />
                             </div>
@@ -162,10 +170,20 @@ new class extends Component {
             </div>
 
             {{-- FOOTER --}}
-            <div class="shrink-0 flex justify-end gap-2
+            <div class="shrink-0 flex justify-end
                         px-5 sm:px-6 py-4 border-t border-slate-200 dark:border-zinc-700
-                        bg-white dark:bg-zinc-900 rounded-b-2xl sm:rounded-b-xl">
-                <flux:button type="button" @click="show = false" variant="ghost" size="sm">Tutup</flux:button>
+                        bg-slate-50/50 dark:bg-zinc-900/50 rounded-b-3xl sm:rounded-b-3xl">
+                <button type="button" @click="show = false"
+                    class="px-3 py-1.5 text-[11px] font-medium rounded-full
+                           text-slate-700 dark:text-zinc-300
+                           bg-white dark:bg-zinc-800
+                           border border-slate-300 dark:border-zinc-600
+                           hover:bg-slate-50 dark:hover:bg-zinc-700
+                           shadow-sm shadow-zinc-200/40 hover:shadow-sm hover:shadow-amber-500/15
+                           hover:scale-[1.02] active:scale-[0.97]
+                           transition-all duration-150">
+                    Tutup
+                </button>
             </div>
         </div>
     </div>

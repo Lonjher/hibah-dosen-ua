@@ -77,18 +77,20 @@ new class extends Component {
         x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
         x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
         class="flex max-h-[92vh] w-full sm:max-w-2xl flex-col overflow-hidden
-               bg-white dark:bg-zinc-900 rounded-t-2xl sm:rounded-xl shadow-2xl
-               border border-slate-200 dark:border-zinc-700"
+               bg-white dark:bg-zinc-900 rounded-t-3xl sm:rounded-3xl shadow-2xl
+               border border-slate-200 dark:border-zinc-700
+               hover:shadow-indigo-500/15 transition-shadow duration-300"
         @click.stop>
 
         @if ($proposal)
             @php $meta = $proposal->statusMeta(); @endphp
 
             {{-- ══════════ HEADER (indigo → violet) ══════════ --}}
-            <div class="shrink-0 bg-gradient-to-r from-indigo-600 to-violet-500 px-4 py-3">
+            <div class="shrink-0 bg-gradient-to-r from-indigo-600 to-violet-500
+                        px-4 py-3 rounded-t-3xl sm:rounded-t-3xl">
                 <div class="flex items-start justify-between gap-3">
                     <div class="flex items-center gap-2 min-w-0 flex-1">
-                        <div class="w-7 h-7 rounded-md bg-white/20 flex items-center justify-center shrink-0">
+                        <div class="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center shrink-0">
                             <flux:icon.eye class="size-3.5 text-white" />
                         </div>
                         <div class="min-w-0 flex-1">
@@ -96,7 +98,7 @@ new class extends Component {
                                 {{ $proposal->title }}
                             </h3>
                             <div class="flex items-center gap-1.5 mt-1 flex-wrap">
-                                <span class="text-[9.5px] font-semibold px-1.5 py-0.5 rounded-full {{ $meta['class'] }}">
+                                <span class="text-[9.5px] font-semibold px-2 py-0.5 rounded-full {{ $meta['class'] }}">
                                     {{ $meta['label'] }}
                                 </span>
                                 <span class="text-[9.5px] text-white/75">
@@ -107,8 +109,10 @@ new class extends Component {
                     </div>
                     <button type="button" @click="show = false"
                         aria-label="Close"
-                        class="shrink-0 w-6 h-6 rounded-md flex items-center justify-center
-                               text-white/80 hover:text-white hover:bg-white/10 transition-colors">
+                        class="shrink-0 w-6 h-6 rounded-full flex items-center justify-center
+                               text-white/80 hover:text-white hover:bg-white/10
+                               hover:scale-110 active:scale-95
+                               transition-all duration-150">
                         <flux:icon.x-mark class="size-3.5" />
                     </button>
                 </div>
@@ -119,8 +123,8 @@ new class extends Component {
 
                 {{-- ─────── METADATA ─────── --}}
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                    <div class="rounded-md border border-indigo-100 dark:border-indigo-900/40
-                                bg-indigo-50/50 dark:bg-indigo-900/10 px-2.5 py-2">
+                    <div class="rounded-2xl border border-indigo-100 dark:border-indigo-900/40
+                                bg-indigo-50/50 dark:bg-indigo-900/10 px-3 py-2.5">
                         <div class="flex items-center gap-1 mb-0.5">
                             <flux:icon.user class="size-2.5 text-indigo-500 dark:text-indigo-400" />
                             <p class="text-[9px] uppercase tracking-wider font-semibold
@@ -134,8 +138,8 @@ new class extends Component {
                         </p>
                     </div>
 
-                    <div class="rounded-md border border-violet-100 dark:border-violet-900/40
-                                bg-violet-50/50 dark:bg-violet-900/10 px-2.5 py-2">
+                    <div class="rounded-2xl border border-violet-100 dark:border-violet-900/40
+                                bg-violet-50/50 dark:bg-violet-900/10 px-3 py-2.5">
                         <div class="flex items-center gap-1 mb-0.5">
                             <flux:icon.clipboard-document-check class="size-2.5 text-violet-500 dark:text-violet-400" />
                             <p class="text-[9px] uppercase tracking-wider font-semibold
@@ -149,8 +153,8 @@ new class extends Component {
                         </p>
                     </div>
 
-                    <div class="rounded-md border border-sky-100 dark:border-sky-900/40
-                                bg-sky-50/50 dark:bg-sky-900/10 px-2.5 py-2">
+                    <div class="rounded-2xl border border-sky-100 dark:border-sky-900/40
+                                bg-sky-50/50 dark:bg-sky-900/10 px-3 py-2.5">
                         <div class="flex items-center gap-1 mb-0.5">
                             <flux:icon.beaker class="size-2.5 text-sky-500 dark:text-sky-400" />
                             <p class="text-[9px] uppercase tracking-wider font-semibold
@@ -164,8 +168,8 @@ new class extends Component {
                         </p>
                     </div>
 
-                    <div class="rounded-md border border-amber-100 dark:border-amber-900/40
-                                bg-amber-50/50 dark:bg-amber-900/10 px-2.5 py-2">
+                    <div class="rounded-2xl border border-amber-100 dark:border-amber-900/40
+                                bg-amber-50/50 dark:bg-amber-900/10 px-3 py-2.5">
                         <div class="flex items-center gap-1 mb-0.5">
                             <flux:icon.calendar-days class="size-2.5 text-amber-500 dark:text-amber-400" />
                             <p class="text-[9px] uppercase tracking-wider font-semibold
@@ -194,9 +198,9 @@ new class extends Component {
                                 Keywords
                             </p>
                         </div>
-                        <div class="flex flex-wrap gap-1">
+                        <div class="flex flex-wrap gap-1.5">
                             @foreach ($keywords as $kw)
-                                <span class="text-[9.5px] px-1.5 py-0.5 rounded-md font-medium
+                                <span class="text-[9.5px] px-2 py-0.5 rounded-full font-medium
                                              bg-indigo-50 dark:bg-indigo-900/20
                                              text-indigo-700 dark:text-indigo-300
                                              border border-indigo-100 dark:border-indigo-900/40">
@@ -216,10 +220,10 @@ new class extends Component {
                             Summary
                         </p>
                     </div>
-                    <div class="rounded-md border border-slate-200 dark:border-zinc-700/70
+                    <div class="rounded-2xl border border-slate-200 dark:border-zinc-700/70
                                 bg-slate-50 dark:bg-zinc-800/40
-                                px-2.5 py-2
-                                text-[10.5px] leading-relaxed whitespace-pre-wrap
+                                px-3 py-2.5
+                                text-[10.5px] leading-relaxed
                                 text-slate-700 dark:text-zinc-300
                                 max-h-40 overflow-y-auto">
                         {{ $proposal->summary }}
@@ -251,16 +255,16 @@ new class extends Component {
                             style="width: {{ $budgetPercent }}%"></div>
                     </div>
 
-                    <div class="space-y-1">
+                    <div class="space-y-1.5">
                         @forelse ($proposal->budgetProposals as $item)
-                            <div class="flex items-center justify-between gap-3 px-2 py-1.5 rounded-md
+                            <div class="flex items-center justify-between gap-3 px-3 py-1.5 rounded-full
                                         bg-slate-50 dark:bg-zinc-800/40
                                         border border-slate-100 dark:border-zinc-800/60">
-                                <span class="text-[10.5px] text-slate-700 dark:text-zinc-300 truncate">
+                                <span class="text-[10.5px] text-slate-700 dark:text-zinc-300 truncate pl-0.5">
                                     {{ $item->item_name }}
                                 </span>
                                 <span class="text-[10.5px] font-semibold whitespace-nowrap
-                                             text-slate-900 dark:text-zinc-100">
+                                             text-slate-900 dark:text-zinc-100 pr-0.5">
                                     Rp {{ number_format($item->amount, 0, ',', '.') }}
                                 </span>
                             </div>
@@ -281,7 +285,7 @@ new class extends Component {
                                       text-slate-500 dark:text-zinc-400">
                                 Admin Notes
                             </p>
-                            <span class="text-[9px] font-bold px-1.5 rounded-full
+                            <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full
                                          bg-amber-100 text-amber-700
                                          dark:bg-amber-900/40 dark:text-amber-300">
                                 {{ $proposal->adminNotes->count() }}
@@ -289,8 +293,8 @@ new class extends Component {
                         </div>
                         <div class="space-y-1.5">
                             @foreach ($proposal->adminNotes as $note)
-                                <div class="rounded-md border border-amber-200 dark:border-amber-800/60
-                                            bg-amber-50 dark:bg-amber-900/15 px-2.5 py-2">
+                                <div class="rounded-2xl border border-amber-200 dark:border-amber-800/60
+                                            bg-amber-50 dark:bg-amber-900/15 px-3 py-2.5">
                                     <div class="flex items-center gap-1.5 mb-1 text-[9.5px]">
                                         <span class="font-semibold text-amber-800 dark:text-amber-300">
                                             {{ $note->admin?->full_name ?? 'Admin' }}
@@ -301,7 +305,7 @@ new class extends Component {
                                         </span>
                                     </div>
                                     @if ($note->comment)
-                                        <p class="text-[10.5px] leading-relaxed whitespace-pre-wrap
+                                        <p class="text-[10.5px] leading-relaxed
                                                   text-amber-900 dark:text-amber-100">
                                             {{ $note->comment }}
                                         </p>
@@ -327,7 +331,7 @@ new class extends Component {
                                       text-slate-500 dark:text-zinc-400">
                                 Reviewer Notes
                             </p>
-                            <span class="text-[9px] font-bold px-1.5 rounded-full
+                            <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full
                                          bg-violet-100 text-violet-700
                                          dark:bg-violet-900/40 dark:text-violet-300">
                                 {{ $proposal->reviewerNotes->count() }}
@@ -335,8 +339,8 @@ new class extends Component {
                         </div>
                         <div class="space-y-1.5">
                             @foreach ($proposal->reviewerNotes as $note)
-                                <div class="rounded-md border border-violet-200 dark:border-violet-800/60
-                                            bg-violet-50 dark:bg-violet-900/15 px-2.5 py-2">
+                                <div class="rounded-2xl border border-violet-200 dark:border-violet-800/60
+                                            bg-violet-50 dark:bg-violet-900/15 px-3 py-2.5">
                                     <div class="flex items-center gap-1.5 mb-1 flex-wrap text-[9.5px]">
                                         <span class="font-semibold text-violet-800 dark:text-violet-300">
                                             {{ $note->reviewer?->full_name ?? 'Reviewer' }}
@@ -346,21 +350,23 @@ new class extends Component {
                                             {{ $note->created_at?->diffForHumans() }}
                                         </span>
                                         @if ($note->is_approved)
-                                            <span class="ml-auto text-[9px] px-1.5 py-0.5 rounded-full font-semibold
+                                            <span class="ml-auto inline-flex items-center gap-0.5 text-[9px] px-2 py-0.5 rounded-full font-semibold
                                                          bg-emerald-100 text-emerald-700
                                                          dark:bg-emerald-900/40 dark:text-emerald-300">
-                                                ✓ Approved
+                                                <flux:icon.check class="size-2.5" />
+                                                Approved
                                             </span>
                                         @else
-                                            <span class="ml-auto text-[9px] px-1.5 py-0.5 rounded-full font-semibold
+                                            <span class="ml-auto inline-flex items-center gap-0.5 text-[9px] px-2 py-0.5 rounded-full font-semibold
                                                          bg-amber-100 text-amber-700
                                                          dark:bg-amber-900/40 dark:text-amber-300">
+                                                <flux:icon.arrow-path class="size-2.5" />
                                                 Revision
                                             </span>
                                         @endif
                                     </div>
                                     @if ($note->comment)
-                                        <p class="text-[10.5px] leading-relaxed whitespace-pre-wrap
+                                        <p class="text-[10.5px] leading-relaxed
                                                   text-violet-900 dark:text-violet-100">
                                             {{ $note->comment }}
                                         </p>
@@ -379,16 +385,18 @@ new class extends Component {
             </div>
 
             {{-- ══════════ FOOTER ══════════ --}}
-            <div class="shrink-0 flex justify-end gap-1.5
+            <div class="shrink-0 flex justify-end
                         px-4 py-3 border-t border-slate-200 dark:border-zinc-700
-                        bg-slate-50/50 dark:bg-zinc-900/50">
+                        bg-slate-50/50 dark:bg-zinc-900/50 rounded-b-3xl sm:rounded-b-3xl">
                 <button type="button" @click="show = false"
-                    class="px-3 py-1.5 text-[11px] font-medium rounded-md
+                    class="px-3 py-1.5 text-[11px] font-medium rounded-full
                            text-slate-700 dark:text-zinc-300
                            bg-white dark:bg-zinc-800
                            border border-slate-300 dark:border-zinc-600
                            hover:bg-slate-50 dark:hover:bg-zinc-700
-                           transition-colors">
+                           shadow-sm shadow-zinc-200/40 hover:shadow-sm hover:shadow-indigo-500/15
+                           hover:scale-[1.02] active:scale-[0.97]
+                           transition-all duration-150">
                     Close
                 </button>
             </div>

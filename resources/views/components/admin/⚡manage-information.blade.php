@@ -102,7 +102,7 @@ new #[Title('Manage Informations')] class extends Component {
             leading="Kelola informasi untuk ditampilkan ke dashboard user." />
 
         {{-- ══════════ MAIN CARD ══════════ --}}
-        <div class="bg-white dark:bg-zinc-900 rounded-xl
+        <div class="bg-white dark:bg-zinc-900 rounded-full
                     shadow-sm shadow-slate-200/50 dark:shadow-zinc-950/50
                     border border-slate-200 dark:border-zinc-800 overflow-hidden">
 
@@ -126,32 +126,20 @@ new #[Title('Manage Informations')] class extends Component {
                             </span>
                         </div>
 
-                        <select wire:model.live="typeFilter"
-                            class="text-[10.5px] rounded-md border-slate-200 dark:border-zinc-700
-                                   bg-white dark:bg-zinc-800
-                                   text-slate-700 dark:text-zinc-200
-                                   py-1 pl-2 pr-6
-                                   focus:ring-1 focus:ring-sky-500 focus:border-sky-500
-                                   transition-colors">
+                        <x-select name="typeFilter" wire:model.live="typeFilter">
                             <option value="">Semua Tipe</option>
                             <option value="info">Info</option>
                             <option value="success">Sukses</option>
                             <option value="warning">Peringatan</option>
                             <option value="danger">Penting</option>
-                        </select>
+                        </x-select>
 
-                        <select wire:model.live="statusFilter"
-                            class="text-[10.5px] rounded-md border-slate-200 dark:border-zinc-700
-                                   bg-white dark:bg-zinc-800
-                                   text-slate-700 dark:text-zinc-200
-                                   py-1 pl-2 pr-6
-                                   focus:ring-1 focus:ring-sky-500 focus:border-sky-500
-                                   transition-colors">
+                        <x-select name="statusFilter" wire:model.live="statusFilter" placeholder="Semua Status">
                             <option value="">Semua Status</option>
                             <option value="published">Published</option>
                             <option value="draft">Draft</option>
                             <option value="expired">Kadaluarsa</option>
-                        </select>
+                        </x-select>
                     </div>
 
                     {{-- Right: search + new --}}
@@ -161,10 +149,10 @@ new #[Title('Manage Informations')] class extends Component {
                                 placeholder="Cari informasi..."
                                 class="w-full !text-[10.5px]" />
                         </div>
-                        <flux:button icon="plus" variant="primary" size="xs"
+                        <flux:button variant="primary"
                             x-data x-on:click="$dispatch('open-add-information')"
                             class="shrink-0 !text-[10.5px]">
-                            New
+                            New Item
                         </flux:button>
                     </div>
                 </div>
@@ -304,7 +292,7 @@ new #[Title('Manage Informations')] class extends Component {
             @if ($informations->hasPages())
                 <div class="px-3 py-2 border-t border-slate-200 dark:border-zinc-800
                             bg-slate-50/50 dark:bg-zinc-900/50">
-                    {{ $informations->links() }}
+                    {{ $informations->links('vendor.pagination.tailwind') }}
                 </div>
             @endif
         </div>

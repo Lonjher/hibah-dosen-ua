@@ -51,10 +51,10 @@
     x-on:confirm-delete.window="open($event.detail)"
     x-on:keydown.escape.window="close()"
     x-show="show"
-    x-transition:enter="transition ease-out duration-150"
+    x-transition:enter="transition ease-out duration-200"
     x-transition:enter-start="opacity-0"
     x-transition:enter-end="opacity-100"
-    x-transition:leave="transition ease-in duration-100"
+    x-transition:leave="transition ease-in duration-150"
     x-transition:leave-start="opacity-100"
     x-transition:leave-end="opacity-0"
     x-cloak
@@ -65,15 +65,15 @@
 
     <div
         x-on:click.away="close()"
-        x-transition:enter="transition ease-out duration-150"
-        x-transition:enter-start="opacity-0 scale-95"
-        x-transition:enter-end="opacity-100 scale-100"
-        x-transition:leave="transition ease-in duration-100"
-        x-transition:leave-start="opacity-100 scale-100"
-        x-transition:leave-end="opacity-0 scale-95"
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+        x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+        x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
         class="bg-white dark:bg-zinc-900 shadow-xl
                w-full {{ $width }}
-               rounded-lg
+               rounded-2xl
                p-4
                border border-zinc-200 dark:border-zinc-700">
 
@@ -108,28 +108,34 @@
         </div>
 
         {{-- Actions --}}
-        <div class="flex justify-end gap-2 mt-4">
+        <div class="flex justify-end gap-1.5 mt-4">
             <button type="button"
                 x-on:click="close()"
                 x-bind:disabled="loading"
-                class="px-3 py-1.5 text-xs font-medium rounded-md
+                class="px-3 py-1.5 text-xs font-medium rounded-full
                        text-zinc-600 dark:text-zinc-300
                        bg-white dark:bg-zinc-800
                        border border-zinc-300 dark:border-zinc-600
                        hover:bg-zinc-50 dark:hover:bg-zinc-700
+                       shadow-sm shadow-zinc-200/40 hover:shadow-sm hover:shadow-rose-500/15
+                       hover:scale-[1.02] active:scale-[0.97]
                        disabled:opacity-50 disabled:cursor-not-allowed
-                       transition-colors"
+                       disabled:hover:scale-100
+                       transition-all duration-150"
                 x-text="cancelLabel"></button>
 
             <button type="button"
                 x-on:click="confirm()"
                 x-bind:disabled="loading"
                 class="inline-flex items-center justify-center gap-1.5
-                       px-3 py-1.5 text-xs font-medium rounded-md
+                       px-3 py-1.5 text-xs font-medium rounded-full
                        text-white
-                       bg-rose-600 hover:bg-rose-700
+                       bg-rose-600/90 hover:bg-rose-600
+                       shadow-sm shadow-rose-500/20 hover:shadow-sm hover:shadow-rose-500/30
                        disabled:opacity-50 disabled:cursor-wait
-                       transition-colors">
+                       hover:scale-[1.02] active:scale-[0.97]
+                       disabled:hover:scale-100
+                       transition-all duration-150">
                 <svg x-show="loading" class="animate-spin size-3" viewBox="0 0 24 24" fill="none"
                      xmlns="http://www.w3.org/2000/svg">
                     <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" opacity=".25"/>

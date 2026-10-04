@@ -170,19 +170,12 @@ new class extends Component {
 
                 {{-- Period Name --}}
                 <div>
-                    <label for="edit-periode"
-                        class="block text-[11px] font-medium text-slate-700 dark:text-zinc-300 mb-1">
-                        Period Name <span class="text-rose-500">*</span>
-                    </label>
-                    <input type="text" id="edit-periode" wire:model="form.periode"
-                        placeholder="e.g. 2025/2026"
-                        class="block w-full rounded-md shadow-sm text-[11.5px]
-                               border-slate-300 dark:border-zinc-600
-                               bg-white dark:bg-zinc-800
-                               text-slate-900 dark:text-zinc-100
-                               placeholder:text-slate-400 dark:placeholder:text-zinc-500
-                               focus:ring-1 focus:ring-blue-500 focus:border-blue-500
-                               py-1.5 px-2.5 transition-colors" />
+                    <x-input
+                        id="edit-periode"
+                        wire:model="form.periode"
+                        label="Period Name"
+                        required
+                        placeholder="e.g. 2025/2026" />
                     @error('form.periode')
                         <p class="mt-1 flex items-center gap-1 text-[10.5px] text-rose-600">
                             <flux:icon.exclamation-circle class="size-3 shrink-0" />
@@ -194,18 +187,13 @@ new class extends Component {
                 {{-- Open From / Open To --}}
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <div>
-                        <label for="edit-open-from"
-                            class="block text-[11px] font-medium text-slate-700 dark:text-zinc-300 mb-1">
-                            Open From <span class="text-rose-500">*</span>
-                        </label>
-                        <input type="date" id="edit-open-from" wire:model="form.open_from"
-                            class="block w-full rounded-md shadow-sm text-[11.5px]
-                                   border-slate-300 dark:border-zinc-600
-                                   bg-white dark:bg-zinc-800
-                                   text-slate-900 dark:text-zinc-100
-                                   focus:ring-1 focus:ring-blue-500 focus:border-blue-500
-                                   py-1.5 px-2.5 transition-colors
-                                   dark:[color-scheme:dark]" />
+                        <x-input
+                            type="date"
+                            id="edit-open-from"
+                            wire:model="form.open_from"
+                            label="Open From"
+                            required
+                            class="dark:[color-scheme:dark]" />
                         @error('form.open_from')
                             <p class="mt-1 flex items-center gap-1 text-[10.5px] text-rose-600">
                                 <flux:icon.exclamation-circle class="size-3 shrink-0" />
@@ -215,18 +203,13 @@ new class extends Component {
                     </div>
 
                     <div>
-                        <label for="edit-open-to"
-                            class="block text-[11px] font-medium text-slate-700 dark:text-zinc-300 mb-1">
-                            Open To <span class="text-rose-500">*</span>
-                        </label>
-                        <input type="date" id="edit-open-to" wire:model="form.open_to"
-                            class="block w-full rounded-md shadow-sm text-[11.5px]
-                                   border-slate-300 dark:border-zinc-600
-                                   bg-white dark:bg-zinc-800
-                                   text-slate-900 dark:text-zinc-100
-                                   focus:ring-1 focus:ring-blue-500 focus:border-blue-500
-                                   py-1.5 px-2.5 transition-colors
-                                   dark:[color-scheme:dark]" />
+                        <x-input
+                            type="date"
+                            id="edit-open-to"
+                            wire:model="form.open_to"
+                            label="Open To"
+                            required
+                            class="dark:[color-scheme:dark]" />
                         @error('form.open_to')
                             <p class="mt-1 flex items-center gap-1 text-[10.5px] text-rose-600">
                                 <flux:icon.exclamation-circle class="size-3 shrink-0" />
@@ -238,7 +221,7 @@ new class extends Component {
 
                 {{-- Is Active --}}
                 <label class="flex items-start gap-2 cursor-pointer select-none
-                              p-2 rounded-md
+                              p-2 rounded-full
                               bg-slate-50 dark:bg-zinc-800/40
                               border border-slate-200 dark:border-zinc-700/60
                               hover:bg-slate-100 dark:hover:bg-zinc-800/70
@@ -274,12 +257,13 @@ new class extends Component {
 
                 <button type="button" @click="show = false"
                     class="w-full sm:w-auto px-3 py-1.5 text-[11px] font-medium
-                           rounded-md
+                           rounded-full
                            text-slate-700 dark:text-zinc-300
                            bg-white dark:bg-zinc-800
                            border border-slate-300 dark:border-zinc-600
                            hover:bg-slate-50 dark:hover:bg-zinc-700
-                           transition-colors">
+                           hover:scale-[1.02] active:scale-[0.97]
+                           transition-all duration-150">
                     Cancel
                 </button>
 
@@ -287,11 +271,13 @@ new class extends Component {
                     wire:loading.attr="disabled"
                     wire:target="update"
                     class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5
-                           px-3 py-1.5 text-[11px] font-medium rounded-md
+                           px-3 py-1.5 text-[11px] font-medium rounded-full
                            text-white
                            bg-blue-600 hover:bg-blue-700
+                           shadow-sm shadow-blue-500/20 hover:shadow-sm hover:shadow-blue-500/30
                            disabled:opacity-60 disabled:cursor-wait
-                           transition-colors">
+                           hover:scale-[1.02] active:scale-[0.97]
+                           transition-all duration-150">
                     <svg wire:loading wire:target="update"
                          class="animate-spin size-3" viewBox="0 0 24 24" fill="none"
                          xmlns="http://www.w3.org/2000/svg">

@@ -112,7 +112,7 @@ new #[Title('Manage Reviewers')] class extends Component {
             leading="Manage all reviewers who will evaluate proposals." />
 
         {{-- ══════════ MAIN CARD ══════════ --}}
-        <div class="bg-white dark:bg-zinc-900 rounded-xl
+        <div class="bg-white dark:bg-zinc-900 rounded-full
                     shadow-sm shadow-slate-200/50 dark:shadow-zinc-950/50
                     border border-slate-200 dark:border-zinc-800 overflow-hidden">
 
@@ -143,10 +143,10 @@ new #[Title('Manage Reviewers')] class extends Component {
                                 placeholder="Search reviewers..."
                                 class="w-full !text-[10.5px]" />
                         </div>
-                        <flux:button icon="plus" variant="primary" size="xs"
+                        <flux:button variant="primary"
                             x-data x-on:click="$dispatch('open-add-reviewer')"
                             class="shrink-0 !text-[10.5px]">
-                            New
+                            New User
                         </flux:button>
                     </div>
                 </div>
@@ -293,7 +293,7 @@ new #[Title('Manage Reviewers')] class extends Component {
             @if ($reviewers->hasPages())
                 <div class="px-3 py-2 border-t border-slate-200 dark:border-zinc-800
                             bg-slate-50/50 dark:bg-zinc-900/50">
-                    {{ $reviewers->links() }}
+                    {{ $reviewers->links('vendor.pagination.tailwind') }}
                 </div>
             @endif
         </div>

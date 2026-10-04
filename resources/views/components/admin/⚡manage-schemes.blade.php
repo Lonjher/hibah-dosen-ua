@@ -108,7 +108,7 @@ new #[Title('Manage Schemes')] class extends Component {
             leading="Manage all research & community service schemes." />
 
         {{-- ══════════ MAIN CARD ══════════ --}}
-        <div class="bg-white dark:bg-zinc-900 rounded-xl
+        <div class="bg-white dark:bg-zinc-900 rounded-full
                     shadow-sm shadow-slate-200/50 dark:shadow-zinc-950/50
                     border border-slate-200 dark:border-zinc-800 overflow-hidden">
 
@@ -139,10 +139,10 @@ new #[Title('Manage Schemes')] class extends Component {
                                 placeholder="Search schemes..."
                                 class="w-full !text-[10.5px]" />
                         </div>
-                        <flux:button icon="plus" variant="primary" size="xs"
+                        <flux:button variant="primary"
                             x-data x-on:click="$dispatch('open-add-scheme')"
                             class="shrink-0 !text-[10.5px]">
-                            New
+                            New Item
                         </flux:button>
                     </div>
                 </div>
@@ -295,7 +295,7 @@ new #[Title('Manage Schemes')] class extends Component {
             @if ($schemes->hasPages())
                 <div class="px-3 py-2 border-t border-slate-200 dark:border-zinc-800
                             bg-slate-50/50 dark:bg-zinc-900/50">
-                    {{ $schemes->links() }}
+                    {{ $schemes->links('vendor.pagination.tailwind') }}
                 </div>
             @endif
         </div>

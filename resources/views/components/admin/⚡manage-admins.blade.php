@@ -146,7 +146,7 @@ new #[Title('Manage Admins')] class extends Component {
         </div>
 
         {{-- ══════════ MAIN CARD ══════════ --}}
-        <div class="bg-white dark:bg-zinc-900 rounded-xl
+        <div class="bg-white dark:bg-zinc-900 rounded-full
                     shadow-sm shadow-slate-200/50 dark:shadow-zinc-950/50
                     border border-slate-200 dark:border-zinc-800 overflow-hidden">
 
@@ -177,10 +177,10 @@ new #[Title('Manage Admins')] class extends Component {
                                 placeholder="Search admins..."
                                 class="w-full !text-[10.5px]" />
                         </div>
-                        <flux:button icon="plus" variant="primary" size="xs"
+                        <flux:button variant="primary"
                             x-data x-on:click="$dispatch('open-add-admin')"
                             class="shrink-0 !text-[10.5px]">
-                            New
+                            New User
                         </flux:button>
                     </div>
                 </div>
@@ -316,7 +316,7 @@ new #[Title('Manage Admins')] class extends Component {
             @if ($admins->hasPages())
                 <div class="px-3 py-2 border-t border-slate-200 dark:border-zinc-800
                             bg-slate-50/50 dark:bg-zinc-900/50">
-                    {{ $admins->links() }}
+                    {{ $admins->links('vendor.pagination.tailwind') }}
                 </div>
             @endif
         </div>

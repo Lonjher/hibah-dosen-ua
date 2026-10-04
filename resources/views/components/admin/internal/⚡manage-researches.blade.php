@@ -158,7 +158,7 @@ new #[Title('Manage Researches')] class extends Component {
             leading="Manage research proposals. Verify, revise, or reject proposals." />
 
         {{-- ══════════ MAIN CARD ══════════ --}}
-        <div class="bg-white dark:bg-zinc-900 rounded-xl
+        <div class="bg-white dark:bg-zinc-900 rounded-full
                     shadow-sm shadow-slate-200/50 dark:shadow-zinc-950/50
                     border border-slate-200 dark:border-zinc-800 overflow-hidden">
 
@@ -170,7 +170,7 @@ new #[Title('Manage Researches')] class extends Component {
 
                     {{-- Left: stat + filter --}}
                     <div class="flex flex-wrap items-center gap-1.5">
-                        <div class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md
+                        <div class="inline-flex items-center gap-1.5 px-2 py-1 rounded-full
                                     bg-emerald-50 dark:bg-emerald-900/20
                                     border border-emerald-100 dark:border-emerald-900/40
                                     w-fit">
@@ -183,13 +183,7 @@ new #[Title('Manage Researches')] class extends Component {
                             </span>
                         </div>
 
-                        <select wire:model.live="statusFilter"
-                            class="text-[10.5px] rounded-md border-slate-200 dark:border-zinc-700
-                                   bg-white dark:bg-zinc-800
-                                   text-slate-700 dark:text-zinc-200
-                                   py-1 pl-2 pr-6
-                                   focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500
-                                   transition-colors">
+                        <x-select wire:model.live="statusFilter">
                             <option value="">All Status</option>
                             <option value="pending">Pending</option>
                             <option value="submitted">Submitted</option>
@@ -197,7 +191,7 @@ new #[Title('Manage Researches')] class extends Component {
                             <option value="revised">Revised</option>
                             <option value="accepted">Accepted</option>
                             <option value="rejected">Rejected</option>
-                        </select>
+                        </x-select>
                     </div>
 
                     {{-- Right: search --}}

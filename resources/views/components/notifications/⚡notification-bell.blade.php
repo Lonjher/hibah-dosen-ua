@@ -174,10 +174,11 @@ new class extends Component {
 
     {{-- ══════════ BELL BUTTON ══════════ --}}
     <button @click="open = !open" type="button" aria-label="Notifications"
-        class="cursor-pointer relative rounded-md p-1.5 sm:p-2
-               text-stone-500 hover:bg-stone-100 hover:text-emerald-600
-               dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-emerald-400
-               transition-colors">
+        class="cursor-pointer relative rounded-full p-1.5 sm:p-2 shadow-sm shadow-emerald-500/20 bg-transparent
+               hover:bg-green-100 dark:hover:bg-stone-900
+               transition-colors duration-150
+               text-stone-500 hover:text-emerald-600
+               dark:text-zinc-400 dark:hover:text-emerald-400">
         <flux:icon.bell class="size-4" />
 
         @if ($this->unreadCount > 0)

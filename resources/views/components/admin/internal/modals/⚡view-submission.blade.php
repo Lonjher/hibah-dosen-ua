@@ -329,18 +329,20 @@ new class extends Component {
         x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
         x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
         class="flex max-h-[92vh] w-full sm:max-w-2xl flex-col overflow-hidden
-               bg-white dark:bg-zinc-900 rounded-t-2xl sm:rounded-xl shadow-2xl
-               border border-slate-200 dark:border-zinc-700"
+               bg-white dark:bg-zinc-900 rounded-t-3xl sm:rounded-3xl shadow-2xl
+               border border-slate-200 dark:border-zinc-700
+               hover:shadow-indigo-500/15 transition-shadow duration-300"
         @click.stop>
 
         @if ($proposal)
             @php $meta = $proposal->statusMeta(); @endphp
 
             {{-- ══════════ HEADER (indigo → violet) ══════════ --}}
-            <div class="shrink-0 bg-gradient-to-r from-indigo-600 to-violet-500 px-4 py-3">
+            <div class="shrink-0 bg-gradient-to-r from-indigo-600 to-violet-500
+                        px-4 py-3 rounded-t-3xl sm:rounded-t-3xl">
                 <div class="flex items-start justify-between gap-3">
                     <div class="flex items-center gap-2 min-w-0">
-                        <div class="w-7 h-7 rounded-md bg-white/20 flex items-center justify-center shrink-0">
+                        <div class="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center shrink-0">
                             <flux:icon.eye class="size-3.5 text-white" />
                         </div>
                         <div class="min-w-0">
@@ -348,7 +350,7 @@ new class extends Component {
                                 {{ $proposal->title }}
                             </h3>
                             <div class="flex items-center gap-1.5 mt-1 flex-wrap">
-                                <span class="text-[9.5px] font-semibold px-1.5 py-0.5 rounded-full {{ $meta['class'] }}">
+                                <span class="text-[9.5px] font-semibold px-2 py-0.5 rounded-full {{ $meta['class'] }}">
                                     {{ $meta['label'] }}
                                 </span>
                                 <span class="text-[9.5px] text-white/75">
@@ -359,8 +361,10 @@ new class extends Component {
                     </div>
                     <button type="button" @click="show = false"
                         aria-label="Close"
-                        class="shrink-0 w-6 h-6 rounded-md flex items-center justify-center
-                               text-white/80 hover:text-white hover:bg-white/10 transition-colors">
+                        class="shrink-0 w-6 h-6 rounded-full flex items-center justify-center
+                               text-white/80 hover:text-white hover:bg-white/10
+                               hover:scale-110 active:scale-95
+                               transition-all duration-150">
                         <flux:icon.x-mark class="size-3.5" />
                     </button>
                 </div>
@@ -369,26 +373,27 @@ new class extends Component {
             {{-- ══════════ TABS ══════════ --}}
             <div class="shrink-0 bg-slate-50 dark:bg-zinc-800/40
                         border-b border-slate-200 dark:border-zinc-700">
-                <div class="flex items-center gap-1 px-3 pt-2 overflow-x-auto">
+                <div class="flex items-center gap-1.5 px-3 sm:px-4 py-2.5 overflow-x-auto">
 
                     {{-- Tab: Progress Report --}}
                     <button type="button" wire:click="switchTab('progress_report')"
                         @class([
-                            'inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-t-md
+                            'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full
                              text-[10.5px] font-semibold transition-all whitespace-nowrap',
-                            'bg-white dark:bg-zinc-900 text-violet-700 dark:text-violet-300
-                             border-x border-t border-slate-200 dark:border-zinc-700'
+                            'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300
+                             shadow-sm shadow-violet-500/20'
                                 => $activeTab === 'progress_report',
                             'text-slate-500 dark:text-zinc-400
-                             hover:text-slate-700 dark:hover:text-zinc-200'
+                             hover:text-slate-700 dark:hover:text-zinc-200
+                             hover:bg-slate-100 dark:hover:bg-zinc-800/60'
                                 => $activeTab !== 'progress_report',
                         ])>
                         <flux:icon.document-chart-bar class="size-3" />
                         <span>Progress Report</span>
                         @if ($progressReport)
-                            <span class="text-[9px] font-bold px-1.5 rounded-full
-                                         bg-violet-100 text-violet-700
-                                         dark:bg-violet-900/40 dark:text-violet-300">
+                            <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full
+                                         bg-violet-200 text-violet-800
+                                         dark:bg-violet-800 dark:text-violet-200">
                                 {{ $progressReport->reviewerNotes->count() + $progressReport->adminNotes->count() }}
                             </span>
                         @endif
@@ -397,22 +402,23 @@ new class extends Component {
                     {{-- Tab: Final Report --}}
                     <button type="button" wire:click="switchTab('final_report')"
                         @class([
-                            'inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-t-md
+                            'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full
                              text-[10.5px] font-semibold transition-all whitespace-nowrap',
-                            'bg-white dark:bg-zinc-900 text-blue-700 dark:text-blue-300
-                             border-x border-t border-slate-200 dark:border-zinc-700'
+                            'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300
+                             shadow-sm shadow-blue-500/20'
                                 => $activeTab === 'final_report',
                             'text-slate-500 dark:text-zinc-400
-                             hover:text-slate-700 dark:hover:text-zinc-200'
+                             hover:text-slate-700 dark:hover:text-zinc-200
+                             hover:bg-slate-100 dark:hover:bg-zinc-800/60'
                                 => $activeTab !== 'final_report',
                             'opacity-50' => ! $finalReport,
                         ])>
                         <flux:icon.document-check class="size-3" />
                         <span>Final Report</span>
                         @if ($finalReport)
-                            <span class="text-[9px] font-bold px-1.5 rounded-full
-                                         bg-blue-100 text-blue-700
-                                         dark:bg-blue-900/40 dark:text-blue-300">
+                            <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full
+                                         bg-blue-200 text-blue-800
+                                         dark:bg-blue-800 dark:text-blue-200">
                                 {{ $finalReport->adminNotes->count() }}
                             </span>
                         @endif
@@ -421,22 +427,23 @@ new class extends Component {
                     {{-- Tab: Output --}}
                     <button type="button" wire:click="switchTab('output')"
                         @class([
-                            'inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-t-md
+                            'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full
                              text-[10.5px] font-semibold transition-all whitespace-nowrap',
-                            'bg-white dark:bg-zinc-900 text-amber-700 dark:text-amber-300
-                             border-x border-t border-slate-200 dark:border-zinc-700'
+                            'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300
+                             shadow-sm shadow-amber-500/20'
                                 => $activeTab === 'output',
                             'text-slate-500 dark:text-zinc-400
-                             hover:text-slate-700 dark:hover:text-zinc-200'
+                             hover:text-slate-700 dark:hover:text-zinc-200
+                             hover:bg-slate-100 dark:hover:bg-zinc-800/60'
                                 => $activeTab !== 'output',
                             'opacity-50' => ! $output,
                         ])>
                         <flux:icon.trophy class="size-3" />
                         <span>Output</span>
                         @if ($output)
-                            <span class="text-[9px] font-bold px-1.5 rounded-full
-                                         bg-amber-100 text-amber-700
-                                         dark:bg-amber-900/40 dark:text-amber-300">
+                            <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full
+                                         bg-amber-200 text-amber-800
+                                         dark:bg-amber-800 dark:text-amber-200">
                                 {{ $output->adminNotes->count() }}
                             </span>
                         @endif
@@ -452,7 +459,7 @@ new class extends Component {
                 @if (! $submission)
                     {{-- Empty state --}}
                     <div class="flex flex-col items-center gap-2 py-12 text-center">
-                        <div class="w-14 h-14 rounded-xl bg-slate-100 dark:bg-zinc-800
+                        <div class="w-14 h-14 rounded-3xl bg-slate-100 dark:bg-zinc-800
                                     flex items-center justify-center">
                             <flux:icon.document-plus class="size-7 text-slate-400 dark:text-zinc-600" />
                         </div>
@@ -479,8 +486,8 @@ new class extends Component {
                 @else
                     {{-- ══════════ META GRID ══════════ --}}
                     <div class="grid grid-cols-2 gap-2.5">
-                        <div class="rounded-md border border-indigo-100 dark:border-indigo-900/40
-                                    bg-indigo-50/50 dark:bg-indigo-900/10 px-2.5 py-2">
+                        <div class="rounded-2xl border border-indigo-100 dark:border-indigo-900/40
+                                    bg-indigo-50/50 dark:bg-indigo-900/10 px-3 py-2.5">
                             <p class="text-[9px] uppercase tracking-wider font-semibold
                                       text-indigo-600 dark:text-indigo-400">
                                 Author
@@ -490,8 +497,8 @@ new class extends Component {
                                 {{ $proposal->author?->full_name ?? '—' }}
                             </p>
                         </div>
-                        <div class="rounded-md border border-violet-100 dark:border-violet-900/40
-                                    bg-violet-50/50 dark:bg-violet-900/10 px-2.5 py-2">
+                        <div class="rounded-2xl border border-violet-100 dark:border-violet-900/40
+                                    bg-violet-50/50 dark:bg-violet-900/10 px-3 py-2.5">
                             <p class="text-[9px] uppercase tracking-wider font-semibold
                                       text-violet-600 dark:text-violet-400">
                                 {{ $activeTab === 'progress_report' ? 'Reviewer' : 'Submitted' }}
@@ -517,7 +524,7 @@ new class extends Component {
                                     Keyword
                                 </p>
                             </div>
-                            <div class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md
+                            <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full
                                         bg-violet-50 dark:bg-violet-900/20
                                         border border-violet-200 dark:border-violet-800/60">
                                 <flux:icon.tag class="size-3 text-violet-600 dark:text-violet-400" />
@@ -538,9 +545,9 @@ new class extends Component {
                                 Summary
                             </p>
                         </div>
-                        <div class="rounded-md border border-slate-200 dark:border-zinc-700/70
-                                    bg-slate-50 dark:bg-zinc-800/40 px-2.5 py-2
-                                    text-[10.5px] leading-relaxed whitespace-pre-wrap
+                        <div class="rounded-2xl border border-slate-200 dark:border-zinc-700/70
+                                    bg-slate-50 dark:bg-zinc-800/40 px-3 py-2.5
+                                    text-[10.5px] leading-relaxed
                                     text-slate-700 dark:text-zinc-300
                                     max-h-40 overflow-y-auto">
                             {{ $submission->summary }}
@@ -563,11 +570,12 @@ new class extends Component {
                                 @if ($submission->report_path)
                                     <a href="{{ Storage::disk('public')->url($submission->report_path) }}"
                                         target="_blank"
-                                        class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md
+                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full
                                                bg-rose-50 hover:bg-rose-100 dark:bg-rose-900/20 dark:hover:bg-rose-900/40
                                                border border-rose-200 dark:border-rose-800/60
                                                text-rose-700 dark:text-rose-300 text-[10.5px] font-semibold
-                                               transition-colors">
+                                               hover:scale-[1.02] active:scale-[0.97]
+                                               transition-all duration-150">
                                         <flux:icon.document-text class="size-3.5" />
                                         Report PDF
                                     </a>
@@ -575,11 +583,12 @@ new class extends Component {
                                 @if ($submission->ppt_path)
                                     <a href="{{ Storage::disk('public')->url($submission->ppt_path) }}"
                                         target="_blank"
-                                        class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md
+                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full
                                                bg-orange-50 hover:bg-orange-100 dark:bg-orange-900/20 dark:hover:bg-orange-900/40
                                                border border-orange-200 dark:border-orange-800/60
                                                text-orange-700 dark:text-orange-300 text-[10.5px] font-semibold
-                                               transition-colors">
+                                               hover:scale-[1.02] active:scale-[0.97]
+                                               transition-all duration-150">
                                         <flux:icon.presentation-chart-bar class="size-3.5" />
                                         Presentation
                                     </a>
@@ -591,11 +600,12 @@ new class extends Component {
                                 @if ($submission->report_path)
                                     <a href="{{ Storage::disk('public')->url($submission->report_path) }}"
                                         target="_blank"
-                                        class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md
+                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full
                                                bg-rose-50 hover:bg-rose-100 dark:bg-rose-900/20
                                                border border-rose-200 dark:border-rose-800/60
                                                text-rose-700 dark:text-rose-300 text-[10.5px] font-semibold
-                                               transition-colors">
+                                               hover:scale-[1.02] active:scale-[0.97]
+                                               transition-all duration-150">
                                         <flux:icon.document-text class="size-3.5" />
                                         Report
                                     </a>
@@ -603,11 +613,12 @@ new class extends Component {
                                 @if ($submission->ppt_path)
                                     <a href="{{ Storage::disk('public')->url($submission->ppt_path) }}"
                                         target="_blank"
-                                        class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md
+                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full
                                                bg-orange-50 hover:bg-orange-100 dark:bg-orange-900/20
                                                border border-orange-200 dark:border-orange-800/60
                                                text-orange-700 dark:text-orange-300 text-[10.5px] font-semibold
-                                               transition-colors">
+                                               hover:scale-[1.02] active:scale-[0.97]
+                                               transition-all duration-150">
                                         <flux:icon.presentation-chart-bar class="size-3.5" />
                                         Presentation
                                     </a>
@@ -615,11 +626,12 @@ new class extends Component {
                                 @if ($submission->research_output)
                                     <a href="{{ Storage::disk('public')->url($submission->research_output) }}"
                                         target="_blank"
-                                        class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md
+                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full
                                                bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20
                                                border border-blue-200 dark:border-blue-800/60
                                                text-blue-700 dark:text-blue-300 text-[10.5px] font-semibold
-                                               transition-colors">
+                                               hover:scale-[1.02] active:scale-[0.97]
+                                               transition-all duration-150">
                                         <flux:icon.document-arrow-down class="size-3.5" />
                                         Research Output
                                     </a>
@@ -627,11 +639,12 @@ new class extends Component {
                                 @if ($submission->submission_proof)
                                     <a href="{{ Storage::disk('public')->url($submission->submission_proof) }}"
                                         target="_blank"
-                                        class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md
+                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full
                                                bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/20
                                                border border-emerald-200 dark:border-emerald-800/60
                                                text-emerald-700 dark:text-emerald-300 text-[10.5px] font-semibold
-                                               transition-colors">
+                                               hover:scale-[1.02] active:scale-[0.97]
+                                               transition-all duration-150">
                                         <flux:icon.photo class="size-3.5" />
                                         Submission Proof
                                     </a>
@@ -641,11 +654,12 @@ new class extends Component {
                             {{-- Output Files --}}
                             @if ($activeTab === 'output')
                                 <a href="{{ $submission->journal_link }}" target="_blank"
-                                    class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full
                                            bg-sky-50 hover:bg-sky-100 dark:bg-sky-900/20
                                            border border-sky-200 dark:border-sky-800/60
                                            text-sky-700 dark:text-sky-300 text-[10.5px] font-semibold
-                                           transition-colors">
+                                           hover:scale-[1.02] active:scale-[0.97]
+                                           transition-all duration-150">
                                     <flux:icon.arrow-up-right class="size-3.5" />
                                     View Journal
                                 </a>
@@ -655,8 +669,8 @@ new class extends Component {
 
                     {{-- ══════════ OUTPUT DETAILS ══════════ --}}
                     @if ($activeTab === 'output')
-                        <div class="rounded-md border border-slate-200 dark:border-zinc-700/70 overflow-hidden">
-                            <div class="px-2.5 py-2 bg-slate-50 dark:bg-zinc-800/40
+                        <div class="rounded-2xl border border-slate-200 dark:border-zinc-700/70 overflow-hidden">
+                            <div class="px-3 py-2 bg-slate-50 dark:bg-zinc-800/40
                                         border-b border-slate-200 dark:border-zinc-700/70">
                                 <div class="flex items-center gap-1.5">
                                     <flux:icon.trophy class="size-3 text-amber-500 dark:text-amber-400" />
@@ -666,7 +680,7 @@ new class extends Component {
                                     </span>
                                 </div>
                             </div>
-                            <div class="px-2.5 py-3 grid grid-cols-2 gap-2.5">
+                            <div class="px-3 py-3 grid grid-cols-2 gap-2.5">
                                 <div>
                                     <p class="text-[9px] uppercase tracking-wider font-semibold
                                               text-slate-500 dark:text-zinc-400">
@@ -683,7 +697,7 @@ new class extends Component {
                                         Level
                                     </p>
                                     @php $levelMeta = $this->levelMeta($submission->level); @endphp
-                                    <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full
                                                  text-[9.5px] font-semibold mt-0.5
                                                  {{ $levelMeta['class'] }}">
                                         <flux:icon.star class="size-2.5" />
@@ -718,8 +732,8 @@ new class extends Component {
                     @if ($activeTab === 'progress_report' && $submission->reviewerNotes->count() > 0)
                         @php $pendingNotesCount = $submission->reviewerNotes->where('is_approved', false)->count(); @endphp
 
-                        <div class="rounded-md border border-violet-200 dark:border-violet-800/60 overflow-hidden">
-                            <div class="px-2.5 py-2 bg-violet-50 dark:bg-violet-900/20
+                        <div class="rounded-2xl border border-violet-200 dark:border-violet-800/60 overflow-hidden">
+                            <div class="px-3 py-2 bg-violet-50 dark:bg-violet-900/20
                                         border-b border-violet-200 dark:border-violet-800/60
                                         flex items-center justify-between gap-2">
                                 <div class="flex items-center gap-1.5 flex-wrap">
@@ -729,13 +743,13 @@ new class extends Component {
                                                  text-violet-800 dark:text-violet-300">
                                         Reviewer Notes
                                     </span>
-                                    <span class="text-[9px] font-bold px-1.5 rounded-full
+                                    <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full
                                                  bg-violet-200 text-violet-800
                                                  dark:bg-violet-800 dark:text-violet-200">
                                         {{ $submission->reviewerNotes->count() }}
                                     </span>
                                     @if ($pendingNotesCount > 0)
-                                        <span class="text-[9px] font-bold px-1.5 rounded-full
+                                        <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full
                                                      bg-amber-200 text-amber-800
                                                      dark:bg-amber-800 dark:text-amber-200">
                                             {{ $pendingNotesCount }} pending
@@ -748,7 +762,7 @@ new class extends Component {
                                 @foreach ($submission->reviewerNotes as $note)
                                     @php $approved = $note->is_approved; @endphp
                                     <div wire:key="rn-{{ $note->id }}"
-                                        class="rounded-md border px-2.5 py-2
+                                        class="rounded-2xl border px-3 py-2.5
                                         {{ $approved
                                             ? 'bg-emerald-50 dark:bg-emerald-900/15 border-emerald-200 dark:border-emerald-800/60'
                                             : 'bg-amber-50 dark:bg-amber-900/15 border-amber-200 dark:border-amber-800/60' }}">
@@ -756,7 +770,7 @@ new class extends Component {
                                         {{-- Header --}}
                                         <div class="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
                                             <div class="flex items-center gap-1.5 min-w-0">
-                                                <div class="w-5 h-5 rounded-md shrink-0
+                                                <div class="w-5 h-5 rounded-full shrink-0
                                                             flex items-center justify-center
                                                             text-[8px] font-bold
                                                     {{ $approved
@@ -780,7 +794,7 @@ new class extends Component {
                                             </div>
 
                                             <span class="inline-flex items-center gap-0.5 shrink-0
-                                                         text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase
+                                                         text-[9px] font-bold px-2 py-0.5 rounded-full uppercase
                                                 {{ $approved
                                                     ? 'bg-emerald-200 text-emerald-800 dark:bg-emerald-800 dark:text-emerald-200'
                                                     : 'bg-amber-200 text-amber-800 dark:bg-amber-800 dark:text-amber-200' }}">
@@ -791,7 +805,7 @@ new class extends Component {
 
                                         {{-- Comment --}}
                                         @if ($note->comment)
-                                            <p class="mt-1 text-[10.5px] leading-relaxed whitespace-pre-wrap
+                                            <p class="mt-1 text-[10.5px] leading-relaxed
                                                 {{ $approved
                                                     ? 'text-emerald-900 dark:text-emerald-100'
                                                     : 'text-amber-900 dark:text-amber-100' }}">
@@ -828,10 +842,13 @@ new class extends Component {
                                                         wire:loading.attr="disabled"
                                                         wire:target="acceptReviewerNote,reviseReviewerNote"
                                                         class="inline-flex items-center gap-1
-                                                               px-2 py-1 rounded-md
+                                                               px-3 py-1 rounded-full
                                                                text-[10px] font-semibold text-white
                                                                bg-emerald-600 hover:bg-emerald-700
-                                                               disabled:opacity-60 transition-colors">
+                                                               shadow-sm shadow-emerald-500/20 hover:shadow-sm hover:shadow-emerald-500/30
+                                                               hover:scale-[1.02] active:scale-[0.97]
+                                                               disabled:opacity-60 disabled:hover:scale-100
+                                                               transition-all duration-150">
                                                         <span wire:loading.remove wire:target="acceptReviewerNote"
                                                             class="inline-flex items-center gap-1">
                                                             <flux:icon.check-circle class="size-2.5" />
@@ -853,10 +870,13 @@ new class extends Component {
                                                         wire:loading.attr="disabled"
                                                         wire:target="acceptReviewerNote,reviseReviewerNote"
                                                         class="inline-flex items-center gap-1
-                                                               px-2 py-1 rounded-md
+                                                               px-3 py-1 rounded-full
                                                                text-[10px] font-semibold text-white
                                                                bg-amber-600 hover:bg-amber-700
-                                                               disabled:opacity-60 transition-colors">
+                                                               shadow-sm shadow-amber-500/20 hover:shadow-sm hover:shadow-amber-500/30
+                                                               hover:scale-[1.02] active:scale-[0.97]
+                                                               disabled:opacity-60 disabled:hover:scale-100
+                                                               transition-all duration-150">
                                                         <span wire:loading.remove wire:target="reviseReviewerNote"
                                                             class="inline-flex items-center gap-1">
                                                             <flux:icon.pencil-square class="size-2.5" />
@@ -882,8 +902,8 @@ new class extends Component {
                     @endif
 
                     {{-- ══════════ ADMIN NOTES ══════════ --}}
-                    <div class="rounded-md border border-amber-200 dark:border-amber-800/60 overflow-hidden">
-                        <div class="px-2.5 py-2 bg-amber-50 dark:bg-amber-900/20
+                    <div class="rounded-2xl border border-amber-200 dark:border-amber-800/60 overflow-hidden">
+                        <div class="px-3 py-2 bg-amber-50 dark:bg-amber-900/20
                                     border-b border-amber-200 dark:border-amber-800/60
                                     flex items-center justify-between">
                             <div class="flex items-center gap-1.5">
@@ -893,7 +913,7 @@ new class extends Component {
                                              text-amber-800 dark:text-amber-300">
                                     Admin Notes
                                 </span>
-                                <span class="text-[9px] font-bold px-1.5 rounded-full
+                                <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full
                                              bg-amber-200 text-amber-800
                                              dark:bg-amber-800 dark:text-amber-200">
                                     {{ $submission->adminNotes->count() }}
@@ -905,11 +925,11 @@ new class extends Component {
                         <div class="p-2.5 space-y-1.5 max-h-60 overflow-y-auto">
                             @forelse ($submission->adminNotes as $note)
                                 <div wire:key="an-{{ $note->id }}"
-                                    class="rounded-md border border-amber-200 dark:border-amber-800/60
-                                           bg-amber-50 dark:bg-amber-900/20 px-2.5 py-2">
+                                    class="rounded-2xl border border-amber-200 dark:border-amber-800/60
+                                           bg-amber-50 dark:bg-amber-900/20 px-3 py-2.5">
                                     <div class="flex items-start justify-between gap-2 mb-1">
                                         <div class="flex items-center gap-1.5 min-w-0 flex-wrap">
-                                            <div class="w-5 h-5 rounded-md shrink-0
+                                            <div class="w-5 h-5 rounded-full shrink-0
                                                         bg-amber-200 dark:bg-amber-800/50
                                                         flex items-center justify-center
                                                         text-[8px] font-bold
@@ -930,15 +950,16 @@ new class extends Component {
                                                 wire:click="deleteAdminNote({{ $note->id }})"
                                                 wire:confirm="Delete this note?"
                                                 aria-label="Delete note"
-                                                class="shrink-0 p-1 rounded
+                                                class="shrink-0 p-1.5 rounded-full
                                                        text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-900/30
-                                                       transition-colors">
+                                                       hover:scale-110 active:scale-95
+                                                       transition-all duration-150">
                                                 <flux:icon.trash class="size-3" />
                                             </button>
                                         @endif
                                     </div>
                                     @if ($note->comment)
-                                        <p class="text-[10.5px] leading-relaxed whitespace-pre-wrap
+                                        <p class="text-[10.5px] leading-relaxed
                                                   text-amber-900 dark:text-amber-100">
                                             {{ $note->comment }}
                                         </p>
@@ -970,36 +991,30 @@ new class extends Component {
                                     Add Note
                                 </p>
 
-                                <textarea wire:model="adminNoteForm.comment" rows="2"
-                                    placeholder="Write a note..."
-                                    class="block w-full rounded-md shadow-sm text-[10.5px] resize-none
-                                           border-amber-300 dark:border-amber-700
-                                           bg-white dark:bg-zinc-800
-                                           text-slate-900 dark:text-zinc-100
-                                           placeholder:text-slate-400 dark:placeholder:text-zinc-500
-                                           focus:ring-1 focus:ring-amber-500 focus:border-amber-500
-                                           py-1.5 px-2.5 transition-colors"></textarea>
+                                <x-textarea
+                                    wire:model="adminNoteForm.comment"
+                                    rows="2"
+                                    rounded="full"
+                                    color="amber"
+                                    placeholder="Write a note..." />
 
-                                <input type="text" wire:model="adminNoteForm.recommendation"
-                                    placeholder="Recommendation (optional)"
-                                    class="block w-full rounded-md shadow-sm text-[10.5px]
-                                           border-amber-300 dark:border-amber-700
-                                           bg-white dark:bg-zinc-800
-                                           text-slate-900 dark:text-zinc-100
-                                           placeholder:text-slate-400 dark:placeholder:text-zinc-500
-                                           focus:ring-1 focus:ring-amber-500 focus:border-amber-500
-                                           py-1.5 px-2.5 transition-colors" />
+                                <x-input
+                                    wire:model="adminNoteForm.recommendation"
+                                    rounded="full"
+                                    placeholder="Recommendation (optional)" />
 
                                 <div class="flex justify-end">
                                     <button type="button" wire:click="saveAdminNote"
                                         wire:loading.attr="disabled"
                                         wire:target="saveAdminNote"
                                         class="inline-flex items-center gap-1
-                                               px-2.5 py-1.5 rounded-md
+                                               px-3 py-1.5 rounded-full
                                                text-[10.5px] font-semibold text-white
-                                               bg-amber-600 hover:bg-amber-700
-                                               disabled:opacity-60 disabled:cursor-wait
-                                               transition-colors">
+                                               bg-amber-600/90 hover:bg-amber-600
+                                               shadow-sm shadow-amber-500/20 hover:shadow-sm hover:shadow-amber-500/30
+                                               hover:scale-[1.02] active:scale-[0.97]
+                                               disabled:opacity-60 disabled:cursor-wait disabled:hover:scale-100
+                                               transition-all duration-150">
                                         <span wire:loading.remove wire:target="saveAdminNote"
                                             class="inline-flex items-center gap-1">
                                             <flux:icon.plus class="size-3" />
@@ -1027,15 +1042,17 @@ new class extends Component {
             <div class="shrink-0 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between
                         gap-1.5 px-4 py-3
                         border-t border-slate-200 dark:border-zinc-700
-                        bg-slate-50/50 dark:bg-zinc-900/50">
+                        bg-slate-50/50 dark:bg-zinc-900/50 rounded-b-3xl sm:rounded-b-3xl">
 
                 <button type="button" @click="show = false"
-                    class="w-full sm:w-auto px-3 py-1.5 text-[11px] font-medium rounded-md
+                    class="w-full sm:w-auto px-3 py-1.5 text-[11px] font-medium rounded-full
                            text-slate-700 dark:text-zinc-300
                            bg-white dark:bg-zinc-800
                            border border-slate-300 dark:border-zinc-600
                            hover:bg-slate-50 dark:hover:bg-zinc-700
-                           transition-colors">
+                           shadow-sm shadow-zinc-200/40 hover:shadow-sm hover:shadow-indigo-500/15
+                           hover:scale-[1.02] active:scale-[0.97]
+                           transition-all duration-150">
                     Close
                 </button>
 
@@ -1047,9 +1064,11 @@ new class extends Component {
                             <button type="button" x-data
                                 x-on:click="$dispatch('open-assign-reviewer-progress', { id: {{ $submission->id }} })"
                                 class="inline-flex items-center justify-center gap-1
-                                       px-3 py-1.5 text-[11px] font-medium rounded-md text-white
-                                       bg-violet-600 hover:bg-violet-700
-                                       transition-colors">
+                                       px-3 py-1.5 text-[11px] font-medium rounded-full text-white
+                                       bg-violet-600/90 hover:bg-violet-600
+                                       shadow-sm shadow-violet-500/20 hover:shadow-sm hover:shadow-violet-500/30
+                                       hover:scale-[1.02] active:scale-[0.97]
+                                       transition-all duration-150">
                                 <flux:icon.user-plus class="size-3" />
                                 Assign Reviewer
                             </button>
@@ -1060,10 +1079,12 @@ new class extends Component {
                             <button type="button" wire:click="submit"
                                 wire:loading.attr="disabled" wire:target="submit"
                                 class="inline-flex items-center justify-center gap-1
-                                       px-3 py-1.5 text-[11px] font-medium rounded-md text-white
-                                       bg-violet-600 hover:bg-violet-700
-                                       disabled:opacity-60 disabled:cursor-wait
-                                       transition-colors">
+                                       px-3 py-1.5 text-[11px] font-medium rounded-full text-white
+                                       bg-violet-600/90 hover:bg-violet-600
+                                       shadow-sm shadow-violet-500/20 hover:shadow-sm hover:shadow-violet-500/30
+                                       disabled:opacity-60 disabled:cursor-wait disabled:hover:scale-100
+                                       hover:scale-[1.02] active:scale-[0.97]
+                                       transition-all duration-150">
                                 <span wire:loading.remove wire:target="submit">Submit</span>
                                 <span wire:loading wire:target="submit">Processing...</span>
                             </button>
@@ -1075,10 +1096,12 @@ new class extends Component {
                                 wire:confirm="Accept this Progress Report? Make sure the reviewer has finished."
                                 wire:loading.attr="disabled" wire:target="acceptProgressReport"
                                 class="inline-flex items-center justify-center gap-1
-                                       px-3 py-1.5 text-[11px] font-medium rounded-md text-white
-                                       bg-emerald-600 hover:bg-emerald-700
-                                       disabled:opacity-60 disabled:cursor-wait
-                                       transition-colors">
+                                       px-3 py-1.5 text-[11px] font-medium rounded-full text-white
+                                       bg-emerald-600/90 hover:bg-emerald-600
+                                       shadow-sm shadow-emerald-500/20 hover:shadow-sm hover:shadow-emerald-500/30
+                                       disabled:opacity-60 disabled:cursor-wait disabled:hover:scale-100
+                                       hover:scale-[1.02] active:scale-[0.97]
+                                       transition-all duration-150">
                                 <span wire:loading.remove wire:target="acceptProgressReport"
                                     class="inline-flex items-center gap-1">
                                     <flux:icon.check-circle class="size-3" />
@@ -1093,10 +1116,12 @@ new class extends Component {
                             <button type="button" wire:click="accept"
                                 wire:loading.attr="disabled" wire:target="accept"
                                 class="inline-flex items-center justify-center gap-1
-                                       px-3 py-1.5 text-[11px] font-medium rounded-md text-white
-                                       bg-emerald-600 hover:bg-emerald-700
-                                       disabled:opacity-60 disabled:cursor-wait
-                                       transition-colors">
+                                       px-3 py-1.5 text-[11px] font-medium rounded-full text-white
+                                       bg-emerald-600/90 hover:bg-emerald-600
+                                       shadow-sm shadow-emerald-500/20 hover:shadow-sm hover:shadow-emerald-500/30
+                                       disabled:opacity-60 disabled:cursor-wait disabled:hover:scale-100
+                                       hover:scale-[1.02] active:scale-[0.97]
+                                       transition-all duration-150">
                                 <span wire:loading.remove wire:target="accept">Accept</span>
                                 <span wire:loading wire:target="accept">Processing...</span>
                             </button>
@@ -1108,10 +1133,12 @@ new class extends Component {
                                 wire:confirm="Reject this submission?"
                                 wire:loading.attr="disabled" wire:target="reject"
                                 class="inline-flex items-center justify-center gap-1
-                                       px-3 py-1.5 text-[11px] font-medium rounded-md text-white
-                                       bg-rose-600 hover:bg-rose-700
-                                       disabled:opacity-60 disabled:cursor-wait
-                                       transition-colors">
+                                       px-3 py-1.5 text-[11px] font-medium rounded-full text-white
+                                       bg-rose-600/90 hover:bg-rose-600
+                                       shadow-sm shadow-rose-500/20 hover:shadow-sm hover:shadow-rose-500/30
+                                       disabled:opacity-60 disabled:cursor-wait disabled:hover:scale-100
+                                       hover:scale-[1.02] active:scale-[0.97]
+                                       transition-all duration-150">
                                 <span wire:loading.remove wire:target="reject">Reject</span>
                                 <span wire:loading wire:target="reject">Processing...</span>
                             </button>

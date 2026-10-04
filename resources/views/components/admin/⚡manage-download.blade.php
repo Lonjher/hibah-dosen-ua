@@ -125,7 +125,7 @@ new #[Title('Manage Downloads')] class extends Component {
             leading="Manage downloadable files for users (guidelines, templates, forms)." />
 
         {{-- ══════════ MAIN CARD ══════════ --}}
-        <div class="bg-white dark:bg-zinc-900 rounded-xl
+        <div class="bg-white dark:bg-zinc-900 rounded-full
                     shadow-sm shadow-slate-200/50 dark:shadow-zinc-950/50
                     border border-slate-200 dark:border-zinc-800 overflow-hidden">
 
@@ -149,31 +149,19 @@ new #[Title('Manage Downloads')] class extends Component {
                             </span>
                         </div>
 
-                        <select wire:model.live="categoryFilter"
-                            class="text-[10.5px] rounded-md border-slate-200 dark:border-zinc-700
-                                   bg-white dark:bg-zinc-800
-                                   text-slate-700 dark:text-zinc-200
-                                   py-1 pl-2 pr-6
-                                   focus:ring-1 focus:ring-violet-500 focus:border-violet-500
-                                   transition-colors">
+                        <x-select wire:model.live="categoryFilter">
                             <option value="">All Categories</option>
                             <option value="guideline">Guideline</option>
                             <option value="template">Template</option>
                             <option value="form">Form</option>
                             <option value="general">General</option>
-                        </select>
+                        </x-select>
 
-                        <select wire:model.live="statusFilter"
-                            class="text-[10.5px] rounded-md border-slate-200 dark:border-zinc-700
-                                   bg-white dark:bg-zinc-800
-                                   text-slate-700 dark:text-zinc-200
-                                   py-1 pl-2 pr-6
-                                   focus:ring-1 focus:ring-violet-500 focus:border-violet-500
-                                   transition-colors">
+                        <x-select wire:model.live="statusFilter">
                             <option value="">All Status</option>
                             <option value="active">Active</option>
                             <option value="inactive">Inactive</option>
-                        </select>
+                        </x-select>
                     </div>
 
                     {{-- Right: search + new --}}
@@ -183,10 +171,10 @@ new #[Title('Manage Downloads')] class extends Component {
                                 placeholder="Search files..."
                                 class="w-full !text-[10.5px]" />
                         </div>
-                        <flux:button icon="plus" variant="primary" size="xs"
+                        <flux:button variant="primary"
                             x-data x-on:click="$dispatch('open-add-download')"
                             class="shrink-0 !text-[10.5px]">
-                            New
+                            New Item
                         </flux:button>
                     </div>
                 </div>
@@ -368,7 +356,7 @@ new #[Title('Manage Downloads')] class extends Component {
             @if ($downloads->hasPages())
                 <div class="px-3 py-2 border-t border-slate-200 dark:border-zinc-800
                             bg-slate-50/50 dark:bg-zinc-900/50">
-                    {{ $downloads->links() }}
+                    {{ $downloads->links('vendor.pagination.tailwind') }}
                 </div>
             @endif
         </div>

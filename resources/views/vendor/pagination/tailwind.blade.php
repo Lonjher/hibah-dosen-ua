@@ -20,7 +20,7 @@
             {{-- Previous --}}
             @if ($paginator->onFirstPage())
                 <span aria-disabled="true" aria-label="{{ __('pagination.previous') }}"
-                    class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md
+                    class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full
                            text-[10.5px] font-medium
                            text-slate-400 dark:text-zinc-600
                            bg-slate-50 dark:bg-zinc-800/50
@@ -35,7 +35,7 @@
                     x-on:click="{{ $scrollIntoViewJsSnippet }}"
                     wire:loading.attr="disabled"
                     aria-label="{{ __('pagination.previous') }}"
-                    class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md
+                    class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full
                            text-[10.5px] font-medium
                            text-slate-700 dark:text-zinc-300
                            bg-white dark:bg-zinc-800
@@ -67,7 +67,7 @@
                     x-on:click="{{ $scrollIntoViewJsSnippet }}"
                     wire:loading.attr="disabled"
                     aria-label="{{ __('pagination.next') }}"
-                    class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md
+                    class="cursor-pointer inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full
                            text-[10.5px] font-medium
                            text-slate-700 dark:text-zinc-300
                            bg-white dark:bg-zinc-800
@@ -81,7 +81,7 @@
                 </button>
             @else
                 <span aria-disabled="true" aria-label="{{ __('pagination.next') }}"
-                    class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md
+                    class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full
                            text-[10.5px] font-medium
                            text-slate-400 dark:text-zinc-600
                            bg-slate-50 dark:bg-zinc-800/50
@@ -126,7 +126,7 @@
                 @if ($paginator->onFirstPage())
                     <span aria-disabled="true" aria-label="{{ __('pagination.previous') }}"
                         class="inline-flex items-center justify-center
-                               w-7 h-7 rounded-md
+                               w-7 h-7 rounded-full
                                text-slate-300 dark:text-zinc-600
                                bg-slate-50 dark:bg-zinc-800/50
                                border border-slate-200 dark:border-zinc-700/60
@@ -139,8 +139,8 @@
                         x-on:click="{{ $scrollIntoViewJsSnippet }}"
                         wire:loading.attr="disabled"
                         aria-label="{{ __('pagination.previous') }}"
-                        class="inline-flex items-center justify-center
-                               w-7 h-7 rounded-md
+                        class="cursor-pointer inline-flex items-center justify-center
+                               w-7 h-7 rounded-full
                                text-slate-500 dark:text-zinc-400
                                bg-white dark:bg-zinc-800
                                border border-slate-200 dark:border-zinc-700/60
@@ -159,7 +159,7 @@
                     @if (is_string($element))
                         <span aria-disabled="true"
                             class="inline-flex items-center justify-center
-                                   w-7 h-7 rounded-md
+                                   w-7 h-7 rounded-full
                                    text-[10.5px] font-medium
                                    text-slate-400 dark:text-zinc-600
                                    bg-slate-50 dark:bg-zinc-800/30
@@ -175,7 +175,7 @@
                             @if ($page == $paginator->currentPage())
                                 <span aria-current="page"
                                     class="inline-flex items-center justify-center
-                                           min-w-7 h-7 px-2 rounded-md
+                                           min-w-7 h-7 px-2 rounded-full
                                            text-[10.5px] font-bold
                                            text-white
                                            bg-emerald-600
@@ -190,8 +190,8 @@
                                     x-on:click="{{ $scrollIntoViewJsSnippet }}"
                                     wire:loading.attr="disabled"
                                     aria-label="{{ __('Go to page :page', ['page' => $page]) }}"
-                                    class="inline-flex items-center justify-center
-                                           min-w-7 h-7 px-2 rounded-md
+                                    class="cursor-pointer inline-flex items-center justify-center
+                                           min-w-7 h-7 px-2 rounded-full
                                            text-[10.5px] font-medium
                                            text-slate-600 dark:text-zinc-400
                                            bg-white dark:bg-zinc-800
@@ -215,8 +215,8 @@
                         x-on:click="{{ $scrollIntoViewJsSnippet }}"
                         wire:loading.attr="disabled"
                         aria-label="{{ __('pagination.next') }}"
-                        class="inline-flex items-center justify-center
-                               w-7 h-7 rounded-md
+                        class="cursor-pointer inline-flex items-center justify-center
+                               w-7 h-7 rounded-full
                                text-slate-500 dark:text-zinc-400
                                bg-white dark:bg-zinc-800
                                border border-slate-200 dark:border-zinc-700/60
@@ -230,7 +230,7 @@
                 @else
                     <span aria-disabled="true" aria-label="{{ __('pagination.next') }}"
                         class="inline-flex items-center justify-center
-                               w-7 h-7 rounded-md
+                               w-7 h-7 rounded-full
                                text-slate-300 dark:text-zinc-600
                                bg-slate-50 dark:bg-zinc-800/50
                                border border-slate-200 dark:border-zinc-700/60

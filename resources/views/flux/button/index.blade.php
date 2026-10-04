@@ -26,7 +26,7 @@ $iconLeading = $icon ??= $iconLeading;
 // Button should be a square if it has no text contents...
 $square ??= $slot->isEmpty();
 
-// Size-up icons in square/icon-only buttons... (xs buttons just get micro size/style...)
+// Size-up icons in square/icon-only buttons...
 $iconVariant ??= ($size === 'xs')
     ? ($square ? 'micro' : 'micro')
     : ($square ? 'mini' : 'micro');
@@ -35,12 +35,12 @@ $iconTrailingVariant ??= $attributes->pluck('icon-trailing:variant', $iconVarian
 
 // When using the outline icon variant, we need to size it down to match the default icon sizes...
 $iconClasses = Flux::classes()
-    ->add($iconVariant === 'outline' ? ($square && $size !== 'xs' ? 'size-5' : 'size-4') : '')
+    ->add($iconVariant === 'outline' ? ($square && $size !== 'xs' ? 'size-4' : 'size-3.5') : '')
     ->add($attributes->pluck('icon:class'))
     ;
 
 $iconTrailingClasses = Flux::classes()
-    ->add($iconTrailingVariant === 'outline' ? ($square && $size !== 'xs' ? 'size-5' : 'size-4') : '')
+    ->add($iconTrailingVariant === 'outline' ? ($square && $size !== 'xs' ? 'size-4' : 'size-3.5') : '')
     ->add($attributes->pluck('icon-trailing:class'))
     ;
 
@@ -53,9 +53,6 @@ $loading ??= $loading ?? ($isTypeSubmitAndNotDisabledOnRender || $attributes->wh
 if ($loading && $type !== 'submit' && ! $isJsMethod) {
     $attributes = $attributes->merge(['wire:loading.attr' => 'data-flux-loading']);
 
-    // We need to add `wire:target` here because without it the loading indicator won't be scoped
-    // by method params, causing multiple buttons with the same method but different params to
-    // trigger each other's loading indicators...
     if (! $attributes->has('wire:target') && $target = $attributes->whereStartsWith('wire:click')->first()) {
         $attributes = $attributes->merge(['wire:target' => $target], escape: false);
     }
@@ -63,74 +60,109 @@ if ($loading && $type !== 'submit' && ! $isJsMethod) {
 
 $classes = Flux::classes()
     ->add('relative items-center font-medium justify-center whitespace-nowrap')
-    ->add('disabled:opacity-50 dark:disabled:opacity-50 disabled:cursor-default disabled:pointer-events-none disabled:shadow-none')
+    ->add('inline-flex')
+
+    // ── Base transition ──
+    ->add('transition-all duration-150 ease-out')
+    ->add('hover:scale-[1.02] active:scale-[0.97]')
+
+    // ── Disabled state ──
+    ->add('disabled:opacity-50 dark:disabled:opacity-40 disabled:cursor-default disabled:pointer-events-none disabled:shadow-none')
+
+    // ── Align ──
     ->add(match ($align) {
         'start' => 'justify-start',
         'center' => 'justify-center',
         'end' => 'justify-end',
     })
-    ->add(match ($size) { // Size...
-        'base' => 'h-8 text-xs rounded-lg gap-2' . ' ' . (
-            $square
-                ? 'w-8'
-                // If we have an icon, we want to reduce the padding on the side that has the icon...
-                : ($iconLeading && $iconLeading !== '' ? 'ps-3' : 'ps-4') . ' ' . ($iconTrailing && $iconTrailing !== '' ? 'pe-3' : 'pe-4')
-        ),
-        'sm' => 'h-7 text-xs rounded-full gap-1.5' . ' ' . (
+
+    // ── Size (rounded-full, compact) ──
+    // Match referensi: px-3 py-1.5 text-[11px] rounded-full
+    ->add(match ($size) {
+        'base' => 'h-7 text-[11px] rounded-full gap-1.5' . ' ' . (
             $square
                 ? 'w-7'
-                : ($iconLeading && $iconLeading !== '' ? 'ps-2' : 'ps-3') . ' ' . ($iconTrailing && $iconTrailing !== '' ? 'pe-2' : 'pe-3')
+                : ($iconLeading && $iconLeading !== '' ? 'ps-2.5' : 'ps-3') . ' ' .
+                  ($iconTrailing && $iconTrailing !== '' ? 'pe-2.5' : 'pe-3')
         ),
-        'xs' => 'h-6 text-xs rounded-md gap-1' . ' ' . (
+        'sm' => 'h-6 text-[10.5px] rounded-full gap-1' . ' ' . (
             $square
                 ? 'w-6'
-                : ($iconLeading && $iconLeading !== '' ? 'ps-1' : 'ps-2') . ' ' . ($iconTrailing && $iconTrailing !== '' ? 'pe-1' : 'pe-2')
+                : ($iconLeading && $iconLeading !== '' ? 'ps-2' : 'ps-2.5') . ' ' .
+                  ($iconTrailing && $iconTrailing !== '' ? 'pe-2' : 'pe-2.5')
+        ),
+        'xs' => 'h-5 text-[10px] rounded-full gap-1' . ' ' . (
+            $square
+                ? 'w-5'
+                : ($iconLeading && $iconLeading !== '' ? 'ps-1.5' : 'ps-2') . ' ' .
+                  ($iconTrailing && $iconTrailing !== '' ? 'pe-1.5' : 'pe-2')
         ),
     })
-    ->add('inline-flex') // Buttons are inline by default but links are blocks, so inline-flex is needed here to ensure link-buttons are displayed the same as buttons...
-    ->add($inset ? match ($size) { // Inset...
+
+    // ── Inset ──
+    ->add($inset ? match ($size) {
         'base' => $square
-            ? Flux::applyInset($inset, top: '-mt-2.5', right: '-me-2.5', bottom: '-mb-2.5', left: '-ms-2.5')
-            : Flux::applyInset($inset, top: '-mt-2.5', right: ($iconTrailing && $iconTrailing !== '' ? '-me-3' : '-me-4'), bottom: '-mb-3', left: ($iconLeading && $iconLeading !== '' ? '-ms-3' : '-ms-4')),
+            ? Flux::applyInset($inset, top: '-mt-2', right: '-me-2', bottom: '-mb-2', left: '-ms-2')
+            : Flux::applyInset($inset, top: '-mt-2', right: ($iconTrailing && $iconTrailing !== '' ? '-me-2.5' : '-me-3'), bottom: '-mb-2', left: ($iconLeading && $iconLeading !== '' ? '-ms-2.5' : '-ms-3')),
         'sm' => $square
             ? Flux::applyInset($inset, top: '-mt-1.5', right: '-me-1.5', bottom: '-mb-1.5', left: '-ms-1.5')
-            : Flux::applyInset($inset, top: '-mt-1.5', right: ($iconTrailing && $iconTrailing !== '' ? '-me-2' : '-me-3'), bottom: '-mb-1.5', left: ($iconLeading && $iconLeading !== '' ? '-ms-2' : '-ms-3')),
+            : Flux::applyInset($inset, top: '-mt-1.5', right: ($iconTrailing && $iconTrailing !== '' ? '-me-2' : '-me-2.5'), bottom: '-mb-1.5', left: ($iconLeading && $iconLeading !== '' ? '-ms-2' : '-ms-2.5')),
         'xs' => $square
             ? Flux::applyInset($inset, top: '-mt-1', right: '-me-1', bottom: '-mb-1', left: '-ms-1')
-            : Flux::applyInset($inset, top: '-mt-1', right: ($iconTrailing && $iconTrailing !== '' ? '-me-1' : '-me-2'), bottom: '-mb-1', left: ($iconLeading && $iconLeading !== '' ? '-ms-1' : '-ms-2')),
+            : Flux::applyInset($inset, top: '-mt-1', right: ($iconTrailing && $iconTrailing !== '' ? '-me-1.5' : '-me-2'), bottom: '-mb-1', left: ($iconLeading && $iconLeading !== '' ? '-ms-1.5' : '-ms-2')),
     } : '')
-    ->add(match ($variant) { // Background color...
-        'primary' => 'bg-emerald-600 hover:bg-emerald-700',
-        'filled' => 'bg-zinc-800/5 hover:bg-zinc-800/10 dark:bg-white/10 dark:hover:bg-white/20',
-        'outline' => 'bg-white hover:bg-zinc-50 dark:bg-zinc-700 dark:hover:bg-zinc-600/75',
-        'danger' => 'bg-rose-500 hover:bg-rose-600 dark:bg-rose-600 dark:hover:bg-rose-500',
-        'ghost' => 'bg-transparent hover:bg-zinc-800/5 dark:hover:bg-white/15',
-        'subtle' => 'bg-transparent hover:bg-zinc-800/5 dark:hover:bg-white/15',
+
+    // ════════════════════════════════════════════════════════════
+    //  BACKGROUND — muted / soft tints (tidak mencolok)
+    // ════════════════════════════════════════════════════════════
+    ->add(match ($variant) {
+        'primary' => 'bg-emerald-600/85 hover:bg-emerald-600/95 dark:bg-emerald-600/80 dark:hover:bg-emerald-600/90',
+        'filled'  => 'bg-zinc-100/80 hover:bg-zinc-100 dark:bg-zinc-800/70 dark:hover:bg-zinc-800',
+        'outline' => 'bg-white/90 hover:bg-zinc-50 dark:bg-zinc-800/50 dark:hover:bg-zinc-800/70',
+        'danger'  => 'bg-rose-600/85 hover:bg-rose-600/95 dark:bg-rose-600/80 dark:hover:bg-rose-600/90',
+        'ghost'   => 'bg-transparent hover:bg-zinc-100/60 dark:hover:bg-zinc-800/50',
+        'subtle'  => 'bg-transparent hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40',
     })
-    ->add(match ($variant) { // Text color...
+
+    // ════════════════════════════════════════════════════════════
+    //  TEXT COLOR
+    // ════════════════════════════════════════════════════════════
+    ->add(match ($variant) {
         'primary' => 'text-white',
-        'filled' => 'text-zinc-800 dark:text-white',
-        'outline' => 'text-zinc-800 dark:text-white',
-        'danger' => 'text-white',
-        'ghost' => 'text-zinc-800 dark:text-white',
-        'subtle' => 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-white',
+        'filled'  => 'text-zinc-700 hover:text-zinc-900 dark:text-zinc-200 dark:hover:text-white',
+        'outline' => 'text-zinc-700 hover:text-zinc-900 dark:text-zinc-200 dark:hover:text-white',
+        'danger'  => 'text-white',
+        'ghost'   => 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white',
+        'subtle'  => 'text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200',
     })
-    ->add(match ($variant) { // Border color...
-        'primary' => 'border border-black/10 dark:border-0',
-        'outline' => 'border border-zinc-200 hover:border-zinc-200 disabled:border-zinc-200 border-b-zinc-300/80 dark:border-zinc-600 dark:hover:border-zinc-600 dark:disabled:border-zinc-600',
-         default => '',
+
+    // ════════════════════════════════════════════════════════════
+    //  BORDER — halus, tidak hard
+    // ════════════════════════════════════════════════════════════
+    ->add(match ($variant) {
+        'primary' => 'border border-emerald-700/15 dark:border-emerald-500/15',
+        'outline' => 'border border-zinc-200/70 hover:border-zinc-300/70 dark:border-zinc-700/70 dark:hover:border-zinc-600/70',
+        'filled'  => 'border border-zinc-200/50 dark:border-zinc-700/50',
+        'danger'  => 'border border-rose-700/15 dark:border-rose-500/15',
+        default   => '',
     })
-    ->add(match ($variant) { // Shadows...
-        'primary' => 'shadow-[inset_0px_1px_--theme(--color-white/.2)]',
-        'danger' => 'shadow-[inset_0px_1px_var(--color-rose-500),inset_0px_2px_--theme(--color-white/.15)] dark:shadow-none',
-        'outline' => match ($size) {
-            'base' => 'shadow-xs',
-            'sm' => 'shadow-xs',
-            'xs' => 'shadow-none',
-        },
-        default => '',
+
+    // ════════════════════════════════════════════════════════════
+    //  SHADOW — halus, shadow-sm emerald 20%
+    // ════════════════════════════════════════════════════════════
+    ->add(match ($variant) {
+        'primary' => 'shadow-sm shadow-emerald-500/20 hover:shadow-sm hover:shadow-emerald-500/30 dark:shadow-emerald-500/15 dark:hover:shadow-emerald-500/25',
+        'danger'  => 'shadow-sm shadow-rose-500/20 hover:shadow-sm hover:shadow-rose-500/30 dark:shadow-rose-500/15 dark:hover:shadow-rose-500/25',
+        'outline' => 'shadow-sm shadow-zinc-200/40 hover:shadow-sm hover:shadow-emerald-500/15 dark:shadow-zinc-950/30 dark:hover:shadow-emerald-500/10',
+        'filled'  => 'shadow-sm shadow-zinc-200/30 hover:shadow-sm hover:shadow-emerald-500/15 dark:shadow-zinc-950/20 dark:hover:shadow-emerald-500/10',
+        'ghost'   => 'shadow-none',
+        'subtle'  => 'shadow-none',
     })
-    ->add(match ($variant) { // Grouped border treatments...
+
+    // ════════════════════════════════════════════════════════════
+    //  GROUPED BORDERS
+    // ════════════════════════════════════════════════════════════
+    ->add(match ($variant) {
         'ghost' => '',
         'subtle' => '',
         'outline' => '[[data-flux-button-group]_&]:border-s-0 [:is([data-flux-button-group]>&:first-child,_[data-flux-button-group]_:first-child>&)]:border-s-[1px]',
@@ -138,12 +170,20 @@ $classes = Flux::classes()
         'danger' => '[[data-flux-button-group]_&]:border-e [:is([data-flux-button-group]>&:last-child,_[data-flux-button-group]_:last-child>&)]:border-e-0 [[data-flux-button-group]_&]:border-rose-600 dark:[[data-flux-button-group]_&]:border-rose-900/25',
         'primary' => '[[data-flux-button-group]_&]:border-e-0 [:is([data-flux-button-group]>&:last-child,_[data-flux-button-group]_:last-child>&)]:border-e-[1px] dark:[:is([data-flux-button-group]>&:last-child,_[data-flux-button-group]_:last-child>&)]:border-e-0 dark:[:is([data-flux-button-group]>&:last-child,_[data-flux-button-group]_:last-child>&)]:border-s-[1px] [:is([data-flux-button-group]>&:not(:first-child),_[data-flux-button-group]_:not(:first-child)>&)]:border-s-[color-mix(in_srgb,var(--color-accent-foreground),transparent_85%)]',
     })
-    ->add($loading ? [ // Loading states...
+
+    // ════════════════════════════════════════════════════════════
+    //  LOADING STATE
+    // ════════════════════════════════════════════════════════════
+    ->add($loading ? [
         '*:transition-opacity',
         $type === 'submit' ? '[&[disabled]>:not([data-flux-loading-indicator])]:opacity-0' : '[&[data-loading]>:not([data-flux-loading-indicator])]:opacity-0 [&[data-flux-loading]>:not([data-flux-loading-indicator])]:opacity-0',
         $type === 'submit' ? '[&[disabled]>[data-flux-loading-indicator]]:opacity-100' : '[&[data-loading]>[data-flux-loading-indicator]]:opacity-100 [&[data-flux-loading]>[data-flux-loading-indicator]]:opacity-100',
         $type === 'submit' ? '[&[disabled]]:pointer-events-none' : 'data-loading:pointer-events-none data-flux-loading:pointer-events-none',
     ] : [])
+
+    // ════════════════════════════════════════════════════════════
+    //  PRIMARY COLOR OVERRIDES (accent tokens)
+    // ════════════════════════════════════════════════════════════
     ->add($variant === 'primary' ? match ($color) {
         'slate' => '[--color-accent:var(--color-slate-800)] [--color-accent-content:var(--color-slate-800)] [--color-accent-foreground:var(--color-white)] dark:[--color-accent:var(--color-white)] dark:[--color-accent-content:var(--color-white)] dark:[--color-accent-foreground:var(--color-slate-800)]',
         'gray' => '[--color-accent:var(--color-gray-800)] [--color-accent-content:var(--color-gray-800)] [--color-accent-foreground:var(--color-white)] dark:[--color-accent:var(--color-white)] dark:[--color-accent-content:var(--color-white)] dark:[--color-accent-foreground:var(--color-gray-800)]',
@@ -196,20 +236,17 @@ $classes = Flux::classes()
         <?php endif; ?>
 
         <?php if (($loading || $iconLeading || $iconTrailing) && ! $slot->isEmpty()): ?>
-            {{-- If we have a loading indicator, we need to wrap it in a span so it can be a target of *:opacity-0... --}}
-            {{-- Also, if we have an icon, we need to wrap it in a span so it can be recognized as a child of the button for :first-child selectors... --}}
             <span>{{ $slot }}</span>
         <?php else: ?>
             {{ $slot }}
         <?php endif; ?>
 
         <?php if ($kbd): ?>
-            <div class="text-xs text-zinc-400 dark:text-zinc-400">{{ $kbd }}</div>
+            <div class="text-xs text-zinc-400 dark:text-zinc-500">{{ $kbd }}</div>
         <?php endif; ?>
 
         <?php if (is_string($iconTrailing) && $iconTrailing !== ''): ?>
-            {{-- Adding the extra margin class inline on the icon component below was causing a double up, so it needs to be added here first... --}}
-            <?php $iconClasses->add($square ? '' : '-ms-1'); ?>
+            <?php $iconClasses->add($square ? '' : '-ms-0.5'); ?>
             <flux:icon :icon="$iconTrailing" :variant="$iconTrailingVariant" :class="$iconTrailingClasses" />
         <?php elseif ($iconTrailing): ?>
             {{ $iconTrailing }}

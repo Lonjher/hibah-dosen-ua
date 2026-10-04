@@ -101,11 +101,11 @@ new class extends Component {
             </div>
 
             {{-- ══════════ BODY ══════════ --}}
-            <div class="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+            <div class="flex-1 overflow-y-auto px-4 py-4">
 
                 {{-- Global Error --}}
                 <template x-if="errorMessage">
-                    <div class="flex items-start gap-2 p-2.5 rounded-md
+                    <div class="mb-3 flex items-start gap-2 p-2.5 rounded-md
                                 bg-rose-50 dark:bg-rose-900/20
                                 border border-rose-200 dark:border-rose-800">
                         <flux:icon.exclamation-triangle
@@ -116,21 +116,16 @@ new class extends Component {
                     </div>
                 </template>
 
-                {{-- NIDN + Full Name --}}
+                {{-- ══════════ FORM GRID ══════════ --}}
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+
+                    {{-- NIDN --}}
                     <div>
-                        <label class="block text-[11px] font-medium text-slate-700 dark:text-zinc-300 mb-1">
-                            NIDN <span class="text-rose-500">*</span>
-                        </label>
-                        <input type="text" wire:model="form.nidn"
-                            placeholder="0000000000"
-                            class="block w-full rounded-md shadow-sm text-[11.5px]
-                                   border-slate-300 dark:border-zinc-600
-                                   bg-white dark:bg-zinc-800
-                                   text-slate-900 dark:text-zinc-100
-                                   placeholder:text-slate-400 dark:placeholder:text-zinc-500
-                                   focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500
-                                   py-1.5 px-2.5 transition-colors" />
+                        <x-input
+                            wire:model="form.nidn"
+                            label="NIDN"
+                            required
+                            placeholder="0000000000" />
                         @error('form.nidn')
                             <p class="mt-1 flex items-center gap-1 text-[10.5px] text-rose-600">
                                 <flux:icon.exclamation-circle class="size-3 shrink-0" />
@@ -139,19 +134,13 @@ new class extends Component {
                         @enderror
                     </div>
 
+                    {{-- Full Name --}}
                     <div>
-                        <label class="block text-[11px] font-medium text-slate-700 dark:text-zinc-300 mb-1">
-                            Full Name <span class="text-rose-500">*</span>
-                        </label>
-                        <input type="text" wire:model="form.full_name"
-                            placeholder="e.g. Ahmad Fauzi"
-                            class="block w-full rounded-md shadow-sm text-[11.5px]
-                                   border-slate-300 dark:border-zinc-600
-                                   bg-white dark:bg-zinc-800
-                                   text-slate-900 dark:text-zinc-100
-                                   placeholder:text-slate-400 dark:placeholder:text-zinc-500
-                                   focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500
-                                   py-1.5 px-2.5 transition-colors" />
+                        <x-input
+                            wire:model="form.full_name"
+                            label="Full Name"
+                            required
+                            placeholder="e.g. Ahmad Fauzi" />
                         @error('form.full_name')
                             <p class="mt-1 flex items-center gap-1 text-[10.5px] text-rose-600">
                                 <flux:icon.exclamation-circle class="size-3 shrink-0" />
@@ -159,23 +148,15 @@ new class extends Component {
                             </p>
                         @enderror
                     </div>
-                </div>
 
-                {{-- Email + Password --}}
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {{-- Email --}}
                     <div>
-                        <label class="block text-[11px] font-medium text-slate-700 dark:text-zinc-300 mb-1">
-                            Email <span class="text-rose-500">*</span>
-                        </label>
-                        <input type="email" wire:model="form.email"
-                            placeholder="name@example.com"
-                            class="block w-full rounded-md shadow-sm text-[11.5px]
-                                   border-slate-300 dark:border-zinc-600
-                                   bg-white dark:bg-zinc-800
-                                   text-slate-900 dark:text-zinc-100
-                                   placeholder:text-slate-400 dark:placeholder:text-zinc-500
-                                   focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500
-                                   py-1.5 px-2.5 transition-colors" />
+                        <x-input
+                            type="email"
+                            wire:model="form.email"
+                            label="Email"
+                            required
+                            placeholder="name@example.com" />
                         @error('form.email')
                             <p class="mt-1 flex items-center gap-1 text-[10.5px] text-rose-600">
                                 <flux:icon.exclamation-circle class="size-3 shrink-0" />
@@ -184,19 +165,14 @@ new class extends Component {
                         @enderror
                     </div>
 
+                    {{-- Password --}}
                     <div>
-                        <label class="block text-[11px] font-medium text-slate-700 dark:text-zinc-300 mb-1">
-                            Password <span class="text-rose-500">*</span>
-                        </label>
-                        <input type="password" wire:model="form.password"
-                            placeholder="Min. 8 characters"
-                            class="block w-full rounded-md shadow-sm text-[11.5px]
-                                   border-slate-300 dark:border-zinc-600
-                                   bg-white dark:bg-zinc-800
-                                   text-slate-900 dark:text-zinc-100
-                                   placeholder:text-slate-400 dark:placeholder:text-zinc-500
-                                   focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500
-                                   py-1.5 px-2.5 transition-colors" />
+                        <x-input
+                            type="password"
+                            wire:model="form.password"
+                            label="Password"
+                            required
+                            placeholder="Min. 8 characters" />
                         @error('form.password')
                             <p class="mt-1 flex items-center gap-1 text-[10.5px] text-rose-600">
                                 <flux:icon.exclamation-circle class="size-3 shrink-0" />
@@ -204,22 +180,15 @@ new class extends Component {
                             </p>
                         @enderror
                     </div>
-                </div>
 
-                {{-- Birthday + Gender --}}
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {{-- Birthday --}}
                     <div>
-                        <label class="block text-[11px] font-medium text-slate-700 dark:text-zinc-300 mb-1">
-                            Birthday <span class="text-rose-500">*</span>
-                        </label>
-                        <input type="date" wire:model="form.birthday"
-                            class="block w-full rounded-md shadow-sm text-[11.5px]
-                                   border-slate-300 dark:border-zinc-600
-                                   bg-white dark:bg-zinc-800
-                                   text-slate-900 dark:text-zinc-100
-                                   focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500
-                                   py-1.5 px-2.5 transition-colors
-                                   dark:[color-scheme:dark]" />
+                        <x-input
+                            type="date"
+                            wire:model="form.birthday"
+                            label="Birthday"
+                            required
+                            class="dark:[color-scheme:dark]" />
                         @error('form.birthday')
                             <p class="mt-1 flex items-center gap-1 text-[10.5px] text-rose-600">
                                 <flux:icon.exclamation-circle class="size-3 shrink-0" />
@@ -228,21 +197,18 @@ new class extends Component {
                         @enderror
                     </div>
 
+                    {{-- Gender --}}
                     <div>
-                        <label class="block text-[11px] font-medium text-slate-700 dark:text-zinc-300 mb-1">
-                            Gender <span class="text-rose-500">*</span>
-                        </label>
-                        <select wire:model="form.gender"
-                            class="block w-full rounded-md shadow-sm text-[11.5px]
-                                   border-slate-300 dark:border-zinc-600
-                                   bg-white dark:bg-zinc-800
-                                   text-slate-900 dark:text-zinc-100
-                                   focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500
-                                   py-1.5 pl-2.5 pr-6 transition-colors">
+                        <x-select
+                            wire:model="form.gender"
+                            label="Gender"
+                            required
+                            size="lg"
+                            color="emerald">
                             <option value="">— Select —</option>
                             <option value="laki-laki">Male</option>
                             <option value="perempuan">Female</option>
-                        </select>
+                        </x-select>
                         @error('form.gender')
                             <p class="mt-1 flex items-center gap-1 text-[10.5px] text-rose-600">
                                 <flux:icon.exclamation-circle class="size-3 shrink-0" />
@@ -250,23 +216,13 @@ new class extends Component {
                             </p>
                         @enderror
                     </div>
-                </div>
 
-                {{-- Phone + Address --}}
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {{-- Phone --}}
                     <div>
-                        <label class="block text-[11px] font-medium text-slate-700 dark:text-zinc-300 mb-1">
-                            Phone
-                        </label>
-                        <input type="text" wire:model="form.phone_number"
-                            placeholder="0812..."
-                            class="block w-full rounded-md shadow-sm text-[11.5px]
-                                   border-slate-300 dark:border-zinc-600
-                                   bg-white dark:bg-zinc-800
-                                   text-slate-900 dark:text-zinc-100
-                                   placeholder:text-slate-400 dark:placeholder:text-zinc-500
-                                   focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500
-                                   py-1.5 px-2.5 transition-colors" />
+                        <x-input
+                            wire:model="form.phone_number"
+                            label="Phone"
+                            placeholder="0812..." />
                         @error('form.phone_number')
                             <p class="mt-1 flex items-center gap-1 text-[10.5px] text-rose-600">
                                 <flux:icon.exclamation-circle class="size-3 shrink-0" />
@@ -275,19 +231,13 @@ new class extends Component {
                         @enderror
                     </div>
 
+                    {{-- Address --}}
                     <div>
-                        <label class="block text-[11px] font-medium text-slate-700 dark:text-zinc-300 mb-1">
-                            Address <span class="text-rose-500">*</span>
-                        </label>
-                        <input type="text" wire:model="form.address"
-                            placeholder="Street, City"
-                            class="block w-full rounded-md shadow-sm text-[11.5px]
-                                   border-slate-300 dark:border-zinc-600
-                                   bg-white dark:bg-zinc-800
-                                   text-slate-900 dark:text-zinc-100
-                                   placeholder:text-slate-400 dark:placeholder:text-zinc-500
-                                   focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500
-                                   py-1.5 px-2.5 transition-colors" />
+                        <x-input
+                            wire:model="form.address"
+                            label="Address"
+                            required
+                            placeholder="Street, City" />
                         @error('form.address')
                             <p class="mt-1 flex items-center gap-1 text-[10.5px] text-rose-600">
                                 <flux:icon.exclamation-circle class="size-3 shrink-0" />
@@ -306,12 +256,14 @@ new class extends Component {
 
                 <button type="button" @click="show = false"
                     class="w-full sm:w-auto px-3 py-1.5 text-[11px] font-medium
-                           rounded-md
+                           rounded-full
                            text-slate-700 dark:text-zinc-300
                            bg-white dark:bg-zinc-800
                            border border-slate-300 dark:border-zinc-600
                            hover:bg-slate-50 dark:hover:bg-zinc-700
-                           transition-colors">
+                           shadow-sm shadow-zinc-200/40 hover:shadow-sm hover:shadow-emerald-500/15
+                           hover:scale-[1.02] active:scale-[0.97]
+                           transition-all duration-150">
                     Cancel
                 </button>
 
@@ -319,11 +271,13 @@ new class extends Component {
                     wire:loading.attr="disabled"
                     wire:target="save"
                     class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5
-                           px-3 py-1.5 text-[11px] font-medium rounded-md
+                           px-3 py-1.5 text-[11px] font-medium rounded-full
                            text-white
-                           bg-emerald-600 hover:bg-emerald-700
+                           bg-emerald-600/90 hover:bg-emerald-600
+                           shadow-sm shadow-emerald-500/20 hover:shadow-sm hover:shadow-emerald-500/30
                            disabled:opacity-60 disabled:cursor-wait
-                           transition-colors">
+                           hover:scale-[1.02] active:scale-[0.97]
+                           transition-all duration-150">
                     <svg wire:loading wire:target="save"
                          class="animate-spin size-3" viewBox="0 0 24 24" fill="none"
                          xmlns="http://www.w3.org/2000/svg">

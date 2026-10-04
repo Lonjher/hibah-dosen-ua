@@ -34,8 +34,13 @@
         }
 
         /* iOS safe area support untuk sidebar */
-        .safe-top    { padding-top:    max(0.625rem, env(safe-area-inset-top)); }
-        .safe-bottom { padding-bottom: max(0.625rem, env(safe-area-inset-bottom)); }
+        .safe-top {
+            padding-top: max(0.625rem, env(safe-area-inset-top));
+        }
+
+        .safe-bottom {
+            padding-bottom: max(0.625rem, env(safe-area-inset-bottom));
+        }
     </style>
 </head>
 
@@ -53,24 +58,16 @@
     <div x-data="{ sidebarOpen: false }" class="min-h-screen w-full bg-surface relative dark:bg-zinc-950">
 
         {{-- ======================= OVERLAY (mobile) ======================= --}}
-        <div
-            x-show="sidebarOpen"
-            x-transition:enter="transition ease-out duration-300"
-            x-transition:enter-start="opacity-0"
-            x-transition:enter-end="opacity-100"
-            x-transition:leave="transition ease-in duration-200"
-            x-transition:leave-start="opacity-100"
-            x-transition:leave-end="opacity-0"
-            x-on:click="sidebarOpen = false"
+        <div x-show="sidebarOpen" x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+            x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0" x-on:click="sidebarOpen = false"
             class="fixed inset-0 z-40 lg:hidden
                    bg-zinc-950/60 backdrop-blur-md"
-            style="display: none;"
-            aria-hidden="true"></div>
+            style="display: none;" aria-hidden="true"></div>
 
         {{-- ======================= SIDEBAR KIRI ======================= --}}
-        <aside
-            x-data="{ usersOpen: true }"
-            :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+        <aside x-data="{ usersOpen: true }" :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
             class="fixed inset-y-0 left-0 z-50
                    w-50 lg:w-48
                    flex flex-col justify-between
@@ -80,8 +77,7 @@
                    select-none
                    transition-transform duration-300 ease-out
                    lg:translate-x-0
-                   dark:bg-zinc-900/85 dark:lg:bg-zinc-900/70"
-        >
+                   dark:bg-zinc-900/85 dark:lg:bg-zinc-900/70">
             <div class="flex flex-col h-full overflow-y-auto safe-top safe-bottom">
 
                 {{-- ─────── Header & Logo ─────── --}}
@@ -90,8 +86,7 @@
                            flex items-center gap-2
                            bg-white/60 dark:border-zinc-800 dark:bg-zinc-900/60">
 
-                    <img alt="LPPM Annuqayah Logo"
-                        class="w-7 h-7 rounded-full object-contain shrink-0"
+                    <img alt="LPPM Annuqayah Logo" class="w-7 h-7 rounded-full object-contain shrink-0"
                         src="{{ asset('images/logo.webp') }}" />
 
                     <div class="flex flex-col min-w-0 flex-1">
@@ -106,9 +101,7 @@
                     </div>
 
                     {{-- Tombol tutup (mobile only) --}}
-                    <button type="button"
-                        x-on:click="sidebarOpen = false"
-                        aria-label="Close menu"
+                    <button type="button" x-on:click="sidebarOpen = false" aria-label="Close menu"
                         class="p-1.5 rounded-lg
                                text-on-surface-variant
                                hover:text-emerald-500 hover:bg-surface-container-low
@@ -141,8 +134,7 @@
                             <x-sidebar-link href="admin.manage-schemes" title="Schemes" icon="rectangle-group" />
 
                             <div class="flex flex-col">
-                                <button type="button"
-                                    x-on:click="usersOpen = !usersOpen"
+                                <button type="button" x-on:click="usersOpen = !usersOpen"
                                     class="w-full flex items-center justify-between px-2 py-1.5 rounded-lg
                                            text-on-surface-variant
                                            hover:text-on-surface hover:bg-surface-container-low/50
@@ -159,16 +151,15 @@
                                         x-bind:class="usersOpen && 'rotate-180'" />
                                 </button>
 
-                                <div x-show="usersOpen"
-                                    x-transition:enter="transition ease-out duration-150"
+                                <div x-show="usersOpen" x-transition:enter="transition ease-out duration-150"
                                     x-transition:enter-start="opacity-0 -translate-y-1"
                                     x-transition:enter-end="opacity-100 translate-y-0"
                                     x-transition:leave="transition ease-in duration-100"
-                                    x-transition:leave-start="opacity-100"
-                                    x-transition:leave-end="opacity-0"
+                                    x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
                                     class="flex flex-col gap-0.5 border-l border-white/80 ml-3.5 my-0.5 dark:border-zinc-800">
                                     <x-sidebar-link href="admin.manage-admins" title="Admins" icon="shield-check" />
-                                    <x-sidebar-link href="admin.manage-reviewers" title="Reviewers" icon="clipboard-document-check" />
+                                    <x-sidebar-link href="admin.manage-reviewers" title="Reviewers"
+                                        icon="clipboard-document-check" />
                                     <x-sidebar-link href="admin.manage-users" title="Users" icon="user-circle" />
                                 </div>
                             </div>
@@ -181,37 +172,17 @@
                                 {{ __('Internal Data') }}
                             </span>
                             <x-sidebar-link href="admin.internal.manage-researches" title="Research" icon="beaker" />
-                            <x-sidebar-link href="admin.internal.manage-dedications" title="Dedication" icon="hand-raised" />
+                            <x-sidebar-link href="admin.internal.manage-dedications" title="Community Service"
+                                icon="hand-raised" />
                         </div>
 
                         {{-- Group: External Data --}}
                         <div class="flex flex-col gap-0.5">
-                            <span
-                                class="px-2 py-1 font-body text-[9px] uppercase tracking-wider text-outline font-bold dark:text-zinc-500">
+                            <span class="px-2 py-1 font-body text-[9px] uppercase tracking-wider text-outline font-bold dark:text-zinc-500">
                                 External Data
                             </span>
-                            <a href="#"
-                                class="flex items-center gap-2 px-2 py-1.5 rounded-lg
-                                       text-on-surface-variant
-                                       hover:text-on-surface hover:bg-surface-container-low/50
-                                       font-heading text-[11px] font-medium
-                                       transition-all group
-                                       dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-800/50">
-                                <flux:icon.globe-alt
-                                    class="size-4 text-outline group-hover:text-emerald-500 transition-colors shrink-0 dark:group-hover:text-emerald-400" />
-                                <span>Research</span>
-                            </a>
-                            <a href="#"
-                                class="flex items-center gap-2 px-2 py-1.5 rounded-lg
-                                       text-on-surface-variant
-                                       hover:text-on-surface hover:bg-surface-container-low/50
-                                       font-heading text-[11px] font-medium
-                                       transition-all group
-                                       dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-800/50">
-                                <flux:icon.gift
-                                    class="size-4 text-outline group-hover:text-emerald-500 transition-colors shrink-0 dark:group-hover:text-emerald-400" />
-                                <span>Dedication</span>
-                            </a>
+                            <x-sidebar-link href="admin.external.manage-researches" title="Research" icon="globe-alt" />
+                            <x-sidebar-link href="admin.external.manage-dedications" title="Community Service" icon="gift" />
                         </div>
                     @endcan
 
@@ -222,7 +193,8 @@
                                 Internal Data
                             </span>
                             <x-sidebar-link href="reviewer.review-proposal" title="Research" icon="beaker" />
-                            <x-sidebar-link href="reviewer.review-progress-report" title="Progress Report" icon="beaker" />
+                            <x-sidebar-link href="reviewer.review-progress-report" title="Progress Report"
+                                icon="beaker" />
                         </div>
                     @endcan
 
@@ -230,10 +202,22 @@
                         <div class="flex flex-col gap-0.5">
                             <span
                                 class="px-2 py-1 font-body text-[9px] uppercase tracking-wider text-outline font-bold dark:text-zinc-500">
-                                Internal Data
+                                {{ __("Internal Data") }}
                             </span>
                             <x-sidebar-link href="user.internal.manage-researches" title="Research" icon="beaker" />
-                            <x-sidebar-link href="user.internal.manage-dedications" title="Dedication" icon="hand-raised" />
+                            <x-sidebar-link href="user.internal.manage-dedications" title="Community Service"
+                                icon="hand-raised" />
+                        </div>
+                        {{-- External Data --}}
+                        <div class="flex flex-col gap-0.5">
+                            <span
+                                class="px-2 py-1 font-body text-[9px] uppercase tracking-wider text-outline font-bold dark:text-zinc-500">
+                                {{ __("External Data") }}
+                            </span>
+                            <x-sidebar-link href="user.external.manage-researches" title="Research"
+                                icon="globe-alt" />
+                            <x-sidebar-link href="user.external.manage-dedications" title="Community Service"
+                                icon="gift" />
                         </div>
                     @endcan
                 </div>
@@ -257,9 +241,7 @@
                     aria-hidden="true"></div>
 
                 <div class="relative flex items-center gap-2 min-w-0 shrink">
-                    <button type="button"
-                        x-on:click="sidebarOpen = true"
-                        aria-label="Open menu"
+                    <button type="button" x-on:click="sidebarOpen = true" aria-label="Open menu"
                         class="lg:hidden p-1.5 shadow-lg shadow-emerald-500/20 rounded-xl cursor-pointer
                                text-on-surface-variant
                                hover:bg-green-100 hover:text-emerald-600
@@ -290,8 +272,8 @@
                     <button type="button"
                         x-on:click="document.documentElement.classList.toggle('dark');
                         localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';"
-                        aria-label="Ganti tema"
-                        class="p-1.5 rounded-md text-on-surface-variant cursor-pointer
+                        aria-label="Change theme"
+                        class="p-1.5 rounded-full text-on-surface-variant cursor-pointer
                                hover:text-emerald-500 hover:bg-surface-container-high transition-colors
                                dark:text-zinc-400 dark:hover:text-emerald-400 dark:hover:bg-zinc-800">
                         <flux:icon.sun class="size-4 hidden dark:block" />

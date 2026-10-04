@@ -108,20 +108,12 @@ new class extends Component {
 
                 {{-- Period Name --}}
                 <div>
-                    <label for="periode"
-                        class="block text-[11px] font-medium text-slate-700 dark:text-zinc-300 mb-1">
-                        Period Name <span class="text-rose-500">*</span>
-                    </label>
-                    <input type="text" id="periode" wire:model="form.periode"
-                        placeholder="e.g. 2025/2026"
+                    <x-input
+                        id="periode"
+                        wire:model="form.periode"
+                        label="Period Name"
                         required
-                        class="block w-full rounded-md shadow-sm text-[11.5px]
-                               border-slate-300 dark:border-zinc-600
-                               bg-white dark:bg-zinc-800
-                               text-slate-900 dark:text-zinc-100
-                               placeholder:text-slate-400 dark:placeholder:text-zinc-500
-                               focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500
-                               py-1.5 px-2.5 transition-colors" />
+                        placeholder="e.g. 2025/2026" />
                     @error('form.periode')
                         <p class="mt-1 flex items-center gap-1 text-[10.5px] text-rose-600">
                             <flux:icon.exclamation-circle class="size-3 shrink-0" />
@@ -133,19 +125,13 @@ new class extends Component {
                 {{-- Open From / Open To --}}
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <div>
-                        <label for="open_from"
-                            class="block text-[11px] font-medium text-slate-700 dark:text-zinc-300 mb-1">
-                            Open From <span class="text-rose-500">*</span>
-                        </label>
-                        <input type="datetime-local" id="open_from"
+                        <x-input
+                            type="datetime-local"
+                            id="open_from"
                             wire:model="form.open_from"
-                            class="block w-full rounded-md shadow-sm text-[11.5px]
-                                   border-slate-300 dark:border-zinc-600
-                                   bg-white dark:bg-zinc-800
-                                   text-slate-900 dark:text-zinc-100
-                                   focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500
-                                   py-1.5 px-2.5 transition-colors
-                                   dark:[color-scheme:dark]" />
+                            label="Open From"
+                            required
+                            class="dark:[color-scheme:dark]" />
                         @error('form.open_from')
                             <p class="mt-1 flex items-center gap-1 text-[10.5px] text-rose-600">
                                 <flux:icon.exclamation-circle class="size-3 shrink-0" />
@@ -155,19 +141,13 @@ new class extends Component {
                     </div>
 
                     <div>
-                        <label for="open_to"
-                            class="block text-[11px] font-medium text-slate-700 dark:text-zinc-300 mb-1">
-                            Open To <span class="text-rose-500">*</span>
-                        </label>
-                        <input type="datetime-local" id="open_to"
+                        <x-input
+                            type="datetime-local"
+                            id="open_to"
                             wire:model="form.open_to"
-                            class="block w-full rounded-md shadow-sm text-[11.5px]
-                                   border-slate-300 dark:border-zinc-600
-                                   bg-white dark:bg-zinc-800
-                                   text-slate-900 dark:text-zinc-100
-                                   focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500
-                                   py-1.5 px-2.5 transition-colors
-                                   dark:[color-scheme:dark]" />
+                            label="Open To"
+                            required
+                            class="dark:[color-scheme:dark]" />
                         @error('form.open_to')
                             <p class="mt-1 flex items-center gap-1 text-[10.5px] text-rose-600">
                                 <flux:icon.exclamation-circle class="size-3 shrink-0" />
@@ -179,7 +159,7 @@ new class extends Component {
 
                 {{-- Is Active --}}
                 <label class="flex items-start gap-2 cursor-pointer select-none
-                              p-2 rounded-md
+                              p-2 rounded-full
                               bg-slate-50 dark:bg-zinc-800/40
                               border border-slate-200 dark:border-zinc-700/60
                               hover:bg-slate-100 dark:hover:bg-zinc-800/70
@@ -213,26 +193,13 @@ new class extends Component {
                         border-t border-slate-200 dark:border-zinc-700
                         bg-slate-50/50 dark:bg-zinc-900/50">
 
-                <button type="button" @click="show = false"
-                    class="w-full sm:w-auto px-3 py-1.5 text-[11px] font-medium
-                           rounded-md
-                           text-slate-700 dark:text-zinc-300
-                           bg-white dark:bg-zinc-800
-                           border border-slate-300 dark:border-zinc-600
-                           hover:bg-slate-50 dark:hover:bg-zinc-700
-                           transition-colors">
+                <flux:button type="button" @click="show = false">
                     Cancel
-                </button>
+                </flux:button>
 
-                <button type="submit"
+                <flux:button type="submit" variant="primary"
                     wire:loading.attr="disabled"
-                    wire:target="create"
-                    class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5
-                           px-3 py-1.5 text-[11px] font-medium rounded-md
-                           text-white
-                           bg-emerald-600 hover:bg-emerald-700
-                           disabled:opacity-60 disabled:cursor-wait
-                           transition-colors">
+                    wire:target="create">
                     <svg wire:loading wire:target="create"
                          class="animate-spin size-3" viewBox="0 0 24 24" fill="none"
                          xmlns="http://www.w3.org/2000/svg">
@@ -241,7 +208,7 @@ new class extends Component {
                     </svg>
                     <span wire:loading.remove wire:target="create">Save Period</span>
                     <span wire:loading wire:target="create">Saving...</span>
-                </button>
+                </flux:button>
             </div>
         </form>
     </div>

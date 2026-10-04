@@ -15,6 +15,7 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use App\Models\ExternalProposal;
 
 /**
  * @property int $id
@@ -44,6 +45,9 @@ use Illuminate\Support\Str;
  * @method HasMany<ProgressReport> reviewedProgressReports()
  * @method HasMany<ReviewerNote> reviewerNotes()
  * @method HasMany<AdminNote> adminNotes()
+ * @method HasMany<ExternalProposal> externalProposals()
+ * @method HasMany<ExternalProposal> externalResearches()
+ * @method HasMany<ExternalProposal> externalDedications()
  */
 #[Guarded(['id'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
@@ -152,5 +156,20 @@ class User extends Authenticatable implements MustVerifyEmail
     public function hasAnyRole(array $roleCodes): bool
     {
         return in_array($this->role?->role_code, $roleCodes, true);
+    }
+
+    public function externalProposals(): HasMany
+    {
+        return $this->hasMany(ExternalProposal::class);
+    }
+
+    public function externalResearches(): HasMany
+    {
+        return $this->hasMany(ExternalProposal::class)->where('is_research', true);
+    }
+
+    public function externalDedications(): HasMany
+    {
+        return $this->hasMany(ExternalProposal::class)->where('is_research', false);
     }
 }

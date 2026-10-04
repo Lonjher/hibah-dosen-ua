@@ -1,96 +1,61 @@
 <?php
 
+use App\Livewire\Forms\InformationForm;
 use App\Models\Informations;
 use Flux\Flux;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
 new class extends Component {
-    public bool $show = false;
-    public ?int $informationId = null;
-
-    public string $title = '';
-    public string $content = '';
-    public string $type = 'info';
-    public bool $is_published = true;
-    public ?string $published_at = null;
-    public ?string $expires_at = null;
-    public int $priority = 0;
-
-    protected function rules(): array
-    {
-        return [
-            'title'        => ['required', 'string', 'max:180'],
-            'content'      => ['required', 'string', 'max:5000'],
-            'type'         => ['required', 'in:info,success,warning,danger'],
-            'is_published' => ['boolean'],
-            'published_at' => ['nullable', 'date'],
-            'expires_at'   => ['nullable', 'date', 'after:published_at'],
-            'priority'     => ['integer', 'min:0', 'max:99'],
-        ];
-    }
-
-    protected function messages(): array
-    {
-        return [
-            'expires_at.after' => 'The expiry date must be after the publish date.',
-        ];
-    }
+    public InformationForm $form;
+    public bool $show = false;        // ← TAMBAHKAN INI
 
     #[On('open-edit-information')]
-    public function open(int $id): void
+    public function load(int $id): void
     {
-        $info = Informations::find($id);
+        $information = Informations::find($id);
 
-        if (! $info) {
+        if (! $information) {
             Flux::toast('Information not found.', variant: 'danger');
             return;
         }
 
+        $this->form->setInformation($information);
+        $this->resetErrorBag();
         $this->resetValidation();
-        $this->informationId = $info->id;
-        $this->title         = $info->title;
-        $this->content       = $info->content;
-        $this->type          = $info->type;
-        $this->is_published  = $info->is_published;
-        $this->published_at  = $info->published_at?->format('Y-m-d\TH:i');
-        $this->expires_at    = $info->expires_at?->format('Y-m-d\TH:i');
-        $this->priority      = $info->priority;
-        $this->show = true;
+        $this->show = true;            // ← set show
     }
 
     public function close(): void
     {
-        $this->show = false;
+        $this->form->reset();
         $this->resetValidation();
+        $this->show = false;           // ← set show
     }
 
     public function update(): void
     {
-        if (! $this->informationId) return;
-
-        $info = Informations::find($this->informationId);
-        if (! $info) {
-            Flux::toast('Information not found.', variant: 'danger');
-            $this->close();
+        if (! $this->form->information) {
             return;
         }
 
-        $data = $this->validate();
+        $this->form->validate();
 
-        $info->update([
-            'title'        => $data['title'],
-            'content'      => $data['content'],
-            'type'         => $data['type'],
-            'is_published' => $data['is_published'],
-            'published_at' => $data['published_at'] ?: $info->published_at,
-            'expires_at'   => $data['expires_at'] ?: null,
-            'priority'     => $data['priority'],
-        ]);
+        try {
+            $this->form->update();
 
-        Flux::toast('Information updated successfully.', variant: 'success');
-        $this->dispatch('information-updated');
-        $this->close();
+            Flux::toast('Information updated successfully.', variant: 'success');
+            $this->dispatch('information-updated');
+            $this->dispatch('close-edit-information-modal');
+            $this->close();
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $this->dispatch('information-error', message: $e->getMessage());
+            throw $e;
+        } catch (\Throwable $e) {
+            report($e);
+            $this->dispatch('information-error', message: 'Failed to update information.');
+        }
     }
 };
 ?>
@@ -100,7 +65,7 @@ new class extends Component {
     @click.self="$wire.close()">
 
     <div class="flex max-h-[92vh] w-full sm:max-w-md flex-col overflow-hidden
-                bg-white dark:bg-zinc-900 rounded-t-2xl sm:rounded-xl shadow-2xl
+                bg-white dark:bg-zinc-900 rounded-full shadow-2xl
                 border border-slate-200 dark:border-zinc-700"
         @click.stop>
 
@@ -135,117 +100,80 @@ new class extends Component {
 
             {{-- Title --}}
             <div>
-                <label class="block text-[11px] font-medium text-slate-700 dark:text-zinc-300 mb-1">
-                    Title <span class="text-rose-500">*</span>
-                </label>
-                <input type="text" wire:model="title"
-                    class="block w-full rounded-md shadow-sm text-[11.5px]
-                           border-slate-300 dark:border-zinc-600
-                           bg-white dark:bg-zinc-800
-                           text-slate-900 dark:text-zinc-100
-                           focus:ring-1 focus:ring-violet-500 focus:border-violet-500
-                           py-1.5 px-2.5 transition-colors" />
-                @error('title')
+                <x-input
+                    wire:model="form.title"
+                    label="Title"
+                    required
+                    size="md" />
+                @error('form.title')
                     <p class="mt-1 text-[10.5px] text-rose-600">{{ $message }}</p>
                 @enderror
             </div>
 
             {{-- Content --}}
             <div>
-                <label class="block text-[11px] font-medium text-slate-700 dark:text-zinc-300 mb-1">
-                    Content <span class="text-rose-500">*</span>
-                </label>
-                <textarea wire:model="content" rows="4"
-                    class="block w-full rounded-md shadow-sm text-[11.5px]
-                           border-slate-300 dark:border-zinc-600
-                           bg-white dark:bg-zinc-800
-                           text-slate-900 dark:text-zinc-100
-                           focus:ring-1 focus:ring-violet-500 focus:border-violet-500
-                           py-1.5 px-2.5 resize-none transition-colors"></textarea>
-                @error('content')
+                <x-textarea
+                    wire:model="form.content"
+                    label="Content"
+                    required
+                    rows="4"
+                    color="violet" />
+                @error('form.content')
                     <p class="mt-1 text-[10.5px] text-rose-600">{{ $message }}</p>
                 @enderror
             </div>
 
             {{-- Type + Priority --}}
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-
-                {{-- Type --}}
                 <div>
-                    <label class="block text-[11px] font-medium text-slate-700 dark:text-zinc-300 mb-1">
-                        Type
-                    </label>
-                    <select wire:model="type"
-                        class="block w-full rounded-md shadow-sm text-[11.5px]
-                               border-slate-300 dark:border-zinc-600
-                               bg-white dark:bg-zinc-800
-                               text-slate-900 dark:text-zinc-100
-                               focus:ring-1 focus:ring-violet-500 focus:border-violet-500
-                               py-1.5 pl-2.5 pr-6 transition-colors">
+                    <x-select
+                        wire:model="form.type"
+                        label="Type"
+                        size="lg"
+                        color="violet">
                         <option value="info">Info</option>
                         <option value="success">Success</option>
                         <option value="warning">Warning</option>
                         <option value="danger">Important</option>
-                    </select>
-                    @error('type')
+                    </x-select>
+                    @error('form.type')
                         <p class="mt-1 text-[10.5px] text-rose-600">{{ $message }}</p>
                     @enderror
                 </div>
 
-                {{-- Priority --}}
                 <div>
-                    <label class="block text-[11px] font-medium text-slate-700 dark:text-zinc-300 mb-1">
-                        Priority
-                    </label>
-                    <input type="number" wire:model="priority" min="0" max="99"
-                        class="block w-full rounded-md shadow-sm text-[11.5px]
-                               border-slate-300 dark:border-zinc-600
-                               bg-white dark:bg-zinc-800
-                               text-slate-900 dark:text-zinc-100
-                               focus:ring-1 focus:ring-violet-500 focus:border-violet-500
-                               py-1.5 px-2.5 transition-colors" />
-                    <p class="mt-0.5 text-[9.5px] text-slate-400 dark:text-zinc-500">
-                        Higher = displayed first
-                    </p>
+                    <x-input
+                        type="number"
+                        wire:model="form.priority"
+                        label="Priority"
+                        min="0"
+                        max="99"
+                        hint="Higher = displayed first" />
+                    @error('form.priority')
+                        <p class="mt-1 text-[10.5px] text-rose-600">{{ $message }}</p>
+                    @enderror
                 </div>
             </div>
 
             {{-- Publish At + Expires At --}}
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-
-                {{-- Publish At --}}
                 <div>
-                    <label class="block text-[11px] font-medium text-slate-700 dark:text-zinc-300 mb-1">
-                        Publish At
-                    </label>
-                    <input type="datetime-local" wire:model="published_at"
-                        class="block w-full rounded-md shadow-sm text-[11.5px]
-                               border-slate-300 dark:border-zinc-600
-                               bg-white dark:bg-zinc-800
-                               text-slate-900 dark:text-zinc-100
-                               focus:ring-1 focus:ring-violet-500 focus:border-violet-500
-                               py-1.5 px-2.5 transition-colors" />
-                    @error('published_at')
+                    <x-input
+                        type="datetime-local"
+                        wire:model="form.published_at"
+                        label="Publish At" />
+                    @error('form.published_at')
                         <p class="mt-1 text-[10.5px] text-rose-600">{{ $message }}</p>
                     @enderror
                 </div>
 
-                {{-- Expires At --}}
                 <div>
-                    <label class="block text-[11px] font-medium text-slate-700 dark:text-zinc-300 mb-1">
-                        Expires At
-                    </label>
-                    <input type="datetime-local" wire:model="expires_at"
-                        class="block w-full rounded-md shadow-sm text-[11.5px]
-                               border-slate-300 dark:border-zinc-600
-                               bg-white dark:bg-zinc-800
-                               text-slate-900 dark:text-zinc-100
-                               focus:ring-1 focus:ring-violet-500 focus:border-violet-500
-                               py-1.5 px-2.5 transition-colors" />
-                    <p class="mt-0.5 text-[9.5px] text-slate-400 dark:text-zinc-500">
-                        Leave empty for no expiry
-                    </p>
-                    @error('expires_at')
+                    <x-input
+                        type="datetime-local"
+                        wire:model="form.expires_at"
+                        label="Expires At"
+                        hint="Leave empty for no expiry" />
+                    @error('form.expires_at')
                         <p class="mt-1 text-[10.5px] text-rose-600">{{ $message }}</p>
                     @enderror
                 </div>
@@ -258,7 +186,7 @@ new class extends Component {
                           border border-slate-200 dark:border-zinc-700/60
                           hover:bg-slate-100 dark:hover:bg-zinc-800/70
                           transition-colors">
-                <input type="checkbox" wire:model="is_published"
+                <input type="checkbox" wire:model="form.is_published"
                     class="rounded border-slate-300 dark:border-zinc-600
                            text-violet-600 focus:ring-violet-500 focus:ring-1
                            w-3.5 h-3.5" />
@@ -272,23 +200,11 @@ new class extends Component {
         <div class="shrink-0 flex flex-col-reverse sm:flex-row sm:justify-end gap-1.5
                     px-4 py-3 border-t border-slate-200 dark:border-zinc-700
                     bg-slate-50/50 dark:bg-zinc-900/50">
-            <button type="button" wire:click="close"
-                class="w-full sm:w-auto px-3 py-1.5 text-[11px] font-medium
-                       rounded-md
-                       text-slate-700 dark:text-zinc-300
-                       bg-white dark:bg-zinc-800
-                       border border-slate-300 dark:border-zinc-600
-                       hover:bg-slate-50 dark:hover:bg-zinc-700
-                       transition-colors">
+            <flux:button type="button" wire:click="close">
                 Cancel
-            </button>
-            <button type="button" wire:click="update"
-                wire:loading.attr="disabled" wire:target="update"
-                class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5
-                       px-3 py-1.5 text-[11px] font-medium rounded-md
-                       text-white bg-violet-600 hover:bg-violet-700
-                       disabled:opacity-60 disabled:cursor-wait
-                       transition-colors">
+            </flux:button>
+            <flux:button type="button" wire:click="update" variant="primary"
+                wire:loading.attr="disabled" wire:target="update">
                 <svg wire:loading wire:target="update"
                      class="animate-spin size-3" viewBox="0 0 24 24" fill="none"
                      xmlns="http://www.w3.org/2000/svg">
@@ -297,7 +213,7 @@ new class extends Component {
                 </svg>
                 <span wire:loading.remove wire:target="update">Save Changes</span>
                 <span wire:loading wire:target="update">Saving...</span>
-            </button>
+            </flux:button>
         </div>
     </div>
 </div>

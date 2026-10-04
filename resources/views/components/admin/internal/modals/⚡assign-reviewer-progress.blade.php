@@ -185,17 +185,19 @@ new class extends Component {
         x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
         x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
         class="flex max-h-[92vh] w-full sm:max-w-md flex-col overflow-hidden
-               bg-white dark:bg-zinc-900 rounded-t-2xl sm:rounded-xl shadow-2xl
-               border border-slate-200 dark:border-zinc-700"
+               bg-white dark:bg-zinc-900 rounded-t-3xl sm:rounded-3xl shadow-2xl
+               border border-slate-200 dark:border-zinc-700
+               hover:shadow-violet-500/15 transition-shadow duration-300"
         @click.stop>
 
         <form wire:submit.prevent="save" class="flex min-h-0 flex-1 flex-col">
 
             {{-- ══════════ HEADER ══════════ --}}
-            <div class="shrink-0 bg-gradient-to-r from-violet-600 to-violet-500 px-4 py-3">
+            <div class="shrink-0 bg-gradient-to-r from-violet-600 to-violet-500
+                        px-4 py-3 rounded-t-3xl sm:rounded-t-3xl">
                 <div class="flex items-start justify-between gap-3">
                     <div class="flex items-center gap-2 min-w-0">
-                        <div class="w-7 h-7 rounded-md bg-white/20 flex items-center justify-center shrink-0">
+                        <div class="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center shrink-0">
                             <flux:icon.user-plus class="size-3.5 text-white" />
                         </div>
                         <div class="min-w-0">
@@ -209,8 +211,10 @@ new class extends Component {
                     </div>
                     <button type="button" @click="show = false"
                         aria-label="Close"
-                        class="shrink-0 w-6 h-6 rounded-md flex items-center justify-center
-                               text-white/80 hover:text-white hover:bg-white/10 transition-colors">
+                        class="shrink-0 w-6 h-6 rounded-full flex items-center justify-center
+                               text-white/80 hover:text-white hover:bg-white/10
+                               hover:scale-110 active:scale-95
+                               transition-all duration-150">
                         <flux:icon.x-mark class="size-3.5" />
                     </button>
                 </div>
@@ -221,7 +225,7 @@ new class extends Component {
 
                 {{-- Global Error --}}
                 <template x-if="errorMessage">
-                    <div class="flex items-start gap-2 p-2.5 rounded-md
+                    <div class="flex items-start gap-2 p-2.5 rounded-2xl
                                 bg-rose-50 dark:bg-rose-900/20
                                 border border-rose-200 dark:border-rose-800">
                         <flux:icon.exclamation-triangle
@@ -233,8 +237,8 @@ new class extends Component {
                 </template>
 
                 {{-- Progress Report Info --}}
-                <div class="rounded-md border border-slate-200 dark:border-zinc-700/70
-                            bg-slate-50 dark:bg-zinc-800/40 px-2.5 py-2">
+                <div class="rounded-2xl border border-slate-200 dark:border-zinc-700/70
+                            bg-slate-50 dark:bg-zinc-800/40 px-3 py-2.5">
                     <p class="text-[9.5px] uppercase tracking-wider font-semibold
                               text-slate-500 dark:text-zinc-400">
                         Progress Report
@@ -246,7 +250,7 @@ new class extends Component {
 
                     @if ($keyword)
                         <div class="mt-1.5">
-                            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full
                                          text-[9.5px] font-semibold
                                          bg-violet-100 text-violet-700
                                          dark:bg-violet-900/40 dark:text-violet-300">
@@ -265,10 +269,10 @@ new class extends Component {
 
                     @if ($selectedReviewer)
                         {{-- ══════════ SELECTED STATE ══════════ --}}
-                        <div class="rounded-md border border-violet-300 dark:border-violet-700
-                                    bg-violet-50 dark:bg-violet-900/20 px-2.5 py-2">
+                        <div class="rounded-full border border-violet-300 dark:border-violet-700
+                                    bg-violet-50 dark:bg-violet-900/20 pl-1 pr-1.5 py-1">
                             <div class="flex items-center gap-2.5">
-                                <div class="w-8 h-8 rounded-md shrink-0
+                                <div class="w-7 h-7 rounded-full shrink-0
                                             bg-violet-200 dark:bg-violet-800/50
                                             flex items-center justify-center
                                             text-[11px] font-bold
@@ -286,7 +290,7 @@ new class extends Component {
                                 </div>
                                 <button type="button" wire:click="clearReviewer"
                                     aria-label="Change reviewer"
-                                    class="shrink-0 w-6 h-6 rounded-md flex items-center justify-center
+                                    class="shrink-0 w-6 h-6 rounded-full flex items-center justify-center
                                            text-violet-600 dark:text-violet-400
                                            hover:bg-violet-100 dark:hover:bg-violet-900/40
                                            transition-colors">
@@ -304,23 +308,28 @@ new class extends Component {
                         {{-- ══════════ SEARCH STATE ══════════ --}}
                         <div class="relative">
                             <flux:icon.magnifying-glass
-                                class="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5
+                                class="absolute left-3 top-1/2 -translate-y-1/2 size-3.5
                                        text-slate-400 pointer-events-none" />
                             <input type="text"
                                 wire:model.live.debounce.200ms="search"
                                 placeholder="Search by name, NIDN, or email..."
                                 autofocus
-                                class="block w-full rounded-md shadow-sm text-[11px] pl-8 pr-2.5
-                                       border-slate-300 dark:border-zinc-600
+                                class="block w-full rounded-full shadow-sm text-[11px] pl-9 pr-3.5
+                                       border border-slate-200 dark:border-zinc-700
                                        bg-white dark:bg-zinc-800
                                        text-slate-900 dark:text-zinc-100
                                        placeholder:text-slate-400 dark:placeholder:text-zinc-500
-                                       focus:ring-1 focus:ring-violet-500 focus:border-violet-500
-                                       py-2 transition-colors" />
+                                       py-2
+                                       hover:shadow-sm hover:shadow-emerald-500/20 dark:hover:shadow-emerald-500/20
+                                       hover:border-slate-300 dark:hover:border-zinc-600
+                                       focus:outline-none
+                                       focus:ring-2 focus:ring-violet-500/25 focus:border-violet-500
+                                       focus:shadow-md focus:shadow-emerald-500/10
+                                       transition-all duration-200" />
                         </div>
 
                         {{-- Suggestions --}}
-                        <div class="mt-2 rounded-md border border-slate-200 dark:border-zinc-700
+                        <div class="mt-2 rounded-xl border border-slate-200 dark:border-zinc-700
                                     bg-white dark:bg-zinc-800 overflow-hidden">
 
                             @forelse ($suggestions as $reviewer)
@@ -331,7 +340,7 @@ new class extends Component {
                                            text-left transition-colors
                                            hover:bg-violet-50 dark:hover:bg-violet-900/20
                                            {{ ! $loop->last ? 'border-b border-slate-100 dark:border-zinc-700/70' : '' }}">
-                                    <div class="w-7 h-7 rounded-md shrink-0
+                                    <div class="w-7 h-7 rounded-full shrink-0
                                                 bg-violet-100 dark:bg-violet-900/40
                                                 flex items-center justify-center
                                                 text-[10px] font-bold
@@ -391,15 +400,18 @@ new class extends Component {
             {{-- ══════════ FOOTER ══════════ --}}
             <div class="shrink-0 flex flex-col-reverse sm:flex-row sm:justify-end gap-1.5
                         px-4 py-3 border-t border-slate-200 dark:border-zinc-700
-                        bg-slate-50/50 dark:bg-zinc-900/50">
+                        bg-slate-50/50 dark:bg-zinc-900/50 rounded-b-3xl sm:rounded-b-3xl">
 
                 <button type="button" @click="show = false"
-                    class="w-full sm:w-auto px-3 py-1.5 text-[11px] font-medium rounded-md
+                    class="w-full sm:w-auto px-3 py-1.5 text-[11px] font-medium rounded-full
                            text-slate-700 dark:text-zinc-300
                            bg-white dark:bg-zinc-800
                            border border-slate-300 dark:border-zinc-600
                            hover:bg-slate-50 dark:hover:bg-zinc-700
-                           transition-colors">
+                           shadow-sm shadow-zinc-200/40
+                           hover:shadow-sm hover:shadow-violet-500/15
+                           hover:scale-[1.02] active:scale-[0.97]
+                           transition-all duration-150">
                     Cancel
                 </button>
 
@@ -407,10 +419,14 @@ new class extends Component {
                     wire:loading.attr="disabled"
                     wire:target="save"
                     class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5
-                           px-3 py-1.5 text-[11px] font-medium rounded-md text-white
-                           bg-violet-600 hover:bg-violet-700
+                           px-3 py-1.5 text-[11px] font-medium rounded-full text-white
+                           bg-violet-600/90 hover:bg-violet-600
+                           shadow-sm shadow-violet-500/20
+                           hover:shadow-sm hover:shadow-violet-500/30
                            disabled:opacity-60 disabled:cursor-wait
-                           transition-colors">
+                           hover:scale-[1.02] active:scale-[0.97]
+                           disabled:hover:scale-100
+                           transition-all duration-150">
                     <svg wire:loading wire:target="save"
                          class="animate-spin size-3" viewBox="0 0 24 24" fill="none"
                          xmlns="http://www.w3.org/2000/svg">

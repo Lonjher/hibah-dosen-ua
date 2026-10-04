@@ -111,17 +111,19 @@ new class extends Component {
         x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
         x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
         class="flex max-h-[92vh] w-full sm:max-w-md flex-col overflow-hidden
-               bg-white dark:bg-zinc-900 rounded-t-2xl sm:rounded-xl shadow-2xl
-               border border-slate-200 dark:border-zinc-700"
+               bg-white dark:bg-zinc-900 rounded-t-3xl sm:rounded-3xl shadow-2xl
+               border border-slate-200 dark:border-zinc-700
+               hover:shadow-amber-500/15 transition-shadow duration-300"
         @click.stop>
 
         <form wire:submit.prevent="save" class="flex min-h-0 flex-1 flex-col">
 
             {{-- HEADER --}}
-            <div class="shrink-0 bg-gradient-to-r from-amber-600 to-amber-500 px-4 py-3">
+            <div class="shrink-0 bg-gradient-to-r from-amber-600 to-amber-500
+                        px-4 py-3 rounded-t-3xl sm:rounded-t-3xl">
                 <div class="flex items-start justify-between gap-3">
                     <div class="flex items-center gap-2 min-w-0">
-                        <div class="w-7 h-7 rounded-md bg-white/20 flex items-center justify-center shrink-0">
+                        <div class="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center shrink-0">
                             <flux:icon.arrow-path class="size-3.5 text-white" />
                         </div>
                         <div class="min-w-0">
@@ -135,8 +137,10 @@ new class extends Component {
                     </div>
                     <button type="button" @click="show = false"
                         aria-label="Close"
-                        class="shrink-0 w-6 h-6 rounded-md flex items-center justify-center
-                               text-white/80 hover:text-white hover:bg-white/10 transition-colors">
+                        class="shrink-0 w-6 h-6 rounded-full flex items-center justify-center
+                               text-white/80 hover:text-white hover:bg-white/10
+                               hover:scale-110 active:scale-95
+                               transition-all duration-150">
                         <flux:icon.x-mark class="size-3.5" />
                     </button>
                 </div>
@@ -145,8 +149,9 @@ new class extends Component {
             {{-- BODY --}}
             <div class="flex-1 overflow-y-auto px-4 py-4 space-y-3">
 
+                {{-- Global Error --}}
                 <template x-if="errorMessage">
-                    <div class="flex items-start gap-2 p-2.5 rounded-md
+                    <div class="flex items-start gap-2 p-2.5 rounded-2xl
                                 bg-rose-50 dark:bg-rose-900/20
                                 border border-rose-200 dark:border-rose-800">
                         <flux:icon.exclamation-triangle
@@ -158,8 +163,8 @@ new class extends Component {
                 </template>
 
                 {{-- Proposal Info --}}
-                <div class="rounded-md border border-slate-200 dark:border-zinc-700/70
-                            bg-slate-50 dark:bg-zinc-800/40 px-2.5 py-2">
+                <div class="rounded-2xl border border-slate-200 dark:border-zinc-700/70
+                            bg-slate-50 dark:bg-zinc-800/40 px-3 py-2.5">
                     <p class="text-[9.5px] uppercase tracking-wider font-semibold
                               text-slate-500 dark:text-zinc-400">
                         Proposal
@@ -172,8 +177,8 @@ new class extends Component {
 
                 {{-- Last note --}}
                 @if ($lastNote)
-                    <div class="rounded-md border border-amber-200 dark:border-amber-800
-                                bg-amber-50 dark:bg-amber-900/20 px-2.5 py-2">
+                    <div class="rounded-2xl border border-amber-200 dark:border-amber-800
+                                bg-amber-50 dark:bg-amber-900/20 px-3 py-2.5">
                         <div class="flex items-center gap-1.5 mb-1">
                             <flux:icon.clock class="size-2.5 text-amber-600 dark:text-amber-400" />
                             <p class="text-[9.5px] font-semibold uppercase tracking-wider
@@ -191,7 +196,7 @@ new class extends Component {
                             </span>
                         </div>
                         @if ($lastNote->comment)
-                            <p class="text-[10.5px] leading-relaxed whitespace-pre-wrap
+                            <p class="text-[10.5px] leading-relaxed
                                       text-amber-900 dark:text-amber-100">
                                 {{ $lastNote->comment }}
                             </p>
@@ -207,18 +212,14 @@ new class extends Component {
 
                 {{-- Comment --}}
                 <div>
-                    <label class="block text-[11px] font-medium text-slate-700 dark:text-zinc-300 mb-1">
-                        Revision Note <span class="text-rose-500">*</span>
-                    </label>
-                    <textarea wire:model="form.comment" rows="4"
-                        placeholder="e.g. Methodology needs clarification, add recent references..."
-                        class="block w-full rounded-md shadow-sm text-[11.5px]
-                               border-slate-300 dark:border-zinc-600
-                               bg-white dark:bg-zinc-800
-                               text-slate-900 dark:text-zinc-100
-                               placeholder:text-slate-400 dark:placeholder:text-zinc-500
-                               focus:ring-1 focus:ring-amber-500 focus:border-amber-500
-                               py-1.5 px-2.5 resize-none transition-colors"></textarea>
+                    <x-textarea
+                        wire:model="form.comment"
+                        label="Revision Note"
+                        required
+                        rows="4"
+                        rounded="full"
+                        color="amber"
+                        placeholder="e.g. Methodology needs clarification, add recent references..." />
                     @error('form.comment')
                         <p class="mt-1 text-[10.5px] text-rose-600">{{ $message }}</p>
                     @enderror
@@ -226,19 +227,11 @@ new class extends Component {
 
                 {{-- Recommendation --}}
                 <div>
-                    <label class="block text-[11px] font-medium text-slate-700 dark:text-zinc-300 mb-1">
-                        Recommendation
-                        <span class="text-slate-400 dark:text-zinc-500 font-normal">(optional)</span>
-                    </label>
-                    <input type="text" wire:model="form.recommendation"
-                        placeholder="e.g. Focus on fixing Chapter 3"
-                        class="block w-full rounded-md shadow-sm text-[11.5px]
-                               border-slate-300 dark:border-zinc-600
-                               bg-white dark:bg-zinc-800
-                               text-slate-900 dark:text-zinc-100
-                               placeholder:text-slate-400 dark:placeholder:text-zinc-500
-                               focus:ring-1 focus:ring-amber-500 focus:border-amber-500
-                               py-1.5 px-2.5 transition-colors" />
+                    <x-input
+                        wire:model="form.recommendation"
+                        label="Recommendation (optional)"
+                        rounded="full"
+                        placeholder="e.g. Focus on fixing Chapter 3" />
                     @error('form.recommendation')
                         <p class="mt-1 text-[10.5px] text-rose-600">{{ $message }}</p>
                     @enderror
@@ -248,15 +241,18 @@ new class extends Component {
             {{-- FOOTER --}}
             <div class="shrink-0 flex flex-col-reverse sm:flex-row sm:justify-end gap-1.5
                         px-4 py-3 border-t border-slate-200 dark:border-zinc-700
-                        bg-slate-50/50 dark:bg-zinc-900/50">
+                        bg-slate-50/50 dark:bg-zinc-900/50 rounded-b-3xl sm:rounded-b-3xl">
 
                 <button type="button" @click="show = false"
-                    class="w-full sm:w-auto px-3 py-1.5 text-[11px] font-medium rounded-md
+                    class="w-full sm:w-auto px-3 py-1.5 text-[11px] font-medium rounded-full
                            text-slate-700 dark:text-zinc-300
                            bg-white dark:bg-zinc-800
                            border border-slate-300 dark:border-zinc-600
                            hover:bg-slate-50 dark:hover:bg-zinc-700
-                           transition-colors">
+                           shadow-sm shadow-zinc-200/40
+                           hover:shadow-sm hover:shadow-amber-500/15
+                           hover:scale-[1.02] active:scale-[0.97]
+                           transition-all duration-150">
                     Cancel
                 </button>
 
@@ -264,10 +260,14 @@ new class extends Component {
                     wire:loading.attr="disabled"
                     wire:target="save"
                     class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5
-                           px-3 py-1.5 text-[11px] font-medium rounded-md text-white
-                           bg-amber-600 hover:bg-amber-700
+                           px-3 py-1.5 text-[11px] font-medium rounded-full text-white
+                           bg-amber-600/90 hover:bg-amber-600
+                           shadow-sm shadow-amber-500/20
+                           hover:shadow-sm hover:shadow-amber-500/30
                            disabled:opacity-60 disabled:cursor-wait
-                           transition-colors">
+                           hover:scale-[1.02] active:scale-[0.97]
+                           disabled:hover:scale-100
+                           transition-all duration-150">
                     <svg wire:loading wire:target="save"
                          class="animate-spin size-3" viewBox="0 0 24 24" fill="none">
                         <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" opacity=".25"/>

@@ -109,18 +109,11 @@ new class extends Component {
 
                 {{-- Scheme Name --}}
                 <div>
-                    <label class="block text-[11px] font-medium text-slate-700 dark:text-zinc-300 mb-1">
-                        Scheme Name <span class="text-rose-500">*</span>
-                    </label>
-                    <input type="text" wire:model="form.name"
-                        placeholder="e.g. Fundamental Research"
-                        class="block w-full rounded-md shadow-sm text-[11.5px]
-                               border-slate-300 dark:border-zinc-600
-                               bg-white dark:bg-zinc-800
-                               text-slate-900 dark:text-zinc-100
-                               placeholder:text-slate-400 dark:placeholder:text-zinc-500
-                               focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500
-                               py-1.5 px-2.5 transition-colors" />
+                    <x-input
+                        wire:model="form.name"
+                        label="Scheme Name"
+                        required
+                        placeholder="e.g. Fundamental Research" />
                     @error('form.name')
                         <p class="mt-1 flex items-center gap-1 text-[10.5px] text-rose-600">
                             <flux:icon.exclamation-circle class="size-3 shrink-0" />
@@ -132,18 +125,11 @@ new class extends Component {
                 {{-- Scheme Code + Budget --}}
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <div>
-                        <label class="block text-[11px] font-medium text-slate-700 dark:text-zinc-300 mb-1">
-                            Scheme Code <span class="text-rose-500">*</span>
-                        </label>
-                        <input type="text" wire:model="form.code"
-                            placeholder="e.g. PD-001"
-                            class="block w-full rounded-md shadow-sm text-[11.5px]
-                                   border-slate-300 dark:border-zinc-600
-                                   bg-white dark:bg-zinc-800
-                                   text-slate-900 dark:text-zinc-100
-                                   placeholder:text-slate-400 dark:placeholder:text-zinc-500
-                                   focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500
-                                   py-1.5 px-2.5 transition-colors" />
+                        <x-input
+                            wire:model="form.code"
+                            label="Scheme Code"
+                            required
+                            placeholder="e.g. PD-001" />
                         @error('form.code')
                             <p class="mt-1 flex items-center gap-1 text-[10.5px] text-rose-600">
                                 <flux:icon.exclamation-circle class="size-3 shrink-0" />
@@ -153,18 +139,12 @@ new class extends Component {
                     </div>
 
                     <div>
-                        <label class="block text-[11px] font-medium text-slate-700 dark:text-zinc-300 mb-1">
-                            Budget Limit <span class="text-rose-500">*</span>
-                        </label>
-                        <input type="number" wire:model="form.budget_limit"
-                            placeholder="10000000"
-                            class="block w-full rounded-md shadow-sm text-[11.5px]
-                                   border-slate-300 dark:border-zinc-600
-                                   bg-white dark:bg-zinc-800
-                                   text-slate-900 dark:text-zinc-100
-                                   placeholder:text-slate-400 dark:placeholder:text-zinc-500
-                                   focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500
-                                   py-1.5 px-2.5 transition-colors" />
+                        <x-input
+                            type="number"
+                            wire:model="form.budget_limit"
+                            label="Budget Limit"
+                            required
+                            placeholder="10000000" />
                         @error('form.budget_limit')
                             <p class="mt-1 flex items-center gap-1 text-[10.5px] text-rose-600">
                                 <flux:icon.exclamation-circle class="size-3 shrink-0" />
@@ -176,18 +156,13 @@ new class extends Component {
 
                 {{-- Description --}}
                 <div>
-                    <label class="block text-[11px] font-medium text-slate-700 dark:text-zinc-300 mb-1">
-                        Description <span class="text-rose-500">*</span>
-                    </label>
-                    <textarea wire:model="form.description" rows="3"
-                        placeholder="Short description..."
-                        class="block w-full rounded-md shadow-sm text-[11.5px]
-                               border-slate-300 dark:border-zinc-600
-                               bg-white dark:bg-zinc-800
-                               text-slate-900 dark:text-zinc-100
-                               placeholder:text-slate-400 dark:placeholder:text-zinc-500
-                               focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500
-                               py-1.5 px-2.5 resize-none transition-colors"></textarea>
+                    <x-textarea
+                        wire:model="form.description"
+                        label="Description"
+                        required
+                        rows="3"
+                        color="emerald"
+                        placeholder="Short description..." />
                     @error('form.description')
                         <p class="mt-1 flex items-center gap-1 text-[10.5px] text-rose-600">
                             <flux:icon.exclamation-circle class="size-3 shrink-0" />
@@ -198,7 +173,7 @@ new class extends Component {
 
                 {{-- Is Active --}}
                 <label class="flex items-start gap-2 cursor-pointer select-none
-                              p-2 rounded-md
+                              p-2 rounded-full
                               bg-slate-50 dark:bg-zinc-800/40
                               border border-slate-200 dark:border-zinc-700/60
                               hover:bg-slate-100 dark:hover:bg-zinc-800/70
@@ -234,12 +209,14 @@ new class extends Component {
 
                 <button type="button" @click="show = false"
                     class="w-full sm:w-auto px-3 py-1.5 text-[11px] font-medium
-                           rounded-md
+                           rounded-full
                            text-slate-700 dark:text-zinc-300
                            bg-white dark:bg-zinc-800
                            border border-slate-300 dark:border-zinc-600
                            hover:bg-slate-50 dark:hover:bg-zinc-700
-                           transition-colors">
+                           shadow-sm shadow-zinc-200/40 hover:shadow-sm hover:shadow-emerald-500/15
+                           hover:scale-[1.02] active:scale-[0.97]
+                           transition-all duration-150">
                     Cancel
                 </button>
 
@@ -247,11 +224,13 @@ new class extends Component {
                     wire:loading.attr="disabled"
                     wire:target="save"
                     class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5
-                           px-3 py-1.5 text-[11px] font-medium rounded-md
+                           px-3 py-1.5 text-[11px] font-medium rounded-full
                            text-white
-                           bg-emerald-600 hover:bg-emerald-700
+                           bg-emerald-600/90 hover:bg-emerald-600
+                           shadow-sm shadow-emerald-500/20 hover:shadow-sm hover:shadow-emerald-500/30
                            disabled:opacity-60 disabled:cursor-wait
-                           transition-colors">
+                           hover:scale-[1.02] active:scale-[0.97]
+                           transition-all duration-150">
                     <svg wire:loading wire:target="save"
                          class="animate-spin size-3" viewBox="0 0 24 24" fill="none"
                          xmlns="http://www.w3.org/2000/svg">

@@ -111,7 +111,7 @@ new #[Title('Manage Users')] class extends Component {
             leading="Manage all lecturers who can submit proposals." />
 
         {{-- ══════════ MAIN CARD ══════════ --}}
-        <div class="bg-white dark:bg-zinc-900 rounded-xl
+        <div class="bg-white dark:bg-zinc-900 rounded-full
                     shadow-sm shadow-slate-200/50 dark:shadow-zinc-950/50
                     border border-slate-200 dark:border-zinc-800 overflow-hidden">
 
@@ -142,10 +142,10 @@ new #[Title('Manage Users')] class extends Component {
                                 placeholder="Search users..."
                                 class="w-full !text-[10.5px]" />
                         </div>
-                        <flux:button icon="plus" variant="primary" size="xs"
+                        <flux:button variant="primary"
                             x-data x-on:click="$dispatch('open-add-user')"
                             class="shrink-0 !text-[10.5px]">
-                            New
+                            New User
                         </flux:button>
                     </div>
                 </div>
@@ -278,7 +278,7 @@ new #[Title('Manage Users')] class extends Component {
             @if ($users->hasPages())
                 <div class="px-3 py-2 border-t border-slate-200 dark:border-zinc-800
                             bg-slate-50/50 dark:bg-zinc-900/50">
-                    {{ $users->links() }}
+                    {{ $users->links('vendor.pagination.tailwind') }}
                 </div>
             @endif
         </div>

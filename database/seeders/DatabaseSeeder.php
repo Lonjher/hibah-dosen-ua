@@ -17,9 +17,8 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             PeriodSeeder::class,
             ResearchSchemeSeeder::class,
-
-            // ── Transactional + Notes ──
             ProposalSeeder::class,
+            ExternalProposalSeeder::class,
         ]);
     }
 }

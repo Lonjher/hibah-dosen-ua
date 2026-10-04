@@ -132,7 +132,7 @@ new #[Title('Manage Dedications')] class extends Component {
             leading="Manage community service proposals. Verify, revise, or reject." />
 
         {{-- ══════════ MAIN CARD ══════════ --}}
-        <div class="bg-white dark:bg-zinc-900 rounded-xl
+        <div class="bg-white dark:bg-zinc-900 rounded-full
                     shadow-sm shadow-slate-200/50 dark:shadow-zinc-950/50
                     border border-slate-200 dark:border-zinc-800 overflow-hidden">
 
@@ -156,13 +156,7 @@ new #[Title('Manage Dedications')] class extends Component {
                             </span>
                         </div>
 
-                        <select wire:model.live="statusFilter"
-                            class="text-[10.5px] rounded-md border-slate-200 dark:border-zinc-700
-                                   bg-white dark:bg-zinc-800
-                                   text-slate-700 dark:text-zinc-200
-                                   py-1 pl-2 pr-6
-                                   focus:ring-1 focus:ring-rose-500 focus:border-rose-500
-                                   transition-colors">
+                        <x-select wire:model.live="statusFilter">
                             <option value="">All Status</option>
                             <option value="pending">Pending</option>
                             <option value="submitted">Submitted</option>
@@ -170,7 +164,7 @@ new #[Title('Manage Dedications')] class extends Component {
                             <option value="revised">Revised</option>
                             <option value="accepted">Accepted</option>
                             <option value="rejected">Rejected</option>
-                        </select>
+                        </x-select>
                     </div>
 
                     <div class="flex-1 lg:flex-none lg:w-56">
@@ -444,7 +438,7 @@ new #[Title('Manage Dedications')] class extends Component {
             @if ($dedications->hasPages())
                 <div class="px-3 py-2 border-t border-slate-200 dark:border-zinc-800
                             bg-slate-50/50 dark:bg-zinc-900/50">
-                    {{ $dedications->links() }}
+                    {{ $dedications->links('vendor.pagination.tailwind') }}
                 </div>
             @endif
         </div>
