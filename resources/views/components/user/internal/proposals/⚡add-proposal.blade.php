@@ -8,8 +8,10 @@ use App\Models\Proposal;
 use App\Models\ResearchScheme;
 use Flux\Flux;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 new class extends Component {
+    use WithFileUploads;
     public ProposalForm $form;
     public BudgetProposalForm $budgetForm;
 
@@ -41,40 +43,61 @@ new class extends Component {
         // Guard: pastikan periode aktif tersedia
         $activePeriod = $this->getActivePeriod();
 
-        if (!$activePeriod) {
+        if (! $activePeriod) {
             Flux::toast('Tidak ada periode aktif. Hubungi admin.', variant: 'danger');
             return;
         }
+
         $this->form->period_id = $activePeriod->id;
         $this->form->validateStep1();
 
+        // ── Handle file proposal ──
+        $newFilePath = $this->form->storeFile();
+
+        // Kalau replace file lama, hapus dulu
+        if ($newFilePath && $this->draftProposalId) {
+            $oldPath = Proposal::find($this->draftProposalId)?->file_path;
+            if ($oldPath && \Storage::disk('public')->exists($oldPath)) {
+                \Storage::disk('public')->delete($oldPath);
+            }
+        }
+
         if ($this->draftProposalId) {
+            $updateData = [
+                'research_scheme_id' => $this->form->research_scheme_id,
+                'title'              => $this->form->title,
+                'summary'            => $this->form->summary,
+                'keywords'           => $this->form->keywords,
+                'period_id'          => $this->form->period_id,
+            ];
+
+            if ($newFilePath) {
+                $updateData['file_path'] = $newFilePath;
+            }
+
             Proposal::where('user_id', auth()->id())
                 ->findOrFail($this->draftProposalId)
-                ->update([
-                    'research_scheme_id' => $this->form->research_scheme_id,
-                    'title' => $this->form->title,
-                    'summary' => $this->form->summary,
-                    'keywords' => $this->form->keywords,
-                    'period_id' => $this->form->period_id,
-                ]);
+                ->update($updateData);
         } else {
             $proposal = Proposal::create([
-                'user_id' => auth()->id(),
+                'user_id'            => auth()->id(),
                 'research_scheme_id' => $this->form->research_scheme_id,
-                'title' => $this->form->title,
-                'summary' => $this->form->summary,
-                'keywords' => $this->form->keywords,
-                'period_id' => $this->form->period_id,
-                'is_research' => $this->isResearch,
-                'status' => 'pending',
-                'reviewer_id' => null,
-                'file_path' => '',
+                'title'              => $this->form->title,
+                'summary'            => $this->form->summary,
+                'keywords'           => $this->form->keywords,
+                'period_id'          => $this->form->period_id,
+                'is_research'        => $this->isResearch,
+                'status'             => 'pending',
+                'reviewer_id'        => null,
+                'file_path'          => $newFilePath ?? '',
             ]);
 
             $this->draftProposalId = $proposal->id;
             $this->form->user_id = auth()->id();
         }
+
+        // Reset file property (sudah di-store ke disk)
+        $this->form->file = null;
 
         $this->budgetForm->proposal_id = $this->draftProposalId;
         $this->step = 2;
@@ -200,32 +223,28 @@ new class extends Component {
 
 <div x-data="{
     show: false,
-    errorMessage: '',
     init() {
         window.addEventListener('open-add-proposal', () => {
-            this.errorMessage = '';
             this.show = true;
         });
-        window.addEventListener('proposal-error', (e) => { this.errorMessage = e.detail.message; });
         window.addEventListener('proposal-added', () => { this.show = false; });
     }
 }" x-show="show" x-transition.opacity x-cloak
     class="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4" @click.self="show = false">
 
     <div class="flex max-h-[90vh] w-full sm:max-w-2xl flex-col overflow-hidden
-                bg-white dark:bg-zinc-900 rounded-t-2xl sm:rounded-xl shadow-2xl
+                bg-white dark:bg-zinc-900 rounded-t-3xl sm:rounded-3xl shadow-2xl
                 border border-slate-200 dark:border-zinc-700"
         @click.stop>
 
         <form class="flex min-h-0 flex-1 flex-col">
 
             {{-- HEADER --}}
-            <div
-                class="shrink-0 bg-gradient-to-r {{ $theme['gradient'] }}
-                        px-5 sm:px-6 py-4 rounded-t-2xl sm:rounded-t-xl">
+            <div class="shrink-0 bg-gradient-to-r {{ $theme['gradient'] }}
+                        px-5 sm:px-6 py-4 rounded-t-3xl sm:rounded-t-3xl">
                 <div class="flex items-start justify-between gap-3">
                     <div class="flex items-center gap-2.5 min-w-0 flex-1">
-                        <div class="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
+                        <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
                             <flux:icon :name="$theme['icon']" class="size-4 text-white" />
                         </div>
                         <div class="min-w-0 flex-1">
@@ -238,80 +257,84 @@ new class extends Component {
                         </div>
                     </div>
                     <button type="button" @click="show = false"
-                        class="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center
-                               text-white/80 hover:text-white hover:bg-white/10 transition-colors">
+                        class="shrink-0 w-7 h-7 rounded-full flex items-center justify-center
+                               text-white/80 hover:text-white hover:bg-white/10
+                               hover:scale-110 active:scale-95 transition-all duration-150">
                         <flux:icon.x-mark class="size-4" />
                     </button>
                 </div>
-
-                {{-- <div class="mt-3 flex items-center gap-2">
-                    <div class="flex items-center gap-2">
-                        <div
-                            class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold
-                                    {{ $step >= 1 ? 'bg-white text-' . $theme['accent'] . '-600' : 'bg-white/30 text-white/70' }}">
-                            1</div>
-                        <span
-                            class="text-[10px] font-medium {{ $step >= 1 ? 'text-white' : 'text-white/60' }}">Metadata</span>
-                    </div>
-                    <div class="flex-1 h-px bg-white/30"></div>
-                    <div class="flex items-center gap-2">
-                        <div
-                            class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold
-                                    {{ $step >= 2 ? 'bg-white text-' . $theme['accent'] . '-600' : 'bg-white/30 text-white/70' }}">
-                            2</div>
-                        <span
-                            class="text-[10px] font-medium {{ $step >= 2 ? 'text-white' : 'text-white/60' }}">Anggaran</span>
-                    </div>
-                </div> --}}
             </div>
+
+            {{-- ══════════ ERROR SUMMARY (di bawah header) ══════════ --}}
+            @if ($errors->any())
+                <div class="shrink-0 px-5 sm:px-6 py-2">
+                    <div class="rounded-2xl border border-rose-200 dark:border-rose-800/60
+                                bg-rose-50 dark:bg-rose-900/20 p-3">
+                        <div class="flex items-start gap-2">
+                            <flux:icon.exclamation-triangle
+                                class="size-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+                            <div class="flex-1 min-w-0">
+                                <p class="text-[11.5px] font-semibold text-rose-800 dark:text-rose-300">
+                                    Mohon periksa kembali:
+                                </p>
+                                <ul class="mt-1 space-y-0.5 list-disc list-inside">
+                                    @foreach ($errors->all() as $error)
+                                        <li class="text-[10.5px] leading-relaxed text-rose-700 dark:text-rose-300">
+                                            {{ $error }}
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
 
             {{-- BODY --}}
             <div class="flex-1 overflow-y-auto px-5 sm:px-6 py-5 space-y-4">
 
-                <template x-if="errorMessage">
-                    <div
-                        class="flex items-start gap-2 p-3 rounded-lg
-                                bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800">
-                        <flux:icon.exclamation-triangle
-                            class="size-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
-                        <p class="text-[11px] text-rose-700 dark:text-rose-300" x-text="errorMessage"></p>
-                    </div>
-                </template>
-
                 @if ($step === 1)
                     <div class="space-y-4">
 
+                        {{-- File Proposal --}}
+                        <x-input
+                            type="file"
+                            wire:model="form.file"
+                            label="File Proposal"
+                            required
+                            accept=".pdf,.doc,.docx"
+                            hint="Maks 10 MB · PDF, DOC, DOCX"
+                            :class="$errors->has('form.file')
+                                ? '[&_input]:!border-rose-400 dark:[&_input]:!border-rose-500 [&_input]:!ring-2 [&_input]:!ring-rose-500/25'
+                                : ''" />
+
                         {{-- Judul --}}
-                        <div>
-                            <x-input
-                                wire:model="form.title"
-                                label="Judul"
-                                required
-                                placeholder="Judul proposal" />
-                            @error('form.title')
-                                <p class="mt-1 text-[11px] text-rose-600">{{ $message }}</p>
-                            @enderror
-                        </div>
+                        <x-input
+                            wire:model="form.title"
+                            label="Judul"
+                            required
+                            placeholder="Judul proposal"
+                            :class="$errors->has('form.title')
+                                ? '[&_input]:!border-rose-400 dark:[&_input]:!border-rose-500 [&_input]:!ring-2 [&_input]:!ring-rose-500/25'
+                                : ''" />
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
 
                             {{-- Skema --}}
-                            <div>
-                                <x-select
-                                    wire:model.live="form.research_scheme_id"
-                                    label="Skema"
-                                    required
-                                    size="lg"
-                                    color="emerald">
-                                    <option value="">— Pilih Skema —</option>
-                                    @foreach ($schemes as $s)
-                                        <option value="{{ $s->id }}">{{ $s->name }} ({{ $s->code }})</option>
-                                    @endforeach
-                                </x-select>
-                                @error('form.research_scheme_id')
-                                    <p class="mt-1 text-[11px] text-rose-600">{{ $message }}</p>
-                                @enderror
-                            </div>
+                            <x-select
+                                wire:model.live="form.research_scheme_id"
+                                label="Skema"
+                                required
+                                size="lg"
+                                color="emerald"
+                                :class="$errors->has('form.research_scheme_id')
+                                    ? '[&_select]:!border-rose-400 dark:[&_select]:!border-rose-500 [&_select]:!ring-2 [&_select]:!ring-rose-500/25'
+                                    : ''">
+                                <option value="">— Pilih Skema —</option>
+                                @foreach ($schemes as $s)
+                                    <option value="{{ $s->id }}">{{ $s->name }} ({{ $s->code }})</option>
+                                @endforeach
+                            </x-select>
 
                             {{-- Periode (custom) --}}
                             <div>
@@ -320,15 +343,17 @@ new class extends Component {
                                 </label>
 
                                 @if ($activePeriod)
-                                    <div
-                                        class="flex items-center gap-2 rounded-full border py-1.5 px-3
-                                        border-emerald-200 dark:border-emerald-800
-                                        bg-emerald-50/60 dark:bg-emerald-900/20">
+                                    <div @class([
+                                        'flex items-center gap-2 rounded-full border py-1.5 px-3',
+                                        'border-emerald-200 dark:border-emerald-800 bg-emerald-50/60 dark:bg-emerald-900/20'
+                                            => ! $errors->has('form.period_id'),
+                                        'border-rose-300 dark:border-rose-700 bg-rose-50/60 dark:bg-rose-900/20 ring-2 ring-rose-500/25'
+                                            => $errors->has('form.period_id'),
+                                    ])>
                                         <flux:icon.calendar-days
                                             class="size-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                                         <div class="min-w-0 flex-1">
-                                            <p
-                                                class="text-[11px] font-semibold text-emerald-800 dark:text-emerald-300 truncate">
+                                            <p class="text-[11px] font-semibold text-emerald-800 dark:text-emerald-300 truncate">
                                                 {{ $activePeriod->periode }}
                                             </p>
                                         </div>
@@ -336,8 +361,10 @@ new class extends Component {
 
                                     <input type="hidden" wire:model="form.period_id" />
                                 @else
-                                    <div
-                                        class="flex items-center gap-2 rounded-full border py-1.5 px-3 border-rose-200 dark:border-rose-800 bg-rose-50/60 dark:bg-rose-900/20">
+                                    <div class="flex items-center gap-2 rounded-full border py-1.5 px-3
+                                                border-rose-300 dark:border-rose-700
+                                                bg-rose-50/60 dark:bg-rose-900/20
+                                                ring-2 ring-rose-500/25">
                                         <flux:icon.exclamation-triangle
                                             class="size-3.5 text-rose-600 dark:text-rose-400 shrink-0" />
                                         <p class="text-[11px] font-medium text-rose-700 dark:text-rose-300">
@@ -345,38 +372,30 @@ new class extends Component {
                                         </p>
                                     </div>
                                 @endif
-
-                                @error('form.period_id')
-                                    <p class="mt-1 text-[11px] text-rose-600">{{ $message }}</p>
-                                @enderror
                             </div>
                         </div>
 
                         {{-- Kata Kunci --}}
-                        <div>
-                            <x-input
-                                wire:model="form.keywords"
-                                label="Kata Kunci"
-                                required
-                                placeholder="kata kunci 1, kata kunci 2" />
-                            @error('form.keywords')
-                                <p class="mt-1 text-[11px] text-rose-600">{{ $message }}</p>
-                            @enderror
-                        </div>
+                        <x-input
+                            wire:model="form.keywords"
+                            label="Keyword"
+                            required
+                            placeholder="Keyword 1; Keyword 2"
+                            :class="$errors->has('form.keywords')
+                                ? '[&_input]:!border-rose-400 dark:[&_input]:!border-rose-500 [&_input]:!ring-2 [&_input]:!ring-rose-500/25'
+                                : ''" />
 
                         {{-- Ringkasan --}}
-                        <div>
-                            <x-textarea
-                                wire:model="form.summary"
-                                label="Ringkasan"
-                                required
-                                rows="4"
-                                color="emerald"
-                                placeholder="Ringkasan proposal..." />
-                            @error('form.summary')
-                                <p class="mt-1 text-[11px] text-rose-600">{{ $message }}</p>
-                            @enderror
-                        </div>
+                        <x-textarea
+                            wire:model="form.summary"
+                            label="Ringkasan"
+                            required
+                            rows="4"
+                            color="emerald"
+                            placeholder="Ringkasan proposal..."
+                            :class="$errors->has('form.summary')
+                                ? '[&_textarea]:!border-rose-400 dark:[&_textarea]:!border-rose-500 [&_textarea]:!ring-2 [&_textarea]:!ring-rose-500/25'
+                                : ''" />
                     </div>
                 @endif
 
@@ -384,8 +403,7 @@ new class extends Component {
                     <div class="space-y-4">
 
                         {{-- Budget summary card --}}
-                        <div
-                            class="rounded-xl border border-slate-200 dark:border-zinc-700
+                        <div class="rounded-2xl border border-slate-200 dark:border-zinc-700
                                     bg-slate-50 dark:bg-zinc-800/40 p-3">
                             <div class="flex items-center justify-between mb-2">
                                 <span class="text-[11px] font-medium text-slate-700 dark:text-zinc-300">Total
@@ -408,26 +426,24 @@ new class extends Component {
 
                         {{-- Add budget item --}}
                         <div class="grid grid-cols-1 sm:grid-cols-[1fr_140px_auto] gap-2 items-end">
-                            <div>
-                                <x-input
-                                    wire:model="budgetForm.item_name"
-                                    label="Nama Item"
-                                    placeholder="Contoh: Honorarium" />
-                                @error('budgetForm.item_name')
-                                    <p class="mt-1 text-[11px] text-rose-600">{{ $message }}</p>
-                                @enderror
-                            </div>
-                            <div>
-                                <x-input
-                                    wire:model="budgetForm.amount"
-                                    label="Jumlah (Rp)"
-                                    placeholder="1000000" />
-                                @error('budgetForm.amount')
-                                    <p class="mt-1 text-[11px] text-rose-600">{{ $message }}</p>
-                                @enderror
-                            </div>
+                            <x-input
+                                wire:model="budgetForm.item_name"
+                                label="Nama Item"
+                                placeholder="Contoh: Honorarium"
+                                :class="$errors->has('budgetForm.item_name')
+                                    ? '[&_input]:!border-rose-400 dark:[&_input]:!border-rose-500 [&_input]:!ring-2 [&_input]:!ring-rose-500/25'
+                                    : ''" />
+
+                            <x-input
+                                wire:model="budgetForm.amount"
+                                label="Jumlah (Rp)"
+                                placeholder="1000000"
+                                :class="$errors->has('budgetForm.amount')
+                                    ? '[&_input]:!border-rose-400 dark:[&_input]:!border-rose-500 [&_input]:!ring-2 [&_input]:!ring-rose-500/25'
+                                    : ''" />
+
                             <flux:button type="button" wire:click="addBudgetItem" icon="plus" variant="primary"
-                            >
+                                class="rounded-full">
                                 Add
                             </flux:button>
                         </div>
@@ -435,8 +451,7 @@ new class extends Component {
                         {{-- Budget items list --}}
                         <div class="space-y-2 max-h-48 overflow-y-auto">
                             @forelse ($budgetItems as $item)
-                                <div
-                                    class="flex items-center justify-between gap-3 p-2.5 rounded-full
+                                <div class="flex items-center justify-between gap-3 p-2.5 rounded-full
                                             border border-slate-200 dark:border-zinc-700
                                             bg-white dark:bg-zinc-800/40">
                                     <div class="flex-1 min-w-0 pl-1.5">
@@ -450,7 +465,7 @@ new class extends Component {
                                     <button type="button" wire:click="removeBudgetItem({{ $item->id }})"
                                         wire:confirm="Hapus item ini?"
                                         class="p-1.5 rounded-full text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/30
-                                               transition-colors">
+                                               hover:scale-110 active:scale-95 transition-all duration-150">
                                         <flux:icon.trash class="size-3.5" />
                                     </button>
                                 </div>
@@ -465,27 +480,51 @@ new class extends Component {
             </div>
 
             {{-- FOOTER --}}
-            <div
-                class="shrink-0 flex flex-col-reverse sm:flex-row sm:justify-between gap-2
+            <div class="shrink-0 flex flex-col-reverse sm:flex-row sm:justify-between gap-2
                         px-5 sm:px-6 py-4 border-t border-slate-200 dark:border-zinc-700
-                        bg-white dark:bg-zinc-900 rounded-b-2xl sm:rounded-b-xl">
-                <flux:button type="button" @click="show = false" variant="danger">Cancel</flux:button>
-                <div class="flex flex-col-reverse sm:flex-row gap-2">
+                        bg-slate-50/50 dark:bg-zinc-900/50 rounded-b-3xl sm:rounded-b-3xl">
+
+                <button type="button" @click="show = false"
+                    class="w-full sm:w-auto px-3 py-1.5 text-[11px] font-medium rounded-full
+                           text-slate-700 dark:text-zinc-300
+                           bg-white dark:bg-zinc-800
+                           border border-slate-300 dark:border-zinc-600
+                           hover:bg-slate-50 dark:hover:bg-zinc-700
+                           shadow-sm shadow-zinc-200/40 hover:shadow-sm hover:shadow-rose-500/15
+                           hover:scale-[1.02] active:scale-[0.97]
+                           transition-all duration-150">
+                    Cancel
+                </button>
+
+                <div class="flex flex-col-reverse sm:flex-row gap-1.5">
                     @if ($step === 2)
-                        <flux:button type="button" wire:click="prevStep">Previous
+                        <flux:button type="button" wire:click="prevStep">
+                            Previous
                         </flux:button>
                     @endif
+
                     @if ($step === 1)
                         <flux:button type="button" wire:click="nextStep" variant="primary"
                             wire:loading.attr="disabled" wire:target="nextStep">
                             Next Step
                         </flux:button>
                     @else
-                        <flux:button type="button" wire:click="finish" variant="primary"
-                            wire:loading.attr="disabled" wire:target="finish">
+                        <button type="button" wire:click="finish"
+                            wire:loading.attr="disabled" wire:target="finish"
+                            class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5
+                                   px-3 py-1.5 text-[11px] font-medium rounded-full text-white
+                                   bg-{{ $theme['accent'] }}-600/90 hover:bg-{{ $theme['accent'] }}-600
+                                   shadow-sm shadow-{{ $theme['accent'] }}-500/20 hover:shadow-sm hover:shadow-{{ $theme['accent'] }}-500/30
+                                   disabled:opacity-60 disabled:cursor-wait disabled:hover:scale-100
+                                   hover:scale-[1.02] active:scale-[0.97]
+                                   transition-all duration-150">
+                            <svg wire:loading wire:target="finish" class="animate-spin size-3" viewBox="0 0 24 24" fill="none">
+                                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" opacity=".25"/>
+                                <path d="M4 12a8 8 0 018-8" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+                            </svg>
                             <span wire:loading.remove wire:target="finish">Simpan Proposal</span>
-                            <span wire:loading.flex wire:target="finish">Menyimpan...</span>
-                        </flux:button>
+                            <span wire:loading wire:target="finish">Menyimpan...</span>
+                        </button>
                     @endif
                 </div>
             </div>

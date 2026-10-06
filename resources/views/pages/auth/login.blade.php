@@ -75,10 +75,10 @@
                     {{-- Heading --}}
                     <div class="mb-6">
                         <h2 class="font-heading mb-1 text-2xl font-bold text-emerald-900 dark:text-emerald-50">
-                            Masuk
+                            Login
                         </h2>
                         <p class="text-xs text-emerald-600/70 dark:text-emerald-400/60">
-                            Masuk untuk mengakses portal hibah
+                            Login to access all features and ease!
                         </p>
                     </div>
 
@@ -106,7 +106,7 @@
                                 </div>
                                 <input id="email" name="email" type="email" value="{{ old('email') }}" required
                                     autofocus autocomplete="email" placeholder="email@example.com"
-                                    class="w-full rounded-xl border border-emerald-200 bg-emerald-50/50 py-2 pl-9 pr-3 text-xs transition-all duration-200 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-100 dark:placeholder-emerald-600" />
+                                    class="w-full rounded-full border border-emerald-200 bg-emerald-50/50 py-2 pl-9 pr-3 text-xs transition-all duration-200 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-100 dark:placeholder-emerald-600" />
                             </div>
                             @error('email')
                                 <p class="mt-1 flex items-center gap-1 text-[11px] text-rose-500 dark:text-rose-400">
@@ -143,7 +143,7 @@
                                 </div>
                                 <input id="password" name="password" :type="show ? 'text' : 'password'" required
                                     autocomplete="current-password" placeholder="••••••••"
-                                    class="w-full rounded-xl border border-emerald-200 bg-emerald-50/50 py-2 pl-9 pr-10 text-xs transition-all duration-200 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-100 dark:placeholder-emerald-600" />
+                                    class="w-full rounded-full border border-emerald-200 bg-emerald-50/50 py-2 pl-9 pr-10 text-xs transition-all duration-200 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-100 dark:placeholder-emerald-600" />
                                 <button type="button" @click="show = !show"
                                     class="absolute inset-y-0 right-0 flex items-center pr-3 text-emerald-400 transition-colors hover:text-emerald-600 dark:text-emerald-500 dark:hover:text-emerald-300">
                                     <svg x-show="!show" class="h-3.5 w-3.5" fill="none" stroke="currentColor"

@@ -97,17 +97,19 @@ new class extends Component {
         x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
         x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
         class="flex max-h-[92vh] w-full sm:max-w-lg flex-col overflow-hidden
-               bg-white dark:bg-zinc-900 rounded-t-2xl sm:rounded-xl shadow-2xl
-               border border-slate-200 dark:border-zinc-700"
+               bg-white dark:bg-zinc-900 rounded-t-3xl sm:rounded-3xl shadow-2xl
+               border border-slate-200 dark:border-zinc-700
+               hover:shadow-blue-500/15 transition-shadow duration-300"
         @click.stop>
 
         <form wire:submit.prevent="update" class="flex min-h-0 flex-1 flex-col">
 
             {{-- ══════════ HEADER ══════════ --}}
-            <div class="shrink-0 bg-gradient-to-r from-blue-600 to-blue-500 px-4 py-3">
+            <div class="shrink-0 bg-gradient-to-r from-blue-600 to-blue-500
+                        px-4 py-3 rounded-t-3xl sm:rounded-t-3xl">
                 <div class="flex items-start justify-between gap-3">
                     <div class="flex items-center gap-2 min-w-0">
-                        <div class="w-7 h-7 rounded-md bg-white/20 flex items-center justify-center shrink-0">
+                        <div class="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center shrink-0">
                             <flux:icon.pencil-square class="size-3.5 text-white" />
                         </div>
                         <div class="min-w-0">
@@ -121,8 +123,10 @@ new class extends Component {
                     </div>
                     <button type="button" @click="show = false"
                         aria-label="Close"
-                        class="shrink-0 w-6 h-6 rounded-md flex items-center justify-center
-                               text-white/80 hover:text-white hover:bg-white/10 transition-colors">
+                        class="shrink-0 w-6 h-6 rounded-full flex items-center justify-center
+                               text-white/80 hover:text-white hover:bg-white/10
+                               hover:scale-110 active:scale-95
+                               transition-all duration-150">
                         <flux:icon.x-mark class="size-3.5" />
                     </button>
                 </div>
@@ -133,7 +137,7 @@ new class extends Component {
 
                 {{-- Global Error --}}
                 <template x-if="errorMessage">
-                    <div class="mb-3 flex items-start gap-2 p-2.5 rounded-md
+                    <div class="mb-3 flex items-start gap-2 p-2.5 rounded-2xl
                                 bg-rose-50 dark:bg-rose-900/20
                                 border border-rose-200 dark:border-rose-800">
                         <flux:icon.exclamation-triangle
@@ -183,6 +187,7 @@ new class extends Component {
                             wire:model="form.title"
                             label="Activity Title"
                             required
+                            rounded="full"
                             placeholder="e.g. Pelatihan Digital Marketing untuk UMKM" />
                         @error('form.title')
                             <p class="mt-1 text-[10.5px] text-rose-600">{{ $message }}</p>
@@ -195,6 +200,7 @@ new class extends Component {
                             <x-input
                                 wire:model="form.scheme"
                                 label="Scheme"
+                                rounded="full"
                                 placeholder="e.g. Pemberdayaan Masyarakat" />
                             @error('form.scheme')
                                 <p class="mt-1 text-[10.5px] text-rose-600">{{ $message }}</p>
@@ -206,6 +212,7 @@ new class extends Component {
                                 wire:model="form.funding_source"
                                 label="Funding Source"
                                 required
+                                rounded="full"
                                 placeholder="e.g. DRTPM, Pemda, CSR" />
                             @error('form.funding_source')
                                 <p class="mt-1 text-[10.5px] text-rose-600">{{ $message }}</p>
@@ -255,6 +262,7 @@ new class extends Component {
                                 wire:model="form.start_date"
                                 label="Start Date"
                                 required
+                                rounded="full"
                                 class="dark:[color-scheme:dark]" />
                             @error('form.start_date')
                                 <p class="mt-1 text-[10.5px] text-rose-600">{{ $message }}</p>
@@ -266,6 +274,7 @@ new class extends Component {
                                 type="date"
                                 wire:model="form.end_date"
                                 label="End Date (optional)"
+                                rounded="full"
                                 class="dark:[color-scheme:dark]" />
                             @error('form.end_date')
                                 <p class="mt-1 text-[10.5px] text-rose-600">{{ $message }}</p>
@@ -280,6 +289,7 @@ new class extends Component {
                             wire:model="form.fund_amount"
                             label="Fund Amount (IDR)"
                             required
+                            rounded="full"
                             min="0"
                             step="100000" />
                         @error('form.fund_amount')
@@ -294,49 +304,129 @@ new class extends Component {
                             label="Description"
                             rows="3"
                             color="blue"
+                            rounded="full"
                             placeholder="Short description..." />
                         @error('form.description')
                             <p class="mt-1 text-[10.5px] text-rose-600">{{ $message }}</p>
                         @enderror
                     </div>
 
-                    {{-- ══════════ CURRENT DOCUMENT (custom) ══════════ --}}
-                    @if ($form->externalDedication?->document_path)
-                        <div class="rounded-full border border-slate-200 dark:border-zinc-700/70
-                                    bg-slate-50 dark:bg-zinc-800/40 pl-2.5 pr-3 py-1.5">
-                            <div class="flex items-center gap-2">
-                                <flux:icon.document-text class="size-3.5 text-slate-400 dark:text-zinc-500 shrink-0" />
-                                <div class="flex-1 min-w-0">
-                                    <p class="text-[9.5px] uppercase tracking-wider font-semibold
-                                              text-slate-500 dark:text-zinc-400 leading-none">
-                                        Current Document
-                                    </p>
-                                    <p class="mt-0.5 text-[11px] font-medium truncate
-                                              text-slate-800 dark:text-zinc-200"
-                                        title="{{ basename($form->externalDedication->document_path) }}">
-                                        {{ basename($form->externalDedication->document_path) }}
-                                    </p>
+                    {{-- ══════════ CURRENT DOCUMENTS (custom) ══════════ --}}
+                    @if ($form->externalDedication?->proposal_document_path || $form->externalDedication?->report_document_path)
+                        <div class="rounded-2xl border border-slate-200 dark:border-zinc-700/70
+                                    bg-slate-50 dark:bg-zinc-800/40 px-3 py-2.5 space-y-2">
+
+                            <p class="text-[9.5px] uppercase tracking-wider font-semibold
+                                      text-slate-500 dark:text-zinc-400 leading-none">
+                                Current Documents
+                            </p>
+
+                            {{-- Proposal Document --}}
+                            @if ($form->externalDedication?->proposal_document_path)
+                                <div class="flex items-center gap-2 pl-1 pr-0.5 py-1
+                                            rounded-full bg-white dark:bg-zinc-900/60
+                                            border border-slate-200 dark:border-zinc-700/70">
+                                    <div class="w-6 h-6 rounded-full shrink-0
+                                                bg-indigo-100 dark:bg-indigo-900/40
+                                                flex items-center justify-center">
+                                        <flux:icon.document-text class="size-3 text-indigo-600 dark:text-indigo-400" />
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-[9px] uppercase tracking-wider font-semibold
+                                                  text-indigo-600 dark:text-indigo-400 leading-none">
+                                            Proposal
+                                        </p>
+                                        <p class="mt-0.5 text-[10.5px] font-medium truncate
+                                                  text-slate-800 dark:text-zinc-200"
+                                            title="{{ basename($form->externalDedication->proposal_document_path) }}">
+                                            {{ basename($form->externalDedication->proposal_document_path) }}
+                                        </p>
+                                    </div>
+                                    <a href="{{ Storage::disk('public')->url($form->externalDedication->proposal_document_path) }}"
+                                        target="_blank" aria-label="View proposal document"
+                                        class="shrink-0 w-6 h-6 rounded-full flex items-center justify-center
+                                               text-indigo-600 dark:text-indigo-400
+                                               hover:bg-indigo-50 dark:hover:bg-indigo-900/40
+                                               hover:scale-110 active:scale-95
+                                               transition-all duration-150">
+                                        <flux:icon.arrow-up-right class="size-3" />
+                                    </a>
                                 </div>
-                            </div>
+                            @endif
+
+                            {{-- Report Document --}}
+                            @if ($form->externalDedication?->report_document_path)
+                                <div class="flex items-center gap-2 pl-1 pr-0.5 py-1
+                                            rounded-full bg-white dark:bg-zinc-900/60
+                                            border border-slate-200 dark:border-zinc-700/70">
+                                    <div class="w-6 h-6 rounded-full shrink-0
+                                                bg-emerald-100 dark:bg-emerald-900/40
+                                                flex items-center justify-center">
+                                        <flux:icon.document-check class="size-3 text-emerald-600 dark:text-emerald-400" />
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-[9px] uppercase tracking-wider font-semibold
+                                                  text-emerald-600 dark:text-emerald-400 leading-none">
+                                            Report
+                                        </p>
+                                        <p class="mt-0.5 text-[10.5px] font-medium truncate
+                                                  text-slate-800 dark:text-zinc-200"
+                                            title="{{ basename($form->externalDedication->report_document_path) }}">
+                                            {{ basename($form->externalDedication->report_document_path) }}
+                                        </p>
+                                    </div>
+                                    <a href="{{ Storage::disk('public')->url($form->externalDedication->report_document_path) }}"
+                                        target="_blank" aria-label="View report document"
+                                        class="shrink-0 w-6 h-6 rounded-full flex items-center justify-center
+                                               text-emerald-600 dark:text-emerald-400
+                                               hover:bg-emerald-50 dark:hover:bg-emerald-900/40
+                                               hover:scale-110 active:scale-95
+                                               transition-all duration-150">
+                                        <flux:icon.arrow-up-right class="size-3" />
+                                    </a>
+                                </div>
+                            @endif
                         </div>
                     @endif
 
-                    {{-- ══════════ REPLACE DOCUMENT ══════════ --}}
-                    <div>
-                        <x-input
-                            type="file"
-                            wire:model="form.document"
-                            label="Replace Document (optional)"
-                            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                            hint="Leave empty to keep current file · Max 10 MB" />
+                    {{-- ══════════ REPLACE DOCUMENTS ══════════ --}}
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
 
-                        <div wire:loading wire:target="form.document"
-                            class="mt-1 text-[10px] text-blue-600 dark:text-blue-400">
-                            Uploading...
+                        {{-- Proposal Document --}}
+                        <div>
+                            <x-input
+                                type="file"
+                                wire:model="form.proposal_document"
+                                label="Replace Proposal (optional)"
+                                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                                rounded="full"
+                                hint="Leave empty to keep · Max 10 MB" />
+                            <div wire:loading wire:target="form.proposal_document"
+                                class="mt-1 text-[10px] text-blue-600 dark:text-blue-400">
+                                Uploading...
+                            </div>
+                            @error('form.proposal_document')
+                                <p class="mt-1 text-[10.5px] text-rose-600">{{ $message }}</p>
+                            @enderror
                         </div>
-                        @error('form.document')
-                            <p class="mt-1 text-[10.5px] text-rose-600">{{ $message }}</p>
-                        @enderror
+
+                        {{-- Report Document --}}
+                        <div>
+                            <x-input
+                                type="file"
+                                wire:model="form.report_document"
+                                label="Replace Report (optional)"
+                                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                                rounded="full"
+                                hint="Leave empty to keep · Max 10 MB" />
+                            <div wire:loading wire:target="form.report_document"
+                                class="mt-1 text-[10px] text-blue-600 dark:text-blue-400">
+                                Uploading...
+                            </div>
+                            @error('form.report_document')
+                                <p class="mt-1 text-[10.5px] text-rose-600">{{ $message }}</p>
+                            @enderror
+                        </div>
                     </div>
 
                     {{-- ══════════ VERIFY TOGGLE (custom) ══════════ --}}
@@ -369,7 +459,7 @@ new class extends Component {
             {{-- ══════════ FOOTER ══════════ --}}
             <div class="shrink-0 flex flex-col-reverse sm:flex-row sm:justify-end gap-1.5
                         px-4 py-3 border-t border-slate-200 dark:border-zinc-700
-                        bg-slate-50/50 dark:bg-zinc-900/50">
+                        bg-slate-50/50 dark:bg-zinc-900/50 rounded-b-3xl sm:rounded-b-3xl">
 
                 <button type="button" @click="show = false"
                     class="w-full sm:w-auto px-3 py-1.5 text-[11px] font-medium rounded-full
@@ -384,12 +474,13 @@ new class extends Component {
                 </button>
 
                 <button type="submit"
-                    wire:loading.attr="disabled" wire:target="update, form.document"
+                    wire:loading.attr="disabled"
+                    wire:target="update, form.proposal_document, form.report_document"
                     class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5
                            px-3 py-1.5 text-[11px] font-medium rounded-full text-white
                            bg-blue-600/90 hover:bg-blue-600
                            shadow-sm shadow-blue-500/20 hover:shadow-sm hover:shadow-blue-500/30
-                           disabled:opacity-60 disabled:cursor-wait
+                           disabled:opacity-60 disabled:cursor-wait disabled:hover:scale-100
                            hover:scale-[1.02] active:scale-[0.97]
                            transition-all duration-150">
                     <svg wire:loading wire:target="update" class="animate-spin size-3" viewBox="0 0 24 24" fill="none">

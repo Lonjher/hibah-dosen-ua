@@ -44,7 +44,8 @@ class ExternalProposalFactory extends Factory
             'status'          => $status,
             'fund_amount'     => $this->fundAmount($isResearch),
             'description'     => fake()->paragraph(3),
-            'document_path'   => null, // diisi oleh state/afterCreating jika perlu
+            'proposal_document_path'   => null, // diisi oleh state/afterCreating jika perlu
+            'report_document_path'   => null, // diisi oleh state/afterCreating jika perlu
             'is_verified'     => fake()->boolean(60), // 60% verified
         ];
     }

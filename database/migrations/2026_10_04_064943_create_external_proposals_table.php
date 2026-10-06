@@ -21,7 +21,8 @@ return new class extends Migration
             $table->enum('status', ['ongoing', 'completed', 'cancelled']);
             $table->unsignedBigInteger('fund_amount');         // dalam Rupiah (Rp)
             $table->text('description')->nullable();
-            $table->string('document_path')->nullable();       // SK / kontrak
+            $table->string('proposal_document_path')->nullable();   // dokumen proposal
+            $table->string('report_document_path')->nullable();     // dokumen laporan
             $table->boolean('is_verified')->default(false);
             $table->timestamps();
             $table->index(['user_id', 'is_research']);          // query by owner + type

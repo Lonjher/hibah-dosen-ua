@@ -4,9 +4,16 @@
             :src="auth()->user()->avatar ? asset('storage/' . auth()->user()->avatar) : null" size="xs"
             class="shrink-0" />
         <div class="text-left">
-            <div class="header-user-name">{{ auth()->user()->full_name }}</div>
+            <div class="header-user-name">{{ Str::limit(auth()->user()->full_name, 10) }}</div>
             <div class="header-user-role text-emerald-400">{{ __(auth()->user()->role?->role_name ?? '') }}</div>
         </div>
+
+        {{-- Chevron --}}
+        <svg class="size-3 shrink-0 text-slate-400 dark:text-zinc-500 transition-transform duration-200 group-aria-expanded:rotate-180"
+            xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m6 9 6 6 6-6" />
+        </svg>
     </button>
 
     <flux:menu class="rounded-xl">
@@ -16,8 +23,8 @@
                 :src="auth()->user()->avatar ? asset('storage/' . auth()->user()->avatar) : null" />
             <div class="flex flex-col min-w-0 flex-1">
                 <span
-                    class="font-heading text-[10px] font-semibold text-on-surface truncate dark:text-zinc-100">{{ auth()->user()->full_name }}</span>
-                <span class="font-body text-[9px]  text-emerald-600 font-bold dark:text-emerald-300 truncate">NIDN:
+                    class="font-heading text-[10px] font-semibold text-on-surface truncate dark:text-zinc-100">{{ Str::limit(auth()->user()->full_name, 20) }}</span>
+                <span class="font-body text-[9px] text-emerald-600 font-bold dark:text-emerald-300 truncate">NIDN:
                     {{ auth()->user()->nidn ?? '...' }}</span>
             </div>
         </div>

@@ -3,6 +3,7 @@
 namespace App\Livewire\Forms;
 
 use App\Models\Proposal;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\Form;
 
 class ProposalForm extends Form
@@ -20,6 +21,9 @@ class ProposalForm extends Form
     public string  $status = 'pending';
     public ?int    $period_id = null;
 
+    /** @var TemporaryUploadedFile|null */
+    public $file = null;
+
     // ═══════════════ Validation ═══════════════
 
     public function rules(): array
@@ -34,6 +38,7 @@ class ProposalForm extends Form
             'is_research'        => ['boolean'],
             'status'             => ['required', 'string', 'in:pending,revised,submitted,rejected,under_review,accepted'],
             'period_id'          => ['required', 'exists:periods,id'],
+            'file'               => ['required', 'file', 'max:10240', 'mimes:pdf,doc,docx'],
         ];
     }
 
@@ -62,12 +67,13 @@ class ProposalForm extends Form
 
             'period_id.required'          => 'Periode wajib dipilih.',
             'period_id.exists'            => 'Periode tidak valid.',
+            'file.required' => 'File proposal wajib diunggah.',
+            'file.file'                   => 'File proposal harus berupa file.',
+            'file.max'                    => 'File proposal maksimal 10 MB.',
+            'file.mimes'                  => 'File proposal harus berformat PDF, DOC, atau DOCX.',
         ];
     }
 
-    /**
-     * Validasi khusus Step 1 (Metadata).
-     */
     public function validateStep1(): void
     {
         $this->validateOnly('research_scheme_id');
@@ -75,6 +81,7 @@ class ProposalForm extends Form
         $this->validateOnly('summary');
         $this->validateOnly('keywords');
         $this->validateOnly('period_id');
+        $this->validateOnly('file');
     }
 
     // ═══════════════ Load ═══════════════
@@ -92,13 +99,29 @@ class ProposalForm extends Form
         $this->file_path          = $proposal->file_path;
         $this->status             = $proposal->status;
         $this->period_id          = $proposal->period_id;
+        $this->file               = null;
     }
 
     // ═══════════════ Actions ═══════════════
 
+    /**
+     * Simpan file proposal ke storage & return path-nya.
+     * Kalau tidak ada file baru, return null.
+     */
+    public function storeFile(): ?string
+    {
+        if (! $this->file) {
+            return null;
+        }
+
+        return $this->file->store('proposals', 'public');
+    }
+
     public function create(): Proposal
     {
         $this->validate();
+
+        $filePath = $this->storeFile() ?? $this->file_path ?? '';
 
         $proposal = Proposal::create([
             'research_scheme_id' => $this->research_scheme_id,
@@ -108,7 +131,7 @@ class ProposalForm extends Form
             'summary'            => $this->summary,
             'keywords'           => $this->keywords,
             'is_research'        => $this->is_research,
-            'file_path'          => $this->file_path ?? '',
+            'file_path'          => $filePath,
             'status'             => $this->status,
             'period_id'          => $this->period_id,
         ]);
@@ -128,6 +151,8 @@ class ProposalForm extends Form
 
         $this->validate();
 
+        $filePath = $this->storeFile();
+
         $this->proposal->update([
             'research_scheme_id' => $this->research_scheme_id,
             'user_id'            => $this->user_id,
@@ -136,7 +161,7 @@ class ProposalForm extends Form
             'summary'            => $this->summary,
             'keywords'           => $this->keywords,
             'is_research'        => $this->is_research,
-            'file_path'          => $this->file_path ?? $this->proposal->file_path,
+            'file_path'          => $filePath ?? $this->file_path ?? $this->proposal->file_path,
             'status'             => $this->status,
             'period_id'          => $this->period_id,
         ]);

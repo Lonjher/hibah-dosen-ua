@@ -9,33 +9,30 @@ class BudgetProposalForm extends Form
 {
     public ?BudgetProposal $budgetProposal = null;
 
-    public ?int   $proposal_id = null;
-    public string $item_name = '';
-    public ?int   $amount = null;
+    public ?int    $proposal_id = null;
+    public string  $item_name = '';
+    public ?string $amount = null;   // ← ubah dari ?int ke ?string
 
     // ═══════════════ Validation ═══════════════
 
     public function rules(): array
     {
         return [
-            'proposal_id' => ['required', 'exists:proposals,id'],
+            'proposal_id' => ['nullable', 'exists:proposals,id'],
             'item_name'   => ['required', 'string', 'max:255'],
-            'amount'      => ['required', 'integer', 'min:1'],
+            'amount'      => ['required', 'numeric', 'min:0', 'max:999999999999'],
         ];
     }
 
     public function messages(): array
     {
         return [
-            'proposal_id.required' => 'Proposal wajib diisi.',
-            'proposal_id.exists'   => 'Proposal tidak valid.',
-
-            'item_name.required'   => 'Nama item wajib diisi.',
-            'item_name.max'        => 'Nama item maksimal 255 karakter.',
-
-            'amount.required'      => 'Jumlah wajib diisi.',
-            'amount.integer'       => 'Jumlah harus berupa angka.',
-            'amount.min'           => 'Jumlah harus lebih dari 0.',
+            'item_name.required' => 'Nama item wajib diisi.',
+            'item_name.max'      => 'Nama item maksimal 255 karakter.',
+            'amount.required'    => 'Jumlah wajib diisi.',
+            'amount.numeric'     => 'Jumlah harus berupa angka.',
+            'amount.min'         => 'Jumlah tidak boleh negatif.',
+            'amount.max'         => 'Jumlah terlalu besar.',
         ];
     }
 
@@ -46,7 +43,7 @@ class BudgetProposalForm extends Form
         $this->budgetProposal = $budgetProposal;
         $this->proposal_id    = $budgetProposal->proposal_id;
         $this->item_name      = $budgetProposal->item_name;
-        $this->amount         = $budgetProposal->amount;
+        $this->amount         = (string) $budgetProposal->amount;
     }
 
     // ═══════════════ Actions ═══════════════
@@ -55,13 +52,16 @@ class BudgetProposalForm extends Form
     {
         $this->validate();
 
+        // Bersihkan separator (misal "1.000.000" → 1000000)
+        $amount = (int) preg_replace('/\D/', '', (string) $this->amount);
+
         $budget = BudgetProposal::create([
             'proposal_id' => $this->proposal_id,
             'item_name'   => $this->item_name,
-            'amount'      => $this->amount,
+            'amount'      => $amount,
         ]);
 
-        $this->reset();
+        $this->reset('item_name', 'amount');
 
         return $budget;
     }
@@ -76,15 +76,16 @@ class BudgetProposalForm extends Form
 
         $this->validate();
 
+        $amount = (int) preg_replace('/\D/', '', (string) $this->amount);
+
         $this->budgetProposal->update([
-            'proposal_id' => $this->proposal_id,
-            'item_name'   => $this->item_name,
-            'amount'      => $this->amount,
+            'item_name' => $this->item_name,
+            'amount'    => $amount,
         ]);
 
         $updated = $this->budgetProposal;
 
-        $this->reset();
+        $this->reset('item_name', 'amount');
 
         return $updated;
     }

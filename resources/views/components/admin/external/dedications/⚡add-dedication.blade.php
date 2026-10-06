@@ -131,17 +131,19 @@ new class extends Component {
         x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
         x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
         class="flex max-h-[92vh] w-full sm:max-w-lg flex-col overflow-hidden
-               bg-white dark:bg-zinc-900 rounded-t-2xl sm:rounded-xl shadow-2xl
-               border border-slate-200 dark:border-zinc-700"
+               bg-white dark:bg-zinc-900 rounded-t-3xl sm:rounded-3xl shadow-2xl
+               border border-slate-200 dark:border-zinc-700
+               hover:shadow-rose-500/15 transition-shadow duration-300"
         x-on:click.stop>
 
         <form wire:submit.prevent="save" class="flex min-h-0 flex-1 flex-col">
 
             {{-- ══════════ HEADER ══════════ --}}
-            <div class="shrink-0 bg-gradient-to-r from-rose-600 to-pink-500 px-4 py-3">
+            <div class="shrink-0 bg-gradient-to-r from-rose-600 to-pink-500
+                        px-4 py-3 rounded-t-3xl sm:rounded-t-3xl">
                 <div class="flex items-start justify-between gap-3">
                     <div class="flex items-center gap-2 min-w-0">
-                        <div class="w-7 h-7 rounded-md bg-white/20 flex items-center justify-center shrink-0">
+                        <div class="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center shrink-0">
                             <flux:icon.gift class="size-3.5 text-white" />
                         </div>
                         <div class="min-w-0">
@@ -155,8 +157,10 @@ new class extends Component {
                     </div>
                     <button type="button" wire:click="close"
                         aria-label="Close"
-                        class="shrink-0 w-6 h-6 rounded-md flex items-center justify-center
-                               text-white/80 hover:text-white hover:bg-white/10 transition-colors">
+                        class="shrink-0 w-6 h-6 rounded-full flex items-center justify-center
+                               text-white/80 hover:text-white hover:bg-white/10
+                               hover:scale-110 active:scale-95
+                               transition-all duration-150">
                         <flux:icon.x-mark class="size-3.5" />
                     </button>
                 </div>
@@ -278,6 +282,7 @@ new class extends Component {
                             wire:model="form.title"
                             label="Activity Title"
                             required
+                            rounded="full"
                             placeholder="e.g. Pelatihan Digital Marketing untuk UMKM" />
                         @error('form.title')
                             <p class="mt-1 text-[10.5px] text-rose-600">{{ $message }}</p>
@@ -290,6 +295,7 @@ new class extends Component {
                             <x-input
                                 wire:model="form.scheme"
                                 label="Scheme"
+                                rounded="full"
                                 placeholder="e.g. Pemberdayaan Masyarakat" />
                             @error('form.scheme')
                                 <p class="mt-1 text-[10.5px] text-rose-600">{{ $message }}</p>
@@ -301,6 +307,7 @@ new class extends Component {
                                 wire:model="form.funding_source"
                                 label="Funding Source"
                                 required
+                                rounded="full"
                                 placeholder="e.g. DRTPM, Pemda, CSR" />
                             @error('form.funding_source')
                                 <p class="mt-1 text-[10.5px] text-rose-600">{{ $message }}</p>
@@ -350,6 +357,7 @@ new class extends Component {
                                 wire:model="form.start_date"
                                 label="Start Date"
                                 required
+                                rounded="full"
                                 class="dark:[color-scheme:dark]" />
                             @error('form.start_date')
                                 <p class="mt-1 text-[10.5px] text-rose-600">{{ $message }}</p>
@@ -361,6 +369,7 @@ new class extends Component {
                                 type="date"
                                 wire:model="form.end_date"
                                 label="End Date (optional)"
+                                rounded="full"
                                 class="dark:[color-scheme:dark]" />
                             @error('form.end_date')
                                 <p class="mt-1 text-[10.5px] text-rose-600">{{ $message }}</p>
@@ -375,6 +384,7 @@ new class extends Component {
                             wire:model="form.fund_amount"
                             label="Fund Amount (IDR)"
                             required
+                            rounded="full"
                             min="0"
                             step="100000" />
                         @error('form.fund_amount')
@@ -389,34 +399,51 @@ new class extends Component {
                             label="Description"
                             rows="3"
                             color="rose"
+                            rounded="full"
                             placeholder="Short description..." />
                         @error('form.description')
                             <p class="mt-1 text-[10.5px] text-rose-600">{{ $message }}</p>
                         @enderror
                     </div>
 
-                    {{-- ══════════ DOCUMENT ══════════ --}}
-                    <div>
-                        <x-input
-                            type="file"
-                            wire:model="form.document"
-                            label="Supporting Document (optional)"
-                            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                            hint="Max 10 MB · pdf, doc, docx, jpg, jpeg, png" />
+                    {{-- ══════════ SUPPORTING DOCUMENTS ══════════ --}}
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
 
-                        <div class="mt-0.5 flex items-center justify-end">
-                            <div wire:loading wire:target="form.document"
-                                class="inline-flex items-center gap-1 text-[9.5px] text-rose-600 dark:text-rose-400">
-                                <svg class="animate-spin size-2.5" viewBox="0 0 24 24" fill="none">
-                                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" opacity=".25"/>
-                                    <path d="M4 12a8 8 0 018-8" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
-                                </svg>
+                        {{-- Proposal Document --}}
+                        <div>
+                            <x-input
+                                type="file"
+                                wire:model="form.proposal_document"
+                                label="Proposal Document (optional)"
+                                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                                rounded="full"
+                                hint="Max 10 MB" />
+                            <div wire:loading wire:target="form.proposal_document"
+                                class="mt-1 text-[10px] text-rose-600 dark:text-rose-400">
                                 Uploading...
                             </div>
+                            @error('form.proposal_document')
+                                <p class="mt-1 text-[10.5px] text-rose-600">{{ $message }}</p>
+                            @enderror
                         </div>
-                        @error('form.document')
-                            <p class="mt-1 text-[10.5px] text-rose-600">{{ $message }}</p>
-                        @enderror
+
+                        {{-- Report Document --}}
+                        <div>
+                            <x-input
+                                type="file"
+                                wire:model="form.report_document"
+                                label="Report Document (optional)"
+                                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                                rounded="full"
+                                hint="Max 10 MB" />
+                            <div wire:loading wire:target="form.report_document"
+                                class="mt-1 text-[10px] text-rose-600 dark:text-rose-400">
+                                Uploading...
+                            </div>
+                            @error('form.report_document')
+                                <p class="mt-1 text-[10.5px] text-rose-600">{{ $message }}</p>
+                            @enderror
+                        </div>
                     </div>
 
                     {{-- ══════════ VERIFY TOGGLE (custom) ══════════ --}}
@@ -449,7 +476,7 @@ new class extends Component {
             {{-- ══════════ FOOTER ══════════ --}}
             <div class="shrink-0 flex flex-col-reverse sm:flex-row sm:justify-end gap-1.5
                         px-4 py-3 border-t border-slate-200 dark:border-zinc-700
-                        bg-slate-50/50 dark:bg-zinc-900/50">
+                        bg-slate-50/50 dark:bg-zinc-900/50 rounded-b-3xl sm:rounded-b-3xl">
 
                 <button type="button" wire:click="close"
                     class="w-full sm:w-auto px-3 py-1.5 text-[11px] font-medium rounded-full
@@ -464,12 +491,13 @@ new class extends Component {
                 </button>
 
                 <button type="submit"
-                    wire:loading.attr="disabled" wire:target="save, form.document"
+                    wire:loading.attr="disabled"
+                    wire:target="save, form.proposal_document, form.report_document"
                     class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5
                            px-3 py-1.5 text-[11px] font-medium rounded-full text-white
                            bg-rose-600/90 hover:bg-rose-600
                            shadow-sm shadow-rose-500/20 hover:shadow-sm hover:shadow-rose-500/30
-                           disabled:opacity-60 disabled:cursor-wait
+                           disabled:opacity-60 disabled:cursor-wait disabled:hover:scale-100
                            hover:scale-[1.02] active:scale-[0.97]
                            transition-all duration-150">
                     <svg wire:loading wire:target="save" class="animate-spin size-3" viewBox="0 0 24 24" fill="none">

@@ -21,7 +21,7 @@ new #[Title('External Researches')] class extends Component {
     public function updatingRoleFilter(): void { $this->resetPage(); }
 
     /* ============================================================
-     |  BASE QUERY — hanya research
+     |  BASE QUERY — hanya research milik user yang login
      ============================================================ */
 
     protected function baseQuery()
@@ -35,22 +35,32 @@ new #[Title('External Researches')] class extends Component {
      |  DOWNLOAD
      ============================================================ */
 
-    public function downloadDocument(int $id)
+    public function downloadProposal(int $id)
+    {
+        return $this->downloadFile($id, 'proposal_document_path', 'Proposal');
+    }
+
+    public function downloadReport(int $id)
+    {
+        return $this->downloadFile($id, 'report_document_path', 'Report');
+    }
+
+    protected function downloadFile(int $id, string $column, string $label)
     {
         $item = $this->baseQuery()->find($id);
 
-        if (! $item || ! $item->document_path) {
-            Flux::toast('Document not found.', variant: 'danger');
+        if (! $item || ! $item->{$column}) {
+            Flux::toast("{$label} document not found.", variant: 'danger');
             return;
         }
 
-        $path = storage_path('app/public/' . $item->document_path);
+        $path = storage_path('app/public/' . $item->{$column});
         if (! file_exists($path)) {
             Flux::toast('File not available on server.', variant: 'danger');
             return;
         }
 
-        return response()->download($path, basename($item->document_path));
+        return response()->download($path, basename($item->{$column}));
     }
 
     /* ============================================================
@@ -98,8 +108,16 @@ new #[Title('External Researches')] class extends Component {
         }
 
         try {
-            if ($item->document_path && \Storage::disk('public')->exists($item->document_path)) {
-                \Storage::disk('public')->delete($item->document_path);
+            // Delete proposal document
+            if ($item->proposal_document_path
+                && \Storage::disk('public')->exists($item->proposal_document_path)) {
+                \Storage::disk('public')->delete($item->proposal_document_path);
+            }
+
+            // Delete report document
+            if ($item->report_document_path
+                && \Storage::disk('public')->exists($item->report_document_path)) {
+                \Storage::disk('public')->delete($item->report_document_path);
             }
 
             $title = $item->title;
@@ -146,7 +164,7 @@ new #[Title('External Researches')] class extends Component {
             leading="Record your research funded by external sources." />
 
         {{-- ══════════ MAIN CARD ══════════ --}}
-        <div class="bg-white dark:bg-zinc-900 rounded-xl
+        <div class="bg-white dark:bg-zinc-900 rounded-2xl
                     shadow-sm shadow-slate-200/50 dark:shadow-zinc-950/50
                     border border-slate-200 dark:border-zinc-800 overflow-hidden">
 
@@ -157,7 +175,8 @@ new #[Title('External Researches')] class extends Component {
                 <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2">
 
                     <div class="flex flex-wrap items-center gap-1.5">
-                        <div class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md
+                        {{-- Stats badge --}}
+                        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full
                                     bg-indigo-50 dark:bg-indigo-900/20
                                     border border-indigo-100 dark:border-indigo-900/40 w-fit">
                             <flux:icon.globe-alt class="size-3 text-indigo-600 dark:text-indigo-400" />
@@ -169,20 +188,23 @@ new #[Title('External Researches')] class extends Component {
                             </span>
                         </div>
 
-                        <x-select wire:model.live="verificationFilter" color="indigo">
+                        <x-select wire:model.live="verificationFilter" size="sm" color="indigo"
+                            maxWidth="w-auto">
                             <option value="">All Verification</option>
                             <option value="verified">Verified</option>
                             <option value="unverified">Unverified</option>
                         </x-select>
 
-                        <x-select wire:model.live="statusFilter" color="indigo">
+                        <x-select wire:model.live="statusFilter" size="sm" color="indigo"
+                            maxWidth="w-auto">
                             <option value="">All Status</option>
                             <option value="ongoing">Ongoing</option>
                             <option value="completed">Completed</option>
                             <option value="cancelled">Cancelled</option>
                         </x-select>
 
-                        <x-select wire:model.live="roleFilter" color="indigo">
+                        <x-select wire:model.live="roleFilter" size="sm" color="indigo"
+                            maxWidth="w-auto">
                             <option value="">All Roles</option>
                             <option value="leader">Leader</option>
                             <option value="member">Member</option>
@@ -261,7 +283,7 @@ new #[Title('External Researches')] class extends Component {
                                     {{-- RESEARCH --}}
                                     <td class="px-3 py-2">
                                         <div class="flex items-start gap-2">
-                                            <div class="w-7 h-7 rounded-md shrink-0
+                                            <div class="w-7 h-7 rounded-full shrink-0
                                                         bg-gradient-to-br from-indigo-100 to-violet-50
                                                         dark:from-indigo-900/30 dark:to-violet-900/20
                                                         flex items-center justify-center
@@ -276,12 +298,12 @@ new #[Title('External Researches')] class extends Component {
                                                     {{ Str::limit($item->title, 45) }}
                                                 </p>
                                                 <div class="mt-0.5 flex items-center gap-1.5 flex-wrap text-[9.5px]">
-                                                    <span class="px-1 rounded font-semibold whitespace-nowrap
+                                                    <span class="px-1.5 py-0.5 rounded-full font-semibold whitespace-nowrap
                                                                  bg-indigo-100 text-indigo-700
                                                                  dark:bg-indigo-900/30 dark:text-indigo-300">
                                                         External
                                                     </span>
-                                                    <span class="px-1 rounded font-semibold whitespace-nowrap
+                                                    <span class="px-1.5 py-0.5 rounded-full font-semibold whitespace-nowrap
                                                                  {{ $role['class'] }}">
                                                         {{ $role['label'] }}
                                                     </span>
@@ -314,7 +336,7 @@ new #[Title('External Researches')] class extends Component {
 
                                     {{-- STATUS --}}
                                     <td class="px-3 py-2">
-                                        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full
                                                      text-[9.5px] font-semibold whitespace-nowrap
                                                      {{ $status['class'] }}">
                                             <span class="w-1 h-1 rounded-full {{ $status['dot'] }}"></span>
@@ -324,7 +346,7 @@ new #[Title('External Researches')] class extends Component {
 
                                     {{-- VERIFICATION --}}
                                     <td class="px-3 py-2">
-                                        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full
                                                      text-[9.5px] font-semibold whitespace-nowrap
                                                      {{ $vMeta['class'] }}">
                                             <flux:icon
@@ -338,17 +360,29 @@ new #[Title('External Researches')] class extends Component {
                                     <td class="px-3 py-2 text-right">
                                         <flux:dropdown position="bottom" align="end">
                                             <flux:button size="xs" variant="ghost" icon="ellipsis-horizontal"
-                                                class="!p-1 rounded-md text-slate-400
+                                                class="!p-1 rounded-full text-slate-400
                                                        hover:bg-slate-100 hover:text-slate-600
                                                        dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-zinc-300
-                                                       opacity-60 group-hover:opacity-100 transition-opacity" />
+                                                       hover:scale-110 active:scale-95
+                                                       opacity-60 group-hover:opacity-100 transition-all duration-150" />
 
                                             <flux:menu class="!text-[11px]">
-                                                @if ($item->document_path)
-                                                    <flux:menu.item icon="arrow-down-tray"
-                                                        wire:click="downloadDocument({{ $item->id }})">
-                                                        Download Document
+                                                {{-- Document downloads --}}
+                                                @if ($item->proposal_document_path)
+                                                    <flux:menu.item icon="document-text"
+                                                        wire:click="downloadProposal({{ $item->id }})">
+                                                        Download Proposal
                                                     </flux:menu.item>
+                                                @endif
+
+                                                @if ($item->report_document_path)
+                                                    <flux:menu.item icon="document-check"
+                                                        wire:click="downloadReport({{ $item->id }})">
+                                                        Download Report
+                                                    </flux:menu.item>
+                                                @endif
+
+                                                @if ($item->proposal_document_path || $item->report_document_path)
                                                     <flux:menu.separator />
                                                 @endif
 
@@ -381,7 +415,7 @@ new #[Title('External Researches')] class extends Component {
                                 <tr>
                                     <td colspan="6" class="px-4 py-12">
                                         <div class="flex flex-col items-center gap-2 text-center">
-                                            <div class="w-12 h-12 rounded-lg bg-slate-100 dark:bg-zinc-800
+                                            <div class="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-zinc-800
                                                         flex items-center justify-center">
                                                 <flux:icon.globe-alt class="size-6 text-slate-400 dark:text-zinc-600" />
                                             </div>

@@ -173,7 +173,7 @@
                             </span>
                             <x-sidebar-link href="admin.internal.manage-researches" title="Research" icon="beaker" />
                             <x-sidebar-link href="admin.internal.manage-dedications" title="Community Service"
-                                icon="hand-raised" />
+                                icon="heart" />
                         </div>
 
                         {{-- Group: External Data --}}
