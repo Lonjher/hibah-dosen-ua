@@ -1,17 +1,9 @@
 {{-- resources/views/layouts/sidebar.blade.php --}}
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
 
 <head>
-    {{-- Cegah flash warna salah: set dark/light SEBELUM CSS & Alpine dimuat --}}
-    <script>
-        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia(
-                '(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-        }
-    </script>
     @include('partials.head')
-
     {{-- Font: DM Sans untuk body, Manrope untuk heading --}}
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=dm-sans:400,500,600,700|manrope:400,500,600,700,800&display=swap"
@@ -78,11 +70,11 @@
                    transition-transform duration-300 ease-out
                    lg:translate-x-0
                    dark:bg-zinc-900/85 dark:lg:bg-zinc-900/70">
-            <div class="flex flex-col h-full overflow-y-auto safe-top safe-bottom">
+            <div class="-mt-1 flex flex-col h-full overflow-y-auto safe-top safe-bottom">
 
                 {{-- ─────── Header & Logo ─────── --}}
                 <div
-                    class="p-2.5 border-b border-white/60
+                    class="p-1 border-b border-white/60
                            flex items-center gap-2
                            bg-white/60 dark:border-zinc-800 dark:bg-zinc-900/60">
 
@@ -91,8 +83,8 @@
 
                     <div class="flex flex-col min-w-0 flex-1">
                         <span
-                            class="font-heading text-[12px] font-bold text-on-surface leading-tight tracking-tight truncate dark:text-zinc-100">
-                            HIBAH DOSEN
+                            class="font-heading uppercase text-[12px] font-bold text-on-surface leading-tight tracking-tight truncate dark:text-zinc-100">
+                            {{ env('APP_NAME') }}
                         </span>
                         <span
                             class="font-body text-[9px] text-on-surface-variant leading-none truncate dark:text-zinc-400">
@@ -232,7 +224,7 @@
                 class="sticky top-0 z-30
                        border-b border-white/60 dark:border-zinc-800
                        shadow-[0_1px_8px_rgba(0,0,0,0.04)]
-                       px-3 sm:px-4 py-2
+                       px-3 sm:px-4 py-1
                        flex items-center justify-between gap-2 sm:gap-4">
 
                 <div class="absolute inset-0 -z-10 pointer-events-none
@@ -269,15 +261,26 @@
                         <livewire:period-badge />
                     </div>
 
-                    <button type="button"
-                        x-on:click="document.documentElement.classList.toggle('dark');
-                        localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';"
-                        aria-label="Change theme"
-                        class="p-1.5 rounded-full text-on-surface-variant cursor-pointer
-                               hover:text-emerald-500 hover:bg-surface-container-high transition-colors
-                               dark:text-zinc-400 dark:hover:text-emerald-400 dark:hover:bg-zinc-800">
-                        <flux:icon.sun class="size-4 hidden dark:block" />
-                        <flux:icon.moon class="size-4 dark:hidden" />
+                    <button
+                        type="button"
+                        x-data
+                        x-on:click="$flux.appearance = $flux.appearance === 'dark' ? 'light' : 'dark'"
+                        :aria-label="$flux.appearance === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
+                        class="rounded-full cursor-pointer p-2 text-stone-500 transition-all duration-300
+                            hover:bg-stone-100 hover:scale-110
+                            dark:text-zinc-400 dark:hover:bg-zinc-800">
+                        {{-- Ikon bulan (muncul saat light) --}}
+                        <svg x-show="$flux.appearance !== 'dark'" class="h-4 w-4" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                        </svg>
+                        {{-- Ikon matahari (muncul saat dark) --}}
+                        <svg x-show="$flux.appearance === 'dark'" class="h-4 w-4" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
                     </button>
 
                     <livewire:notifications.notification-bell />

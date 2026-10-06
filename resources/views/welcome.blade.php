@@ -1,12 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" x-data="{
-    darkMode: localStorage.getItem('darkMode') ?
-        localStorage.getItem('darkMode') === 'true' : window.matchMedia('(prefers-color-scheme: dark)').matches
-}" x-init="$watch('darkMode', val => {
-    localStorage.setItem('darkMode', val);
-    document.documentElement.classList.toggle('dark', val);
-})"
-    :class="{ 'dark': darkMode }" class="scroll-smooth">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
 
 <head>
     <meta charset="utf-8">
@@ -25,7 +18,9 @@
         rel="stylesheet" />
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-
+    @persist('flux-appearance')
+        @fluxAppearance
+    @endpersist
     <style>
         :root {
             --font-heading: 'Manrope', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -427,14 +422,23 @@
             {{-- Right actions --}}
             <div class="flex items-center gap-2">
                 {{-- Dark Mode Toggle --}}
-                <button x-data variant="segmented" x-model="$flux.appearance"
-                    class="cursor-pointer rounded-lg p-2 text-stone-500 transition-all duration-300 hover:bg-stone-100 hover:scale-110 dark:text-zinc-400 dark:hover:bg-zinc-800"
-                    :aria-label="darkMode ? 'Dark Mode' : 'Light Mode'" @click="darkMode = !darkMode">
-                    <svg x-show="!darkMode" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <button
+                    type="button"
+                    x-data
+                    x-on:click="$flux.appearance = $flux.appearance === 'dark' ? 'light' : 'dark'"
+                    :aria-label="$flux.appearance === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
+                    class="rounded-full cursor-pointer p-2 text-stone-500 transition-all duration-300
+                        hover:bg-stone-100 hover:scale-110
+                        dark:text-zinc-400 dark:hover:bg-zinc-800">
+                    {{-- Ikon bulan (muncul saat light) --}}
+                    <svg x-show="$flux.appearance !== 'dark'" class="h-4 w-4" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
                     </svg>
-                    <svg x-show="darkMode" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {{-- Ikon matahari (muncul saat dark) --}}
+                    <svg x-show="$flux.appearance === 'dark'" class="h-4 w-4" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
                     </svg>
@@ -1743,6 +1747,7 @@
             });
         });
     </script>
+    @fluxScripts
 </body>
 
 </html>

@@ -18,7 +18,7 @@
                         {{ __('Verify your Email Address') }}
                     </h1>
                     <p class="mt-1 text-[11px] text-slate-500 dark:text-zinc-400 leading-relaxed">
-                        {{ __('We have emailed your verification link. Please check your inbox or spam folder.') }}
+                        {{ __('We will email you a verification link to ensure your email account is valid.') }}
                     </p>
                 </div>
 
@@ -29,7 +29,7 @@
                         <div class="flex items-start gap-2.5">
                             <flux:icon.check-circle class="size-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
                             <p class="text-[11px] text-emerald-700 dark:text-emerald-400">
-                                {{ __('Verification link has been sent to your account!') }}
+                                {{ __('Verification link has been sent to your account. Check spam message in case no email in inbox!') }}
                             </p>
                         </div>
                     </div>
@@ -39,11 +39,11 @@
                 <div class="flex flex-col gap-3">
 
                     {{-- Kirim ulang --}}
-                    <form method="POST" action="{{ route('verification.send') }}">
+                    <form class="flex justify-center items-center" method="POST" action="{{ route('verification.send') }}">
                         @csrf
-                        <flux:button type="submit" variant="primary" size="sm"
-                            class="w-full" data-test="resend-verification-button">
-                            {{ __('Resend Verification Email') }}
+                        <flux:button type="submit" variant="primary"
+                            data-test="resend-verification-button">
+                            {{ __('Send Verification Email') }}
                         </flux:button>
                     </form>
 
