@@ -38,7 +38,14 @@ class ProposalForm extends Form
             'is_research'        => ['boolean'],
             'status'             => ['required', 'string', 'in:pending,revised,submitted,rejected,under_review,accepted'],
             'period_id'          => ['required', 'exists:periods,id'],
-            'file'               => ['required', 'file', 'max:10240', 'mimes:pdf,doc,docx'],
+            'file'               => [
+                // File wajib HANYA kalau belum ada file tersimpan (create baru)
+                // Kalau sudah ada file (edit), file jadi nullable
+                ($this->proposal?->file_path ? 'nullable' : 'required'),
+                'file',
+                'max:10240',
+                'mimes:pdf,doc,docx',
+            ],
         ];
     }
 
@@ -47,27 +54,20 @@ class ProposalForm extends Form
         return [
             'research_scheme_id.required' => 'Skema wajib dipilih.',
             'research_scheme_id.exists'   => 'Skema tidak valid.',
-
             'user_id.required'            => 'Author wajib diisi.',
             'user_id.exists'              => 'Author tidak valid.',
-
             'reviewer_id.exists'          => 'Reviewer tidak valid.',
-
             'title.required'              => 'Judul wajib diisi.',
             'title.max'                   => 'Judul maksimal 255 karakter.',
-
             'summary.required'            => 'Ringkasan wajib diisi.',
             'summary.min'                 => 'Ringkasan minimal 20 karakter.',
-
             'keywords.required'           => 'Kata kunci wajib diisi.',
             'keywords.max'                => 'Kata kunci maksimal 255 karakter.',
-
             'status.required'             => 'Status wajib diisi.',
             'status.in'                   => 'Status tidak valid.',
-
             'period_id.required'          => 'Periode wajib dipilih.',
             'period_id.exists'            => 'Periode tidak valid.',
-            'file.required' => 'File proposal wajib diunggah.',
+            'file.required'               => 'File proposal wajib diunggah.',
             'file.file'                   => 'File proposal harus berupa file.',
             'file.max'                    => 'File proposal maksimal 10 MB.',
             'file.mimes'                  => 'File proposal harus berformat PDF, DOC, atau DOCX.',
@@ -105,8 +105,8 @@ class ProposalForm extends Form
     // ═══════════════ Actions ═══════════════
 
     /**
-     * Simpan file proposal ke storage & return path-nya.
-     * Kalau tidak ada file baru, return null.
+     * Simpan file baru ke storage & return path-nya.
+     * Return null kalau tidak ada file baru.
      */
     public function storeFile(): ?string
     {
@@ -121,7 +121,7 @@ class ProposalForm extends Form
     {
         $this->validate();
 
-        $filePath = $this->storeFile() ?? $this->file_path ?? '';
+        $filePath = $this->storeFile() ?? '';
 
         $proposal = Proposal::create([
             'research_scheme_id' => $this->research_scheme_id,
@@ -151,7 +151,13 @@ class ProposalForm extends Form
 
         $this->validate();
 
-        $filePath = $this->storeFile();
+        $newFilePath = $this->storeFile();
+
+        // Hapus file lama kalau di-replace
+        if ($newFilePath && $this->proposal->file_path
+            && \Storage::disk('public')->exists($this->proposal->file_path)) {
+            \Storage::disk('public')->delete($this->proposal->file_path);
+        }
 
         $this->proposal->update([
             'research_scheme_id' => $this->research_scheme_id,
@@ -161,7 +167,7 @@ class ProposalForm extends Form
             'summary'            => $this->summary,
             'keywords'           => $this->keywords,
             'is_research'        => $this->is_research,
-            'file_path'          => $filePath ?? $this->file_path ?? $this->proposal->file_path,
+            'file_path'          => $newFilePath ?? $this->proposal->file_path,
             'status'             => $this->status,
             'period_id'          => $this->period_id,
         ]);

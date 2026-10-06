@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Period;
 use App\Models\ProgressReport;
 use App\Models\ReviewerNote;
 use Illuminate\Support\Facades\Auth;
@@ -12,11 +13,38 @@ new #[Title('Review Progress Reports')] class extends Component {
 
     public string $search = '';
     public string $statusFilter = 'all';
-    public string $typeFilter = 'all'; // all | research | dedication
+    public string $typeFilter = 'all';
+    public string $periodFilter = 'all';
 
-    public function updatingSearch(): void { $this->resetPage(); }
-    public function updatingStatusFilter(): void { $this->resetPage(); }
-    public function updatingTypeFilter(): void { $this->resetPage(); }
+    public function mount(): void
+    {
+        // Default: periode aktif → terbaru → all
+        $active = Period::where('is_active', true)->first();
+
+        if ($active) {
+            $this->periodFilter = (string) $active->id;
+        } else {
+            $latest = Period::orderByDesc('open_from')->orderByDesc('id')->first();
+            $this->periodFilter = $latest ? (string) $latest->id : 'all';
+        }
+    }
+
+    public function updatingSearch(): void
+    {
+        $this->resetPage();
+    }
+    public function updatingStatusFilter(): void
+    {
+        $this->resetPage();
+    }
+    public function updatingTypeFilter(): void
+    {
+        $this->resetPage();
+    }
+    public function updatingPeriodFilter(): void
+    {
+        $this->resetPage();
+    }
 
     public function isFinalized(ProgressReport $report): bool
     {
@@ -25,113 +53,287 @@ new #[Title('Review Progress Reports')] class extends Component {
 
     public function hasReviewerNotes(ProgressReport $report): bool
     {
-        return ReviewerNote::where('noteable_id', $report->id)
-            ->where('noteable_type', 'progress_report')
-            ->where('reviewer_id', Auth::id())
-            ->exists();
+        return ReviewerNote::where('noteable_id', $report->id)->where('noteable_type', 'progress_report')->where('reviewer_id', Auth::id())->exists();
     }
 
     public function with(): array
     {
+        $selectedPeriod = $this->periodFilter === 'all' ? null : Period::find((int) $this->periodFilter);
+
         $reports = ProgressReport::query()
             ->with(['proposal.researchScheme', 'proposal.author', 'proposal.period', 'reviewer'])
             ->where('reviewer_id', Auth::id())
-            ->when($this->search, fn ($q) => $q->where(function ($q) {
-                $q->where('keyword', 'like', "%{$this->search}%")
-                  ->orWhere('summary', 'like', "%{$this->search}%")
-                  ->orWhereHas('proposal', function ($q) {
-                      $q->where('title', 'like', "%{$this->search}%")
-                        ->orWhereHas('author', fn ($q) => $q->where('full_name', 'like', "%{$this->search}%"));
-                  });
-            }))
-            ->when($this->statusFilter !== 'all', fn ($q) => $q->where('status', $this->statusFilter))
-            ->when($this->typeFilter === 'research', fn ($q) => $q->whereHas('proposal', fn ($q) => $q->where('is_research', true)))
-            ->when($this->typeFilter === 'dedication', fn ($q) => $q->whereHas('proposal', fn ($q) => $q->where('is_research', false)))
+            ->when($selectedPeriod, fn($q) => $q->whereHas('proposal', fn($q) => $q->where('period_id', $selectedPeriod->id)))
+            ->when(
+                $this->search,
+                fn($q) => $q->where(function ($q) {
+                    $q->where('keyword', 'like', "%{$this->search}%")
+                        ->orWhere('summary', 'like', "%{$this->search}%")
+                        ->orWhereHas('proposal', function ($q) {
+                            $q->where('title', 'like', "%{$this->search}%")->orWhereHas('author', fn($q) => $q->where('full_name', 'like', "%{$this->search}%"));
+                        });
+                }),
+            )
+            ->when($this->statusFilter !== 'all', fn($q) => $q->where('status', $this->statusFilter))
+            ->when($this->typeFilter === 'research', fn($q) => $q->whereHas('proposal', fn($q) => $q->where('is_research', true)))
+            ->when($this->typeFilter === 'dedication', fn($q) => $q->whereHas('proposal', fn($q) => $q->where('is_research', false)))
             ->latest()
             ->paginate(10);
 
-        return ['reports' => $reports];
+        return [
+            'reports' => $reports,
+            'periods' => Period::orderByDesc('open_from')->orderByDesc('id')->get(),
+            'selectedPeriod' => $selectedPeriod,
+        ];
     }
 };
 ?>
 
-<div class="p-4 sm:p-6 space-y-6">
+<div class="p-3 sm:p-4 space-y-3">
 
     <x-dashboard-header icon="document-chart-bar" title="Review Progress Reports"
         leading="Review progress reports assigned to you." />
 
-    {{-- ══════════ Table Card ══════════ --}}
-    <div class="bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl rounded-2xl
-                border border-white/80 dark:border-zinc-800 shadow-sm overflow-hidden">
+    {{-- Table Card --}}
+    <div
+        class="bg-white dark:bg-zinc-900 rounded-2xl
+            border border-slate-200 dark:border-zinc-800 shadow-sm overflow-hidden">
 
-        {{-- Header --}}
-        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between
-                    gap-3 p-4 border-b border-slate-100 dark:border-zinc-800">
+        {{-- Toolbar --}}
+        <div
+            class="px-2 sm:px-3 py-2
+            border-b border-slate-200 dark:border-zinc-800
+            bg-slate-50/50 dark:bg-zinc-900/50">
+            <div class="flex flex-wrap items-center gap-1.5 min-w-0">
 
-            <div class="flex items-center gap-2 text-[11px] text-slate-500 dark:text-zinc-400 min-w-0">
-                @if ($reports->total() > 0)
-                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md
-                                 bg-violet-50 text-violet-700 font-semibold
-                                 dark:bg-violet-900/30 dark:text-violet-300 shrink-0">
-                        <flux:icon.list-bullet class="size-3" />
-                        {{ $reports->total() }} {{ Str::plural('report', $reports->total()) }}
-                    </span>
-                @else
-                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md
-                                 bg-slate-100 text-slate-500 font-semibold
-                                 dark:bg-zinc-800 dark:text-zinc-400">
-                        <flux:icon.list-bullet class="size-3" />
-                        No reports assigned
-                    </span>
-                @endif
-            </div>
+                {{-- Row 1: Stats + Filters --}}
+                <div class="flex flex-wrap items-center gap-1.5">
+                    @if ($reports->total() > 0)
+                        <div
+                            class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full
+                bg-violet-50 dark:bg-violet-900/20
+                border border-violet-100 dark:border-violet-900/40 w-fit">
+                            <flux:icon.document-chart-bar class="size-3 text-violet-600 dark:text-violet-400" />
+                            <span class="text-[10.5px] font-semibold text-violet-700 dark:text-violet-300">
+                                {{ $reports->total() }}
+                            </span>
+                            <span class="text-[10px] text-violet-600/70 dark:text-violet-400/70">
+                                reports
+                            </span>
+                        </div>
+                    @else
+                        <div
+                            class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full
+                bg-slate-50 dark:bg-zinc-800/40
+                border border-slate-100 dark:border-zinc-800 w-fit">
+                            <flux:icon.document-chart-bar class="size-3 text-slate-500 dark:text-zinc-400" />
+                            <span class="text-[10.5px] font-medium text-slate-500 dark:text-zinc-400">
+                                No reports
+                            </span>
+                        </div>
+                    @endif
 
-            {{-- Filter + Search --}}
-            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full lg:w-auto">
+                    {{-- Period Filter --}}
+                    <div
+                        class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full
+                            bg-white dark:bg-zinc-900
+                            border border-slate-200 dark:border-zinc-800
+                            shadow-sm shadow-slate-200/50 dark:shadow-zinc-950/50">
+                        <flux:icon.calendar-days class="size-3 text-slate-400 dark:text-zinc-500 shrink-0" />
+                        <select wire:model.live="periodFilter"
+                            class="text-[10.5px] font-medium bg-transparent border-0
+                                text-slate-700 dark:text-zinc-200
+                                focus:outline-none focus:ring-0 cursor-pointer
+                                pr-5 pl-0 py-0 max-w-[140px] truncate
+                                [&>option]:text-slate-700 dark:[&>option]:text-zinc-200
+                                [&>option]:bg-white dark:[&>option]:bg-zinc-900">
+                            <option value="all">All Periods</option>
+                            @foreach ($periods as $p)
+                                <option value="{{ $p->id }}">{{ $p->periode }}</option>
+                            @endforeach
+                        </select>
+                    </div>
 
-                {{-- Type Filter --}}
-                <select wire:model.live="typeFilter"
-                    class="text-[11px] rounded-xl border-slate-200 dark:border-zinc-700
-                           bg-white dark:bg-zinc-800 text-slate-700 dark:text-zinc-200
-                           focus:border-violet-500 focus:ring-violet-500 py-2 px-3 shrink-0">
-                    <option value="all">All Types</option>
-                    <option value="research">Penelitian</option>
-                    <option value="dedication">Pengabdian</option>
-                </select>
+                    <div wire:loading wire:target="periodFilter"
+                        class="w-3.5 h-3.5 rounded-full bg-violet-100 dark:bg-violet-900/40 flex items-center justify-center shrink-0">
+                        <svg class="animate-spin size-2.5 text-violet-600 dark:text-violet-400" viewBox="0 0 24 24"
+                            fill="none">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"
+                                opacity=".25" />
+                            <path d="M4 12a8 8 0 018-8" stroke="currentColor" stroke-width="4" stroke-linecap="round" />
+                        </svg>
+                    </div>
 
-                {{-- Status Filter --}}
-                <select wire:model.live="statusFilter"
-                    class="text-[11px] rounded-xl border-slate-200 dark:border-zinc-700
-                           bg-white dark:bg-zinc-800 text-slate-700 dark:text-zinc-200
-                           focus:border-violet-500 focus:ring-violet-500 py-2 px-3 shrink-0">
-                    <option value="all">All Status</option>
-                    <option value="under_review">Under Review</option>
-                    <option value="revised">Needs Revision</option>
-                    <option value="accepted">Accepted</option>
-                </select>
+                    <x-select wire:model.live="typeFilter" size="sm" color="violet" maxWidth="w-auto">
+                        <option value="all">All Types</option>
+                        <option value="research">Research</option>
+                        <option value="dedication">Community Service</option>
+                    </x-select>
 
-                <x-input-search name="search" id="search-reviewer-progress"
-                    wire:model.live.debounce.300ms="search"
-                    placeholder="Search keyword, proposal, or author..."
-                    max-width="max-w-sm" class="!flex w-full sm:w-auto flex-1" />
+                    <x-select wire:model.live="statusFilter" size="sm" color="violet" maxWidth="w-auto">
+                        <option value="all">All Status</option>
+                        <option value="under_review">Under Review</option>
+                        <option value="revised">Needs Revision</option>
+                        <option value="accepted">Accepted</option>
+                    </x-select>
+                </div>
+                {{-- Row 2: Search --}}
+                <div class="order-5 sm:order-4
+                    w-full sm:w-auto
+                    sm:ml-auto
+                    md:w-44 lg:w-56
+                    min-w-0">
+                    <x-input-search name="search" id="search-reviewer-progress" wire:model.live.debounce.300ms="search"
+                        placeholder="Search keyword, proposal, author..." class="w-full !text-[10.5px]" />
+                </div>
             </div>
         </div>
 
-        {{-- Table --}}
-        <div class="overflow-x-auto">
-            <table class="w-full min-w-[920px] text-xs">
-                <thead class="bg-violet-50/50 dark:bg-violet-900/20 text-left text-[10px]
-                              uppercase tracking-wider text-slate-500 dark:text-zinc-400">
-                    <tr>
-                        <th class="px-4 py-3 font-semibold">Keyword & Proposal</th>
-                        <th class="px-4 py-3 font-semibold">Author</th>
-                        <th class="px-4 py-3 font-semibold">Submitted</th>
-                        <th class="px-4 py-3 font-semibold">Status</th>
-                        <th class="px-4 py-3 font-semibold text-right">Actions</th>
+        {{-- ================= MOBILE VIEW (cards) ================= --}}
+        <div class="block md:hidden divide-y divide-slate-100 dark:divide-zinc-800/70">
+            @forelse ($reports as $report)
+                @php
+                    $meta = $report->statusMeta();
+                    $hasNotes = $this->hasReviewerNotes($report);
+                    $isResearch = (bool) $report->proposal?->is_research;
+                @endphp
+                <div wire:key="rpt-m-{{ $report->id }}"
+                    class="p-3 active:bg-slate-50 dark:active:bg-zinc-800/40 transition-colors">
+                    {{-- Header: icon + keyword + status --}}
+                    <div class="flex items-start gap-2.5">
+                        <div
+                            class="w-8 h-8 rounded-full shrink-0
+                                {{ $isResearch
+                                    ? 'bg-gradient-to-br from-emerald-100 to-teal-50 dark:from-emerald-900/30 dark:to-teal-900/20'
+                                    : 'bg-gradient-to-br from-rose-100 to-pink-50 dark:from-rose-900/30 dark:to-pink-900/20' }}
+                                flex items-center justify-center">
+                            <flux:icon :name="$isResearch ? 'beaker' : 'heart'"
+                                class="size-4 {{ $isResearch ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400' }}" />
+                        </div>
+
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-start justify-between gap-2">
+                                <div class="flex items-center gap-1.5 min-w-0">
+                                    <flux:icon.tag class="size-3 text-violet-600 dark:text-violet-400 shrink-0" />
+                                    <span class="text-[12px] font-semibold text-slate-900 dark:text-white truncate"
+                                        title="{{ $report->keyword }}">
+                                        {{ $report->keyword }}
+                                    </span>
+                                </div>
+                                <span
+                                    class="inline-flex items-center px-2 py-0.5 rounded-full
+                                         text-[9.5px] font-semibold whitespace-nowrap shrink-0
+                                         {{ $meta['class'] }}">
+                                    {{ $meta['label'] }}
+                                </span>
+                            </div>
+
+                            {{-- Type badge + title --}}
+                            <div class="mt-1 flex items-center gap-1.5 flex-wrap text-[10px]">
+                                <span
+                                    class="px-1.5 py-0.5 rounded-full font-semibold whitespace-nowrap
+                                        {{ $isResearch
+                                            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
+                                            : 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300' }}">
+                                    {{ $isResearch ? 'Research' : 'Dedication' }}
+                                </span>
+                                <span class="text-slate-500 dark:text-zinc-500 line-clamp-2"
+                                    title="{{ $report->proposal?->title }}">
+                                    {{ $report->proposal?->title ?? '—' }}
+                                </span>
+                            </div>
+
+                            {{-- Author + date --}}
+                            <div class="mt-2 flex items-center justify-between gap-2">
+                                <div class="flex items-center gap-1.5 min-w-0">
+                                    @if ($report->proposal?->author)
+                                        <div
+                                            class="w-5 h-5 rounded-full shrink-0
+                                                bg-violet-100 text-violet-700
+                                                dark:bg-violet-900/40 dark:text-violet-300
+                                                flex items-center justify-center
+                                                text-[8.5px] font-bold">
+                                            {{ strtoupper(substr($report->proposal->author->full_name, 0, 1)) }}
+                                        </div>
+                                        <p class="text-[10.5px] font-medium truncate text-slate-700 dark:text-zinc-300">
+                                            {{ $report->proposal->author->full_name }}
+                                        </p>
+                                    @else
+                                        <span class="text-[10.5px] text-slate-400 dark:text-zinc-500 italic">—</span>
+                                    @endif
+                                </div>
+                                <span
+                                    class="text-[9.5px] text-slate-500 dark:text-zinc-500 font-mono whitespace-nowrap">
+                                    {{ $report->created_at?->format('d M Y') ?? '—' }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Action --}}
+                    <div class="mt-2.5 flex justify-end">
+                        <flux:button size="xs" variant="primary" icon="eye" class="!text-[10.5px]" x-data
+                            x-on:click="$dispatch('open-view-progress-report', { id: {{ $report->id }} })">
+                            View & Review
+                        </flux:button>
+                    </div>
+                </div>
+            @empty
+                <div class="px-4 py-12">
+                    <div class="flex flex-col items-center gap-2 text-center">
+                        <div
+                            class="w-12 h-12 rounded-full bg-slate-100 dark:bg-zinc-800
+                                flex items-center justify-center">
+                            <flux:icon.document-chart-bar class="size-6 text-slate-400 dark:text-zinc-600" />
+                        </div>
+                        <div>
+                            <p class="text-[12px] font-semibold text-slate-900 dark:text-white">
+                                No progress reports assigned to you
+                            </p>
+                            <p class="text-[10.5px] text-slate-500 dark:text-zinc-400 mt-0.5">
+                                @if ($search || $statusFilter !== 'all' || $typeFilter !== 'all')
+                                    Try adjusting your search or filters.
+                                @else
+                                    You'll see progress reports here once the admin assigns them.
+                                @endif
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            @endforelse
+        </div>
+
+        {{-- ================= DESKTOP VIEW (table) ================= --}}
+        <div class="hidden md:block overflow-x-auto">
+            <table class="w-full min-w-[840px]">
+                <thead>
+                    <tr
+                        class="bg-slate-50/80 dark:bg-zinc-900/50
+                           border-b border-slate-200 dark:border-zinc-800">
+                        <th
+                            class="px-3 py-1.5 text-left text-[9.5px] font-semibold uppercase tracking-wider
+                               text-slate-500 dark:text-zinc-400 whitespace-nowrap">
+                            Keyword & Proposal</th>
+                        <th
+                            class="px-3 py-1.5 text-left text-[9.5px] font-semibold uppercase tracking-wider
+                               text-slate-500 dark:text-zinc-400 whitespace-nowrap">
+                            Author</th>
+                        <th
+                            class="px-3 py-1.5 text-left text-[9.5px] font-semibold uppercase tracking-wider
+                               text-slate-500 dark:text-zinc-400 whitespace-nowrap">
+                            Submitted</th>
+                        <th
+                            class="px-3 py-1.5 text-left text-[9.5px] font-semibold uppercase tracking-wider
+                               text-slate-500 dark:text-zinc-400 whitespace-nowrap">
+                            Status</th>
+                        <th
+                            class="px-3 py-1.5 text-right text-[9.5px] font-semibold uppercase tracking-wider
+                               text-slate-500 dark:text-zinc-400 whitespace-nowrap">
+                            Action</th>
                     </tr>
                 </thead>
 
-                <tbody class="divide-y divide-slate-100 dark:divide-zinc-800">
+                <tbody class="divide-y divide-slate-100 dark:divide-zinc-800/70">
                     @forelse ($reports as $report)
                         @php
                             $meta = $report->statusMeta();
@@ -139,56 +341,41 @@ new #[Title('Review Progress Reports')] class extends Component {
                             $isResearch = (bool) $report->proposal?->is_research;
                         @endphp
                         <tr wire:key="rpt-{{ $report->id }}"
-                            class="group hover:bg-violet-50/30 dark:hover:bg-zinc-800/50 transition-colors">
+                            class="group transition-colors duration-150
+                               hover:bg-slate-50/70 dark:hover:bg-zinc-800/40">
 
                             {{-- Keyword & Proposal --}}
-                            <td class="px-4 py-3 max-w-md">
-                                <div class="flex flex-row gap-2 min-w-0">
-
-                                    {{-- Icon --}}
-                                    <div class="flex items-center justify-center w-8 h-8 rounded-lg shrink-0
-                                                group-hover:scale-105 transition-transform
-                                                {{ $isResearch
-                                                    ? 'bg-gradient-to-br from-emerald-100 to-teal-50 dark:from-emerald-900/30 dark:to-teal-900/20'
-                                                    : 'bg-gradient-to-br from-rose-100 to-pink-50 dark:from-rose-900/30 dark:to-pink-900/20' }}">
+                            <td class="px-3 py-2 max-w-md">
+                                <div class="flex items-start gap-2">
+                                    <div
+                                        class="w-7 h-7 rounded-full shrink-0
+                                            {{ $isResearch
+                                                ? 'bg-gradient-to-br from-emerald-100 to-teal-50 dark:from-emerald-900/30 dark:to-teal-900/20'
+                                                : 'bg-gradient-to-br from-rose-100 to-pink-50 dark:from-rose-900/30 dark:to-pink-900/20' }}
+                                            flex items-center justify-center
+                                            group-hover:scale-105 transition-transform">
                                         <flux:icon :name="$isResearch ? 'beaker' : 'heart'"
-                                            class="size-3.5 {{ $isResearch
-                                                ? 'text-emerald-600 dark:text-emerald-400'
-                                                : 'text-rose-600 dark:text-rose-400' }}" />
+                                            class="size-3.5 {{ $isResearch ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400' }}" />
                                     </div>
-
-                                    {{-- Content --}}
-                                    <div class="min-w-0 flex-1">
+                                    <div class="min-w-0">
                                         <div class="flex items-center gap-1.5">
-                                            <flux:icon.tag class="size-3 text-violet-600 dark:text-violet-400 shrink-0" />
-                                            <span class="font-medium text-slate-900 dark:text-zinc-100 truncate"
+                                            <flux:icon.tag
+                                                class="size-3 text-violet-600 dark:text-violet-400 shrink-0" />
+                                            <span
+                                                class="text-[11.5px] font-semibold text-slate-900 dark:text-white truncate"
                                                 title="{{ $report->keyword }}">
                                                 {{ $report->keyword }}
                                             </span>
                                         </div>
-                                        <div class="flex items-center gap-2 mt-0.5 min-w-0">
-
-                                            {{-- Badge Jenis --}}
-                                            @if ($isResearch)
-                                                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded shrink-0
-                                                             text-[9px] font-semibold uppercase tracking-wider
-                                                             bg-emerald-100 text-emerald-700
-                                                             dark:bg-emerald-900/30 dark:text-emerald-300">
-                                                    <flux:icon.beaker class="size-2" />
-                                                    Penelitian
-                                                </span>
-                                            @else
-                                                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded shrink-0
-                                                             text-[9px] font-semibold uppercase tracking-wider
-                                                             bg-rose-100 text-rose-700
-                                                             dark:bg-rose-900/30 dark:text-rose-300">
-                                                    <flux:icon.heart class="size-2" />
-                                                    Pengabdian
-                                                </span>
-                                            @endif
-
-                                            {{-- Proposal Title --}}
-                                            <span class="text-[10px] text-slate-500 dark:text-zinc-400 line-clamp-1 truncate"
+                                        <div class="mt-0.5 flex items-center gap-1.5 flex-wrap text-[9.5px]">
+                                            <span
+                                                class="px-1.5 py-0.5 rounded-full font-semibold whitespace-nowrap
+                                                    {{ $isResearch
+                                                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
+                                                        : 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300' }}">
+                                                {{ $isResearch ? 'Research' : 'Dedication' }}
+                                            </span>
+                                            <span class="text-slate-500 dark:text-zinc-500 truncate max-w-[220px]"
                                                 title="{{ $report->proposal?->title }}">
                                                 {{ Str::limit($report->proposal?->title ?? '—', 50) }}
                                             </span>
@@ -198,46 +385,58 @@ new #[Title('Review Progress Reports')] class extends Component {
                             </td>
 
                             {{-- Author --}}
-                            <td class="px-4 py-3">
+                            <td class="px-3 py-2">
                                 @if ($report->proposal?->author)
-                                    <div class="flex items-center gap-2">
-                                        <div class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700
-                                                    flex items-center justify-center text-[10px] font-bold shrink-0
-                                                    dark:bg-emerald-900/40 dark:text-emerald-300">
+                                    <div class="flex items-center gap-2 min-w-0">
+                                        <div
+                                            class="w-6 h-6 rounded-full shrink-0
+                                                bg-violet-100 text-violet-700
+                                                dark:bg-violet-900/40 dark:text-violet-300
+                                                flex items-center justify-center
+                                                text-[9px] font-bold">
                                             {{ strtoupper(substr($report->proposal->author->full_name, 0, 1)) }}
                                         </div>
-                                        <span class="truncate max-w-[140px] text-slate-700 dark:text-zinc-300">
+                                        <p
+                                            class="text-[10.5px] font-medium truncate
+                                              text-slate-700 dark:text-zinc-300">
                                             {{ $report->proposal->author->full_name }}
-                                        </span>
+                                        </p>
                                     </div>
                                 @else
-                                    <span class="text-slate-400 dark:text-zinc-500 italic">—</span>
+                                    <span class="text-[10.5px] text-slate-400 dark:text-zinc-500 italic">—</span>
                                 @endif
                             </td>
 
                             {{-- Submitted --}}
-                            <td class="px-4 py-3 text-slate-600 dark:text-zinc-300 whitespace-nowrap font-mono text-[11px]">
-                                {{ $report->created_at?->format('d M Y, H:i') ?? '—' }}
+                            <td class="px-3 py-2">
+                                <span
+                                    class="text-[10.5px] text-slate-600 dark:text-zinc-400 whitespace-nowrap font-mono">
+                                    {{ $report->created_at?->format('d M Y, H:i') ?? '—' }}
+                                </span>
                             </td>
 
                             {{-- Status --}}
-                            <td class="px-4 py-3">
-                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full
-                                             text-[11px] font-semibold whitespace-nowrap {{ $meta['class'] }}">
+                            <td class="px-3 py-2">
+                                <span
+                                    class="inline-flex items-center px-2 py-0.5 rounded-full
+                                         text-[9.5px] font-semibold whitespace-nowrap
+                                         {{ $meta['class'] }}">
                                     {{ $meta['label'] }}
                                 </span>
                             </td>
 
-                            {{-- Actions --}}
-                            <td class="px-4 py-3 text-right whitespace-nowrap">
+                            {{-- Action --}}
+                            <td class="px-3 py-2 text-right">
                                 <flux:dropdown position="bottom" align="end">
                                     <flux:button size="xs" variant="ghost" icon="ellipsis-horizontal"
-                                        class="rounded-lg text-slate-500 hover:bg-slate-100
-                                               dark:text-zinc-400 dark:hover:bg-zinc-700/60" />
+                                        class="!p-1 rounded-full text-slate-400
+                                           hover:bg-slate-100 hover:text-slate-600
+                                           dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-zinc-300
+                                           hover:scale-110 active:scale-95
+                                           opacity-60 group-hover:opacity-100 transition-all duration-150" />
 
-                                    <flux:menu>
-                                        <flux:menu.item icon="eye"
-                                            x-data
+                                    <flux:menu class="!text-[11px]">
+                                        <flux:menu.item icon="eye" x-data
                                             x-on:click="$dispatch('open-view-progress-report', { id: {{ $report->id }} })">
                                             View & Review
                                         </flux:menu.item>
@@ -247,25 +446,25 @@ new #[Title('Review Progress Reports')] class extends Component {
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="px-4 py-16 text-center">
-                                <div class="flex flex-col items-center gap-3">
-                                    <div class="w-12 h-12 rounded-full
-                                                bg-slate-100 dark:bg-zinc-800
-                                                flex items-center justify-center">
+                            <td colspan="5" class="px-4 py-12">
+                                <div class="flex flex-col items-center gap-2 text-center">
+                                    <div
+                                        class="w-12 h-12 rounded-full bg-slate-100 dark:bg-zinc-800
+                                            flex items-center justify-center">
                                         <flux:icon.document-chart-bar
-                                            class="size-5 text-slate-400 dark:text-zinc-500" />
+                                            class="size-6 text-slate-400 dark:text-zinc-600" />
                                     </div>
-                                    <div class="flex flex-col gap-1">
-                                        <span class="text-sm font-medium text-slate-700 dark:text-zinc-300">
+                                    <div>
+                                        <p class="text-[12px] font-semibold text-slate-900 dark:text-white">
                                             No progress reports assigned to you
-                                        </span>
-                                        <span class="text-xs text-slate-500 dark:text-zinc-400">
+                                        </p>
+                                        <p class="text-[10.5px] text-slate-500 dark:text-zinc-400 mt-0.5">
                                             @if ($search || $statusFilter !== 'all' || $typeFilter !== 'all')
                                                 Try adjusting your search or filters.
                                             @else
                                                 You'll see progress reports here once the admin assigns them.
                                             @endif
-                                        </span>
+                                        </p>
                                     </div>
                                 </div>
                             </td>
@@ -276,12 +475,14 @@ new #[Title('Review Progress Reports')] class extends Component {
         </div>
 
         @if ($reports->hasPages())
-            <div class="px-4 py-3 border-t border-slate-100 dark:border-zinc-800">
-                {{ $reports->links() }}
+            <div
+                class="px-3 py-2 border-t border-slate-200 dark:border-zinc-800
+                    bg-slate-50/50 dark:bg-zinc-900/50">
+                {{ $reports->links('vendor.pagination.tailwind') }}
             </div>
         @endif
     </div>
 
-    {{-- ══════════ MODAL ══════════ --}}
+    {{-- Modal --}}
     <livewire:reviewers.researches.modals.view-progress-report />
 </div>

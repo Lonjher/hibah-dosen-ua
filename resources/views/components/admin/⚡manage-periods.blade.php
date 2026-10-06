@@ -24,9 +24,11 @@ new #[Title('Manage Periods')] class extends Component {
     public function setActive(int $id): void
     {
         $period = Period::find($id);
-        if (! $period) return;
+        if (!$period) {
+            return;
+        }
 
-        if (! $this->canActivate($period)) {
+        if (!$this->canActivate($period)) {
             Flux::toast('This period is locked and cannot be activated.', variant: 'danger');
             return;
         }
@@ -49,27 +51,17 @@ new #[Title('Manage Periods')] class extends Component {
     public function confirmDelete(int $id): void
     {
         $period = Period::find($id);
-        if (! $period) {
+        if (!$period) {
             Flux::toast('Period not found.', variant: 'danger');
             return;
         }
 
-        if (! $this->canDelete($period)) {
+        if (!$this->canDelete($period)) {
             Flux::toast('This period cannot be deleted.', variant: 'danger');
             return;
         }
 
-        $this->dispatch(
-            'confirm-delete',
-            title: 'Delete Period?',
-            message: 'You are about to delete:',
-            subject: $period->periode,
-            note: 'This action cannot be undone.',
-            confirmLabel: 'Delete',
-            cancelLabel: 'Cancel',
-            action: 'deletePeriod',
-            payload: ['id' => $period->id],
-        );
+        $this->dispatch('confirm-delete', title: 'Delete Period?', message: 'You are about to delete:', subject: $period->periode, note: 'This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel', action: 'deletePeriod', payload: ['id' => $period->id]);
     }
 
     #[On('delete-confirmed')]
@@ -82,10 +74,14 @@ new #[Title('Manage Periods')] class extends Component {
 
     public function deletePeriod(?int $id): void
     {
-        if (! $id) return;
+        if (!$id) {
+            return;
+        }
 
         $period = Period::find($id);
-        if (! $period) return;
+        if (!$period) {
+            return;
+        }
 
         if ($this->isLocked($period)) {
             Flux::toast('This period is locked and cannot be deleted.', variant: 'danger');
@@ -130,41 +126,42 @@ new #[Title('Manage Periods')] class extends Component {
 
     protected function isFutureYearWithActiveCurrent(Period $period): bool
     {
-        if (! $period->open_to) return false;
+        if (!$period->open_to) {
+            return false;
+        }
 
         $currentYear = now()->year;
-        $openToYear  = $period->open_to->year;
+        $openToYear = $period->open_to->year;
 
-        if ($openToYear <= $currentYear) return false;
+        if ($openToYear <= $currentYear) {
+            return false;
+        }
 
-        return Period::query()
-            ->where('is_active', true)
-            ->where('id', '!=', $period->id)
-            ->whereYear('open_from', $currentYear)
-            ->exists();
+        return Period::query()->where('is_active', true)->where('id', '!=', $period->id)->whereYear('open_from', $currentYear)->exists();
     }
 
     public function canEdit(Period $period): bool
     {
-        return ! $this->isLocked($period);
+        return !$this->isLocked($period);
     }
 
     public function canDelete(Period $period): bool
     {
-        return ! $this->isLocked($period) && ! $this->hasProposals($period);
+        return !$this->isLocked($period) && !$this->hasProposals($period);
     }
 
     public function canActivate(Period $period): bool
     {
-        return ! $this->isLocked($period);
+        return !$this->isLocked($period);
     }
 
     public function isOngoing(Period $period): bool
     {
-        if (! $period->open_from || ! $period->open_to) return false;
+        if (!$period->open_from || !$period->open_to) {
+            return false;
+        }
 
-        return $period->open_from->copy()->startOfDay()->isPast()
-            && $period->open_to->copy()->endOfDay()->isFuture();
+        return $period->open_from->copy()->startOfDay()->isPast() && $period->open_to->copy()->endOfDay()->isFuture();
     }
 
     /* ============================================================
@@ -173,275 +170,329 @@ new #[Title('Manage Periods')] class extends Component {
 
     public function with(): array
     {
-        $periods = Period::query()
-            ->when($this->search, fn ($q) => $q->where('periode', 'like', '%' . $this->search . '%'))
-            ->orderByDesc('open_from')
-            ->paginate(10);
+        $periods = Period::query()->when($this->search, fn($q) => $q->where('periode', 'like', '%' . $this->search . '%'))->orderByDesc('open_from')->paginate(10);
 
         return ['periods' => $periods];
     }
 };
 ?>
 
-<div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50
+<div
+    class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50
             dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950
             p-2.5 sm:p-3 lg:p-4">
     <div class="max-w-7xl mx-auto space-y-3">
 
         {{-- ══════════ HEADER ══════════ --}}
-        <x-dashboard-header icon="calendar-days" title="Manage Periods"
-            leading="Manage all the periods of your system." />
+        <x-dashboard-header icon="calendar-days" title="Manage Periods" leading="Manage all the periods of your system." />
 
         {{-- ══════════ MAIN CARD ══════════ --}}
-        <div class="bg-white dark:bg-zinc-900 rounded-full
-                    shadow-sm shadow-slate-200/50 dark:shadow-zinc-950/50
-                    border border-slate-200 dark:border-zinc-800 overflow-hidden">
+        <div
+            class="bg-white dark:bg-zinc-900 rounded-2xl
+            shadow-sm shadow-slate-200/50 dark:shadow-zinc-950/50
+            border border-slate-200 dark:border-zinc-800 overflow-hidden">
 
-            {{-- ─────── TOOLBAR ─────── --}}
-            <div class="px-2.5 sm:px-3 py-2
-                        border-b border-slate-200 dark:border-zinc-800
-                        bg-slate-50/50 dark:bg-zinc-900/50">
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            {{-- ─────── TOOLBAR (RESPONSIVE) ─────── --}}
+            <div
+                class="px-2 sm:px-3 py-2
+                border-b border-slate-200 dark:border-zinc-800
+                bg-slate-50/50 dark:bg-zinc-900/50">
 
-                    {{-- Left: stat pill --}}
-                    <div class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md
-                                bg-emerald-50 dark:bg-emerald-900/20
-                                border border-emerald-100 dark:border-emerald-900/40
-                                w-fit">
+                <div class="flex flex-wrap items-center gap-1.5 min-w-0">
+
+                    {{-- ─────── STATS BADGE ─────── --}}
+                    <div
+                        class="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full
+                        bg-emerald-50 dark:bg-emerald-900/20
+                        border border-emerald-100 dark:border-emerald-900/40">
                         <flux:icon.calendar-days class="size-3 text-emerald-600 dark:text-emerald-400" />
                         <span class="text-[10.5px] font-semibold text-emerald-700 dark:text-emerald-300">
                             {{ $periods->total() }}
                         </span>
-                        <span class="text-[10px] text-emerald-600/70 dark:text-emerald-400/70">
+                        <span class="text-[10px] text-emerald-600/70 dark:text-emerald-400/70 hidden sm:inline">
                             periods
                         </span>
                     </div>
 
-                    {{-- Right: search + new --}}
-                    <div class="flex items-center gap-1.5 w-full sm:w-auto">
-                        <div class="flex-1 sm:flex-none sm:w-56">
-                            <x-input-search name="q" wire:model.live="search" id="search-periode"
-                                placeholder="Search periods..."
-                                class="w-full text-[10.5px]!" />
-                        </div>
-                        <flux:button variant="primary"
-                            x-data x-on:click="$dispatch('add-period-modal')"
-                            class="shrink-0 text-[10.5px]!">
-                            New Item
+                    {{-- ─────── NEW BUTTON ─────── --}}
+                    <div class="order-4 sm:order-5 ml-auto sm:ml-0 shrink-0">
+                        <flux:button variant="primary" x-data x-on:click="$dispatch('add-period-modal')"
+                            class="!text-[10.5px]">
+                            New
                         </flux:button>
+                    </div>
+
+                    {{-- ─────── SEARCH ─────── --}}
+                    <div
+                        class="order-5 sm:order-4
+                        w-full sm:w-auto
+                        sm:ml-auto
+                        md:w-44 lg:w-56
+                        min-w-0">
+                        <x-input-search name="q" wire:model.live="search" id="search-periode"
+                            placeholder="Search periods..." class="w-full !text-[10.5px]" />
                     </div>
                 </div>
             </div>
 
-            {{-- ─────── TABLE ─────── --}}
-            <div class="overflow-x-auto">
-                <table class="w-full min-w-[640px]">
-                    <thead>
-                        <tr class="bg-slate-50/80 dark:bg-zinc-900/50
-                                   border-b border-slate-200 dark:border-zinc-800">
-                            <th class="px-3 py-1.5 text-left text-[9.5px] font-semibold uppercase tracking-wider
-                                       text-slate-500 dark:text-zinc-400">
-                                Period
-                            </th>
-                            <th class="px-3 py-1.5 text-left text-[9.5px] font-semibold uppercase tracking-wider
-                                       text-slate-500 dark:text-zinc-400">
-                                Status
-                            </th>
-                            <th class="hidden lg:table-cell px-3 py-1.5 text-left text-[9.5px] font-semibold uppercase tracking-wider
-                                       text-slate-500 dark:text-zinc-400">
-                                Open From
-                            </th>
-                            <th class="hidden lg:table-cell px-3 py-1.5 text-left text-[9.5px] font-semibold uppercase tracking-wider
-                                       text-slate-500 dark:text-zinc-400">
-                                Open To
-                            </th>
-                            <th class="px-3 py-1.5 text-right text-[9.5px] font-semibold uppercase tracking-wider
-                                       text-slate-500 dark:text-zinc-400">
-                                Action
-                            </th>
-                        </tr>
-                    </thead>
+            {{-- ─────── TABLE (RESPONSIVE) ─────── --}}
+            <div class="relative">
+                {{-- Swipe hint --}}
+                <div x-data="{ showHint: true }" x-init="setTimeout(() => showHint = false, 3500)" x-show="showHint"
+                    x-transition:leave="transition ease-in duration-500" x-transition:leave-start="opacity-100"
+                    x-transition:leave-end="opacity-0"
+                    class="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
+                   z-20 md:hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full
+                   bg-slate-900/85 dark:bg-zinc-700/90 backdrop-blur-sm
+                   text-white text-[10.5px] font-medium shadow-lg">
+                    <flux:icon.arrows-right-left class="size-3" />
+                    Swipe to see more
+                </div>
 
-                    <tbody class="divide-y divide-slate-100 dark:divide-zinc-800/70">
-                        @forelse ($periods as $period)
-                            @php $locked = $this->isLocked($period); @endphp
+                <div
+                    class="overflow-x-auto overscroll-x-contain scroll-smooth
+                    [scrollbar-width:thin]
+                    [&::-webkit-scrollbar]:h-1.5
+                    [&::-webkit-scrollbar-thumb]:bg-slate-300
+                    [&::-webkit-scrollbar-thumb]:rounded-full
+                    dark:[&::-webkit-scrollbar-thumb]:bg-zinc-700">
+                    <table class="w-full min-w-[480px] sm:min-w-[560px] lg:min-w-[640px]">
+                        <thead>
+                            <tr
+                                class="bg-slate-50/80 dark:bg-zinc-900/50
+                               border-b border-slate-200 dark:border-zinc-800">
+                                <th
+                                    class="px-2 sm:px-3 py-1.5 text-left text-[9.5px] font-semibold uppercase tracking-wider
+                                   text-slate-500 dark:text-zinc-400 whitespace-nowrap">
+                                    Period
+                                </th>
+                                <th
+                                    class="px-2 sm:px-3 py-1.5 text-left text-[9.5px] font-semibold uppercase tracking-wider
+                                   text-slate-500 dark:text-zinc-400 whitespace-nowrap">
+                                    Status
+                                </th>
+                                <th
+                                    class="hidden lg:table-cell px-2 sm:px-3 py-1.5 text-left text-[9.5px] font-semibold uppercase tracking-wider
+                                   text-slate-500 dark:text-zinc-400 whitespace-nowrap">
+                                    Open From
+                                </th>
+                                <th
+                                    class="hidden lg:table-cell px-2 sm:px-3 py-1.5 text-left text-[9.5px] font-semibold uppercase tracking-wider
+                                   text-slate-500 dark:text-zinc-400 whitespace-nowrap">
+                                    Open To
+                                </th>
+                                <th
+                                    class="px-2 sm:px-3 py-1.5 text-right text-[9.5px] font-semibold uppercase tracking-wider
+                                   text-slate-500 dark:text-zinc-400 whitespace-nowrap">
+                                    Action
+                                </th>
+                            </tr>
+                        </thead>
 
-                            <tr wire:key="period-{{ $period->id }}"
-                                class="group transition-colors duration-150
-                                {{ $locked
-                                    ? 'bg-slate-50/40 dark:bg-zinc-900/30 opacity-80'
-                                    : 'hover:bg-slate-50/70 dark:hover:bg-zinc-800/40' }}">
+                        <tbody class="divide-y divide-slate-100 dark:divide-zinc-800/70">
+                            @forelse ($periods as $period)
+                                @php $locked = $this->isLocked($period); @endphp
 
-                                {{-- PERIOD --}}
-                                <td class="px-3 py-2">
-                                    <div class="flex items-center gap-2">
-                                        <div class="w-7 h-7 rounded-md shrink-0
-                                                    bg-gradient-to-br from-emerald-100 to-teal-50
-                                                    dark:from-emerald-900/30 dark:to-teal-900/20
-                                                    flex items-center justify-center
-                                                    ring-1 ring-white/40 dark:ring-zinc-800/40">
-                                            <flux:icon.calendar
-                                                class="size-3.5 text-emerald-600 dark:text-emerald-400" />
-                                        </div>
-                                        <div class="min-w-0">
-                                            <p class="text-[11.5px] font-semibold leading-tight
-                                                      text-slate-900 dark:text-white
-                                                      flex items-center gap-1.5">
-                                                <span class="truncate">{{ $period->periode }}</span>
-                                                @if ($locked)
-                                                    <flux:icon.lock-closed
-                                                        class="size-3 text-rose-500 dark:text-rose-400 shrink-0" />
-                                                @endif
-                                            </p>
-                                            {{-- Mobile-only dates --}}
-                                            <div class="lg:hidden mt-0.5 flex items-center gap-1.5 flex-wrap
-                                                        text-[9.5px] text-slate-500 dark:text-zinc-500">
-                                                <span>{{ $period->open_from?->format('d M Y') ?? '—' }}</span>
-                                                <span class="w-0.5 h-0.5 rounded-full bg-current opacity-60"></span>
-                                                <span>{{ $period->open_to?->format('d M Y') ?? '—' }}</span>
+                                <tr wire:key="period-{{ $period->id }}"
+                                    class="group transition-colors duration-150
+                            {{ $locked ? 'bg-slate-50/40 dark:bg-zinc-900/30 opacity-80' : 'hover:bg-slate-50/70 dark:hover:bg-zinc-800/40' }}">
+
+                                    {{-- PERIOD --}}
+                                    <td class="px-2 sm:px-3 py-2">
+                                        <div class="flex items-center gap-2">
+                                            <div
+                                                class="w-6 h-6 sm:w-7 sm:h-7 rounded-full shrink-0
+                                                bg-gradient-to-br from-emerald-100 to-teal-50
+                                                dark:from-emerald-900/30 dark:to-teal-900/20
+                                                flex items-center justify-center
+                                                ring-1 ring-white/40 dark:ring-zinc-800/40
+                                                group-hover:scale-105 transition-transform">
+                                                <flux:icon.calendar
+                                                    class="size-3 sm:size-3.5 text-emerald-600 dark:text-emerald-400" />
+                                            </div>
+                                            <div class="min-w-0">
+                                                <p
+                                                    class="text-[11px] sm:text-[11.5px] font-semibold leading-tight
+                                                  text-slate-900 dark:text-white
+                                                  flex items-center gap-1.5">
+                                                    <span class="truncate">{{ $period->periode }}</span>
+                                                    @if ($locked)
+                                                        <flux:icon.lock-closed
+                                                            class="size-3 text-rose-500 dark:text-rose-400 shrink-0" />
+                                                    @endif
+                                                </p>
+                                                {{-- Mobile-only dates --}}
+                                                <div
+                                                    class="lg:hidden mt-0.5 flex items-center gap-1.5 flex-wrap
+                                                    text-[9.5px] text-slate-500 dark:text-zinc-500">
+                                                    <span>{{ $period->open_from?->format('d M Y') ?? '—' }}</span>
+                                                    <span class="w-0.5 h-0.5 rounded-full bg-current opacity-60"></span>
+                                                    <span>{{ $period->open_to?->format('d M Y') ?? '—' }}</span>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                </td>
+                                    </td>
 
-                                {{-- STATUS --}}
-                                <td class="px-3 py-2">
-                                    <div class="flex flex-col gap-1 items-start">
-                                        @if ($period->is_active)
-                                            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full
-                                                         bg-emerald-100 dark:bg-emerald-900/30
-                                                         text-emerald-700 dark:text-emerald-300
-                                                         text-[9.5px] font-semibold w-fit">
-                                                <span class="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></span>
-                                                Active
-                                            </span>
-                                        @else
-                                            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full
-                                                         bg-slate-100 dark:bg-zinc-800
-                                                         text-slate-600 dark:text-zinc-400
-                                                         text-[9.5px] font-medium w-fit">
-                                                <span class="w-1 h-1 rounded-full bg-slate-400 dark:bg-zinc-600"></span>
-                                                Inactive
-                                            </span>
-                                        @endif
-
-                                        @if ($locked)
-                                            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full
-                                                         bg-rose-100 dark:bg-rose-900/30
-                                                         text-rose-700 dark:text-rose-300
-                                                         text-[9.5px] font-semibold w-fit">
-                                                <flux:icon.lock-closed class="size-2.5" />
-                                                Locked
-                                            </span>
-                                        @elseif ($this->hasProposals($period))
-                                            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full
-                                                         bg-sky-100 dark:bg-sky-900/30
-                                                         text-sky-700 dark:text-sky-300
-                                                         text-[9.5px] font-medium w-fit">
-                                                <flux:icon.document-text class="size-2.5" />
-                                                {{ $period->proposals()->count() }} proposal
-                                            </span>
-                                        @endif
-                                    </div>
-                                </td>
-
-                                {{-- OPEN FROM --}}
-                                <td class="hidden lg:table-cell px-3 py-2">
-                                    <div class="flex items-center gap-1.5 text-[10.5px]
-                                                text-slate-600 dark:text-zinc-400">
-                                        <flux:icon.clock class="size-3 text-slate-400 dark:text-zinc-500" />
-                                        <span>{{ $period->open_from?->format('d M Y') ?? '—' }}</span>
-                                    </div>
-                                </td>
-
-                                {{-- OPEN TO --}}
-                                <td class="hidden lg:table-cell px-3 py-2">
-                                    <div class="flex items-center gap-1.5 text-[10.5px]
-                                                text-slate-600 dark:text-zinc-400">
-                                        <flux:icon.clock class="size-3 text-slate-400 dark:text-zinc-500" />
-                                        <span>{{ $period->open_to?->format('d M Y') ?? '—' }}</span>
-                                    </div>
-                                </td>
-
-                                {{-- ACTIONS --}}
-                                <td class="px-3 py-2 text-right">
-                                    <flux:dropdown position="bottom" align="end">
-                                        <flux:button size="xs" variant="ghost" icon="ellipsis-horizontal"
-                                        :disabled="$locked"
-                                        class="{{ $locked
-                                            ? 'text-slate-300 dark:text-zinc-600 cursor-not-allowed'
-                                            : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-zinc-300' }}" />
-
-                                        <flux:menu class="!text-[11px]">
+                                    {{-- STATUS --}}
+                                    <td class="px-2 sm:px-3 py-2">
+                                        <div class="flex flex-col gap-1 items-start">
+                                            @if ($period->is_active)
+                                                <span
+                                                    class="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full
+                                                     bg-emerald-100 dark:bg-emerald-900/30
+                                                     text-emerald-700 dark:text-emerald-300
+                                                     text-[9.5px] font-semibold w-fit whitespace-nowrap">
+                                                    <span
+                                                        class="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></span>
+                                                    Active
+                                                </span>
+                                            @else
+                                                <span
+                                                    class="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full
+                                                     bg-slate-100 dark:bg-zinc-800
+                                                     text-slate-600 dark:text-zinc-400
+                                                     text-[9.5px] font-medium w-fit whitespace-nowrap">
+                                                    <span
+                                                        class="w-1 h-1 rounded-full bg-slate-400 dark:bg-zinc-600"></span>
+                                                    Inactive
+                                                </span>
+                                            @endif
 
                                             @if ($locked)
-                                                <flux:menu.item icon="lock-closed" disabled>
-                                                    Period Locked
-                                                </flux:menu.item>
-                                                <flux:menu.item icon="eye" disabled>
-                                                    View Only
-                                                </flux:menu.item>
-                                            @else
-                                                @if (! $period->is_active)
-                                                    <flux:menu.item icon="check-circle"
-                                                        wire:click="setActive({{ $period->id }})">
-                                                        Activate Period
+                                                <span
+                                                    class="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full
+                                                     bg-rose-100 dark:bg-rose-900/30
+                                                     text-rose-700 dark:text-rose-300
+                                                     text-[9.5px] font-semibold w-fit whitespace-nowrap">
+                                                    <flux:icon.lock-closed class="size-2.5" />
+                                                    Locked
+                                                </span>
+                                            @elseif ($this->hasProposals($period))
+                                                <span
+                                                    class="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full
+                                                     bg-sky-100 dark:bg-sky-900/30
+                                                     text-sky-700 dark:text-sky-300
+                                                     text-[9.5px] font-medium w-fit whitespace-nowrap">
+                                                    <flux:icon.document-text class="size-2.5" />
+                                                    {{ $period->proposals()->count() }} proposal
+                                                </span>
+                                            @endif
+                                        </div>
+                                    </td>
+
+                                    {{-- OPEN FROM --}}
+                                    <td class="hidden lg:table-cell px-2 sm:px-3 py-2">
+                                        <div
+                                            class="flex items-center gap-1.5 text-[10.5px]
+                                            text-slate-600 dark:text-zinc-400 whitespace-nowrap">
+                                            <flux:icon.clock
+                                                class="size-3 text-slate-400 dark:text-zinc-500 shrink-0" />
+                                            <span>{{ $period->open_from?->format('d M Y') ?? '—' }}</span>
+                                        </div>
+                                    </td>
+
+                                    {{-- OPEN TO --}}
+                                    <td class="hidden lg:table-cell px-2 sm:px-3 py-2">
+                                        <div
+                                            class="flex items-center gap-1.5 text-[10.5px]
+                                            text-slate-600 dark:text-zinc-400 whitespace-nowrap">
+                                            <flux:icon.clock
+                                                class="size-3 text-slate-400 dark:text-zinc-500 shrink-0" />
+                                            <span>{{ $period->open_to?->format('d M Y') ?? '—' }}</span>
+                                        </div>
+                                    </td>
+
+                                    {{-- ACTIONS --}}
+                                    <td class="px-2 sm:px-3 py-2 text-right">
+                                        <flux:dropdown position="bottom" align="end">
+                                            <flux:button size="xs" variant="ghost" icon="ellipsis-horizontal"
+                                                :disabled="$locked"
+                                                class="{{ $locked
+                                                    ? '!p-1 rounded-full text-slate-300 dark:text-zinc-600 cursor-not-allowed'
+                                                    : '!p-1 rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-zinc-300 hover:scale-110 active:scale-95 transition-all duration-150' }}" />
+
+                                            <flux:menu class="!text-[11px]">
+
+                                                @if ($locked)
+                                                    <flux:menu.item icon="lock-closed" disabled>
+                                                        Period Locked
                                                     </flux:menu.item>
-                                                @endif
-
-                                                <flux:menu.item icon="pencil-square" x-data
-                                                    x-on:click="$dispatch('open-edit-period', { id: {{ $period->id }} })">
-                                                    Edit Period
-                                                </flux:menu.item>
-
-                                                @if (! $this->hasProposals($period))
-                                                    <flux:menu.separator />
-                                                    <flux:menu.item variant="danger" icon="trash"
-                                                        wire:click="confirmDelete({{ $period->id }})">
-                                                        Delete Period
+                                                    <flux:menu.item icon="eye" disabled>
+                                                        View Only
                                                     </flux:menu.item>
                                                 @else
-                                                    <flux:menu.separator />
-                                                    <flux:menu.item variant="danger" icon="trash" disabled>
-                                                        Delete Period
-                                                    </flux:menu.item>
-                                                @endif
-                                            @endif
-                                        </flux:menu>
-                                    </flux:dropdown>
-                                </td>
-                            </tr>
+                                                    @if (!$period->is_active)
+                                                        <flux:menu.item icon="check-circle"
+                                                            wire:click="setActive({{ $period->id }})">
+                                                            Activate Period
+                                                        </flux:menu.item>
+                                                    @endif
 
-                        @empty
-                            {{-- EMPTY STATE ── --}}
-                            <tr>
-                                <td colspan="5" class="px-4 py-10">
-                                    <div class="flex flex-col items-center gap-2 text-center">
-                                        <div class="w-11 h-11 rounded-lg bg-slate-100 dark:bg-zinc-800
-                                                    flex items-center justify-center">
-                                            <flux:icon.calendar-days
-                                                class="size-5 text-slate-400 dark:text-zinc-600" />
+                                                    <flux:menu.item icon="pencil-square" x-data
+                                                        x-on:click="$dispatch('open-edit-period', { id: {{ $period->id }} })">
+                                                        Edit Period
+                                                    </flux:menu.item>
+
+                                                    @if (!$this->hasProposals($period))
+                                                        <flux:menu.separator />
+                                                        <flux:menu.item variant="danger" icon="trash"
+                                                            wire:click="confirmDelete({{ $period->id }})">
+                                                            Delete Period
+                                                        </flux:menu.item>
+                                                    @else
+                                                        <flux:menu.separator />
+                                                        <flux:menu.item variant="danger" icon="trash" disabled>
+                                                            Delete Period
+                                                        </flux:menu.item>
+                                                    @endif
+                                                @endif
+                                            </flux:menu>
+                                        </flux:dropdown>
+                                    </td>
+                                </tr>
+
+                            @empty
+                                <tr>
+                                    <td colspan="5" class="px-4 py-10">
+                                        <div class="flex flex-col items-center gap-2 text-center">
+                                            <div
+                                                class="w-11 h-11 rounded-full bg-slate-100 dark:bg-zinc-800
+                                                flex items-center justify-center">
+                                                <flux:icon.calendar-days
+                                                    class="size-5 text-slate-400 dark:text-zinc-600" />
+                                            </div>
+                                            <div>
+                                                <p class="text-[12px] font-semibold text-slate-900 dark:text-white">
+                                                    No periods yet
+                                                </p>
+                                                <p class="text-[10.5px] text-slate-500 dark:text-zinc-400 mt-0.5">
+                                                    @if ($search)
+                                                        No results for "{{ $search }}".
+                                                    @else
+                                                        Click "New" to create your first period.
+                                                    @endif
+                                                </p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p class="text-[12px] font-semibold text-slate-900 dark:text-white">
-                                                No periods yet
-                                            </p>
-                                            <p class="text-[10.5px] text-slate-500 dark:text-zinc-400 mt-0.5">
-                                                Click "New" to create your first period.
-                                            </p>
-                                        </div>
-                                    </div>
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             {{-- ─────── PAGINATION ─────── --}}
             @if ($periods->hasPages())
-                <div class="px-3 py-2 border-t border-slate-200 dark:border-zinc-800
-                            bg-slate-50/50 dark:bg-zinc-900/50">
+                <div
+                    class="px-2 sm:px-3 py-2 border-t border-slate-200 dark:border-zinc-800
+                    bg-slate-50/50 dark:bg-zinc-900/50
+                    overflow-x-auto
+                    [scrollbar-width:thin]
+                    [&::-webkit-scrollbar]:h-1
+                    [&::-webkit-scrollbar-thumb]:bg-slate-300
+                    [&::-webkit-scrollbar-thumb]:rounded-full
+                    dark:[&::-webkit-scrollbar-thumb]:bg-zinc-700">
                     {{ $periods->links('vendor.pagination.tailwind') }}
                 </div>
             @endif
