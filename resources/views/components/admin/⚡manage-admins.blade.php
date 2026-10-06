@@ -125,7 +125,7 @@ new #[Title('Manage Admins')] class extends Component {
 
         {{-- ══════════ RESTRICTED BANNER ══════════ --}}
         <div
-            class="rounded-lg border border-amber-200 dark:border-amber-800/60
+            class="rounded-full border border-amber-200 dark:border-amber-800/60
                     bg-amber-50/70 dark:bg-amber-900/15
                     px-3 py-2 flex items-start gap-2">
             <flux:icon.shield-exclamation class="size-3.5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
@@ -246,32 +246,53 @@ new #[Title('Manage Admins')] class extends Component {
                                     {{-- ADMIN --}}
                                     <td class="px-2 sm:px-3 py-2">
                                         <div class="flex items-center gap-2">
-                                            <div
-                                                class="w-6 h-6 sm:w-7 sm:h-7 rounded-full shrink-0
-                                                bg-gradient-to-br from-emerald-100 to-teal-50
-                                                dark:from-emerald-900/30 dark:to-teal-900/20
-                                                flex items-center justify-center
-                                                text-[9px] sm:text-[10px] font-bold
-                                                text-emerald-700 dark:text-emerald-300
-                                                ring-1 ring-white/40 dark:ring-zinc-800/40
-                                                group-hover:scale-105 transition-transform">
-                                                {{ $admin->initials() }}
-                                            </div>
+                                            @if ($admin->avatar)
+                                                {{-- ── Avatar (clickable) ── --}}
+                                                <button type="button"
+                                                    x-data
+                                                    x-on:click="$dispatch('open-avatar', { id: {{ $admin->id }} })"
+                                                    aria-label="View avatar of {{ $admin->full_name }}"
+                                                    class="w-6 h-6 sm:w-7 sm:h-7 rounded-full shrink-0 overflow-hidden
+                                                        ring-1 ring-white/40 dark:ring-zinc-800/40
+                                                        cursor-pointer
+                                                        group-hover:scale-105 transition-all duration-200
+                                                        hover:ring-2 hover:ring-emerald-400 dark:hover:ring-emerald-500
+                                                        focus:outline-none focus:ring-2 focus:ring-emerald-500
+                                                        active:scale-95">
+                                                    <img src="{{ asset('storage/' . $admin->avatar) }}"
+                                                        alt="{{ $admin->full_name }}"
+                                                        loading="lazy"
+                                                        class="w-full h-full object-cover" />
+                                                </button>
+                                            @else
+                                                {{-- ── Initials fallback ── --}}
+                                                <div class="w-6 h-6 sm:w-7 sm:h-7 rounded-full shrink-0
+                                                            bg-gradient-to-br from-emerald-100 to-teal-50
+                                                            dark:from-emerald-900/30 dark:to-teal-900/20
+                                                            flex items-center justify-center
+                                                            text-[9px] sm:text-[10px] font-bold
+                                                            text-emerald-700 dark:text-emerald-300
+                                                            ring-1 ring-white/40 dark:ring-zinc-800/40
+                                                            group-hover:scale-105 transition-transform">
+                                                    {{ $admin->initials() }}
+                                                </div>
+                                            @endif
+
+                                            {{-- Name + email + NIDN --}}
                                             <div class="min-w-0">
                                                 <p class="text-[11px] sm:text-[11.5px] font-semibold leading-tight truncate
-                                                  text-slate-900 dark:text-white max-w-[200px] sm:max-w-none"
+                                                        text-slate-900 dark:text-white max-w-[200px] sm:max-w-none"
                                                     title="{{ $admin->full_name }}">
                                                     {{ $admin->full_name }}
                                                 </p>
                                                 <p class="mt-0.5 text-[9.5px] truncate
-                                                  text-slate-500 dark:text-zinc-500"
+                                                        text-slate-500 dark:text-zinc-500"
                                                     title="{{ $admin->email }}">
                                                     {{ $admin->email }}
                                                 </p>
-                                                {{-- NIDN on mobile --}}
                                                 @if ($admin->nidn)
-                                                    <p
-                                                        class="mt-0.5 md:hidden text-[9.5px] font-mono text-slate-500 dark:text-zinc-500">
+                                                    <p class="mt-0.5 md:hidden text-[9.5px] font-mono
+                                                            text-slate-500 dark:text-zinc-500">
                                                         {{ $admin->nidn }}
                                                     </p>
                                                 @endif
@@ -373,8 +394,8 @@ new #[Title('Manage Admins')] class extends Component {
             @endif
         </div>
     </div>
-
     {{-- ══════════ MODALS ══════════ --}}
+    <livewire:avatar-viewer />
     <x-confirm-delete />
     <livewire:admin.admins.add-admin />
     <livewire:admin.admins.edit-admin />
