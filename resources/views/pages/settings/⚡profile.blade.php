@@ -259,22 +259,52 @@ new #[Title('Profile settings')] class extends Component {
     <x-pages::settings.layout>
         <div class="m-4 space-y-4 text-xs">
 
-            {{-- ═══════════════════════════════════════════ --}}
-            {{-- PROFILE CARD — Banner + Avatar + Info        --}}
-            {{-- ═══════════════════════════════════════════ --}}
             <div
-                class="overflow-hidden rounded-xl border border-slate-200 dark:border-zinc-800
+                class="overflow-hidden rounded-full border border-slate-200 dark:border-zinc-800
                         bg-white dark:bg-zinc-950 shadow-sm">
 
                 {{-- Banner --}}
-                <div
-                    class="relative h-20 sm:h-24 bg-gradient-to-br
-                            from-violet-500 via-violet-600 to-indigo-600
-                            dark:from-violet-800 dark:via-violet-700 dark:to-indigo-800">
-                    <div class="absolute inset-0 opacity-20"
+                <div class="banner-animated relative h-20 sm:h-24 overflow-hidden">
+
+                    {{-- ── Animated blobs (light: pastel; dark: muted) ── --}}
+                    <div
+                        class="banner-blob-1 absolute -top-8 -left-8 h-32 w-32 sm:h-40 sm:w-40
+                rounded-full blur-3xl
+                bg-violet-300/50 dark:bg-violet-600/30">
+                    </div>
+                    <div
+                        class="banner-blob-2 absolute -bottom-10 -right-6 h-32 w-32 sm:h-40 sm:w-40
+                rounded-full blur-3xl
+                bg-teal-300/50 dark:bg-teal-600/25">
+                    </div>
+                    <div class="banner-blob-1 absolute top-1/2 left-1/2 h-24 w-24 sm:h-32 sm:w-32
+                -translate-x-1/2 -translate-y-1/2
+                rounded-full blur-3xl
+                bg-blue-300/40 dark:bg-blue-700/25"
+                        style="animation-delay: -3s;">
+                    </div>
+
+                    {{-- ── Texture layers ── --}}
+                    <div class="banner-texture-dots     absolute inset-0 pointer-events-none"></div>
+                    <div class="banner-texture-noise    absolute inset-0 pointer-events-none"></div>
+                    <div class="banner-texture-vignette absolute inset-0 pointer-events-none"></div>
+
+                    {{-- ── Radial highlights ── --}}
+                    <div class="absolute inset-0 pointer-events-none opacity-30
+                dark:opacity-15"
                         style="background-image:
-                            radial-gradient(circle at 20% 30%, rgba(255,255,255,0.5) 0, transparent 40%),
-                            radial-gradient(circle at 80% 70%, rgba(255,255,255,0.35) 0, transparent 35%);">
+            radial-gradient(circle at 20% 30%, rgba(255,255,255,0.7) 0, transparent 45%),
+            radial-gradient(circle at 80% 70%, rgba(255,255,255,0.5) 0, transparent 40%);">
+                    </div>
+
+                    {{-- ── Shine sweep ── --}}
+                    <div class="banner-shine absolute inset-y-0 w-1/3 pointer-events-none"></div>
+
+                    {{-- ── Border bawah halus ── --}}
+                    <div
+                        class="absolute bottom-0 inset-x-0 h-px
+                bg-gradient-to-r from-transparent via-white/40 to-transparent
+                dark:via-white/15">
                     </div>
                 </div>
 
@@ -416,7 +446,7 @@ new #[Title('Profile settings')] class extends Component {
                         <div class="flex items-center gap-1.5 sm:pb-1">
                             <label for="avatar-upload"
                                 class="inline-flex cursor-pointer items-center gap-1
-                                       rounded-lg border border-slate-200 dark:border-zinc-800
+                                       rounded-full border border-slate-200 dark:border-zinc-800
                                        bg-white dark:bg-zinc-900
                                        px-2.5 py-1 text-[10px] font-medium
                                        text-slate-700 dark:text-zinc-300
@@ -428,14 +458,14 @@ new #[Title('Profile settings')] class extends Component {
                                     <path stroke-linecap="round" stroke-linejoin="round"
                                         d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
                                 </svg>
-                                {{ $existingAvatarUrl ? __('Ganti') : __('Upload') }}
+                                {{ $existingAvatarUrl ? __('Change') : __('Upload') }}
                             </label>
 
                             @if ($existingAvatarUrl)
                                 <button type="button" wire:click="removeAvatar"
                                     wire:confirm="{{ __('Hapus avatar?') }}"
                                     class="inline-flex cursor-pointer items-center gap-1
-                                           rounded-lg border border-red-200 dark:border-red-900/50
+                                           rounded-full border border-red-200 dark:border-red-900/50
                                            bg-white dark:bg-zinc-900
                                            px-2.5 py-1 text-[10px] font-medium
                                            text-red-600 dark:text-red-400
@@ -445,7 +475,7 @@ new #[Title('Profile settings')] class extends Component {
                                         <path stroke-linecap="round" stroke-linejoin="round"
                                             d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
                                     </svg>
-                                    {{ __('Hapus') }}
+                                    {{ __('Delete') }}
                                 </button>
                             @endif
                         </div>
@@ -500,7 +530,7 @@ new #[Title('Profile settings')] class extends Component {
             {{-- PERSONAL INFORMATION FORM                    --}}
             {{-- ═══════════════════════════════════════════ --}}
             <div
-                class="overflow-hidden rounded-xl border border-slate-200 dark:border-zinc-800
+                class="overflow-hidden rounded-full border border-slate-200 dark:border-zinc-800
                         bg-white dark:bg-zinc-950 shadow-sm">
 
                 <div
@@ -577,7 +607,7 @@ new #[Title('Profile settings')] class extends Component {
             {{-- PASSWORD FORM                                --}}
             {{-- ═══════════════════════════════════════════ --}}
             <div
-                class="overflow-hidden rounded-xl border border-slate-200 dark:border-zinc-800
+                class="overflow-hidden rounded-full border border-slate-200 dark:border-zinc-800
                         bg-white dark:bg-zinc-950 shadow-sm">
 
                 <div

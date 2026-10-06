@@ -10,7 +10,6 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-
 @theme {
     /* ================= Font Families =================
        Manrope  → Heading (judul, display, headline, title, label)
@@ -239,12 +238,12 @@
     }
 
     html {
-        background-color: #f8f9ff;   /* = --color-surface */
+        background-color: #f8f9ff; /* = --color-surface */
         color-scheme: light;
     }
 
     html.dark {
-        background-color: #0a0a0a;   /* = --color-zinc-950 */
+        background-color: #0a0a0a; /* = --color-zinc-950 */
         color-scheme: dark;
     }
 
@@ -265,12 +264,12 @@
 }
 
 [data-flux-field]:not(ui-radio, ui-checkbox) {
-    @apply grid gap-1;   /* dari gap-2 → gap-1 agar rapat dengan input h-7 */
+    @apply grid gap-1; /* dari gap-2 → gap-1 agar rapat dengan input h-7 */
 }
 
 [data-flux-label] {
     @apply !mb-0 !leading-tight;
-    font-size: 11px;      /* selaras dengan input text-xs */
+    font-size: 11px; /* selaras dengan input text-xs */
     font-weight: 500;
     letter-spacing: 0.01em;
 }
@@ -480,6 +479,395 @@ select:focus[data-flux-control] {
             transform: none;
             transition: none;
         }
+    }
+    /* =========================================================
+   ANIMATED BANNER — Soft 3-color gradient (light + dark)
+   ========================================================= */
+
+    @keyframes banner-gradient {
+        0%,
+        100% {
+            background-position: 0% 50%;
+        }
+        50% {
+            background-position: 100% 50%;
+        }
+    }
+
+    @keyframes banner-blob-1 {
+        0%,
+        100% {
+            transform: translate(0, 0) scale(1);
+            opacity: 0.45;
+        }
+        50% {
+            transform: translate(30%, 20%) scale(1.25);
+            opacity: 0.7;
+        }
+    }
+
+    @keyframes banner-blob-2 {
+        0%,
+        100% {
+            transform: translate(0, 0) scale(1);
+            opacity: 0.35;
+        }
+        50% {
+            transform: translate(-25%, -15%) scale(1.35);
+            opacity: 0.6;
+        }
+    }
+
+    @keyframes banner-shine {
+        0% {
+            transform: translateX(-120%) skewX(-20deg);
+        }
+        100% {
+            transform: translateX(220%) skewX(-20deg);
+        }
+    }
+
+    /* ── Gradient: light mode (halus, pastel-ish) ── */
+    .banner-animated {
+        background: linear-gradient(
+            120deg,
+            #a78bfa 0%,
+            /* violet-400  — lavender */ #93c5fd 30%,
+            /* blue-300    — soft sky */ #5eead4 60%,
+            /* teal-300    — soft mint */ #93c5fd 85%,
+            /* blue-300 */ #a78bfa 100% /* violet-400 */
+        );
+        background-size: 300% 300%;
+        animation: banner-gradient 12s ease-in-out infinite;
+    }
+
+    /* ── Gradient: dark mode (deep muted, tidak norak) ── */
+    .dark .banner-animated {
+        background: linear-gradient(
+            120deg,
+            #5b21b6 0%,
+            /* violet-800 */ #1e40af 30%,
+            /* blue-800 */ #0f766e 60%,
+            /* teal-700 */ #1e40af 85%,
+            /* blue-800 */ #5b21b6 100% /* violet-800 */
+        );
+        background-size: 300% 300%;
+        animation: banner-gradient 12s ease-in-out infinite;
+    }
+
+    .banner-blob-1 {
+        animation: banner-blob-1 7s ease-in-out infinite;
+    }
+    .banner-blob-2 {
+        animation: banner-blob-2 9s ease-in-out infinite;
+        animation-delay: -3s;
+    }
+    .banner-shine {
+        animation: banner-shine 6s ease-in-out infinite;
+        animation-delay: 1.5s;
+    }
+
+    /* =========================================================
+   TEXTURES — auto-adapt light/dark
+   ========================================================= */
+
+    /* ── Grain / noise ── */
+    .banner-texture-noise {
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+        background-size: 180px 180px;
+        opacity: 0.18;
+        mix-blend-mode: soft-light;
+    }
+    .dark .banner-texture-noise {
+        opacity: 0.3;
+        mix-blend-mode: overlay;
+    }
+
+    /* ── Dots grid ── */
+    .banner-texture-dots {
+        background-image: radial-gradient(
+            rgba(255, 255, 255, 0.55) 1px,
+            transparent 1.2px
+        );
+        background-size: 14px 14px;
+        opacity: 0.35;
+    }
+    .dark .banner-texture-dots {
+        background-image: radial-gradient(
+            rgba(255, 255, 255, 0.22) 1px,
+            transparent 1.2px
+        );
+        opacity: 0.35;
+    }
+
+    /* ── Diagonal lines ── */
+    .banner-texture-lines {
+        background-image: repeating-linear-gradient(
+            45deg,
+            rgba(255, 255, 255, 0.22) 0px,
+            rgba(255, 255, 255, 0.22) 1px,
+            transparent 1px,
+            transparent 10px
+        );
+        opacity: 0.35;
+    }
+    .dark .banner-texture-lines {
+        background-image: repeating-linear-gradient(
+            45deg,
+            rgba(255, 255, 255, 0.12) 0px,
+            rgba(255, 255, 255, 0.12) 1px,
+            transparent 1px,
+            transparent 10px
+        );
+        opacity: 0.35;
+    }
+
+    /* ── Mesh grid ── */
+    .banner-texture-mesh {
+        background-image:
+            linear-gradient(rgba(255, 255, 255, 0.2) 1px, transparent 1px),
+            linear-gradient(
+                90deg,
+                rgba(255, 255, 255, 0.2) 1px,
+                transparent 1px
+            );
+        background-size: 22px 22px;
+        opacity: 0.4;
+    }
+    .dark .banner-texture-mesh {
+        background-image:
+            linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+            linear-gradient(
+                90deg,
+                rgba(255, 255, 255, 0.1) 1px,
+                transparent 1px
+            );
+        opacity: 0.4;
+    }
+
+    /* ── Halftone ── */
+    .banner-texture-halftone {
+        background-image: radial-gradient(
+            circle,
+            rgba(255, 255, 255, 0.55) 1.2px,
+            transparent 1.4px
+        );
+        background-size: 7px 7px;
+        opacity: 0.25;
+    }
+    .dark .banner-texture-halftone {
+        background-image: radial-gradient(
+            circle,
+            rgba(255, 255, 255, 0.2) 1.2px,
+            transparent 1.4px
+        );
+        opacity: 0.25;
+    }
+
+    /* ── Cross-hatch ── */
+    .banner-texture-cross {
+        background-image:
+            repeating-linear-gradient(
+                45deg,
+                rgba(255, 255, 255, 0.18) 0px,
+                rgba(255, 255, 255, 0.18) 1px,
+                transparent 1px,
+                transparent 10px
+            ),
+            repeating-linear-gradient(
+                -45deg,
+                rgba(255, 255, 255, 0.18) 0px,
+                rgba(255, 255, 255, 0.18) 1px,
+                transparent 1px,
+                transparent 10px
+            );
+        opacity: 0.4;
+    }
+    .dark .banner-texture-cross {
+        background-image:
+            repeating-linear-gradient(
+                45deg,
+                rgba(255, 255, 255, 0.1) 0px,
+                rgba(255, 255, 255, 0.1) 1px,
+                transparent 1px,
+                transparent 10px
+            ),
+            repeating-linear-gradient(
+                -45deg,
+                rgba(255, 255, 255, 0.1) 0px,
+                rgba(255, 255, 255, 0.1) 1px,
+                transparent 1px,
+                transparent 10px
+            );
+        opacity: 0.4;
+    }
+
+    /* ── Vignette (light: gelapkan tepi; dark: lebih gelap lagi) ── */
+    .banner-texture-vignette {
+        background: radial-gradient(
+            ellipse at center,
+            transparent 40%,
+            rgba(80, 60, 140, 0.28) 100%
+        );
+        opacity: 0.55;
+    }
+    .dark .banner-texture-vignette {
+        background: radial-gradient(
+            ellipse at center,
+            transparent 35%,
+            rgba(0, 0, 0, 0.55) 100%
+        );
+        opacity: 0.7;
+    }
+
+    /* ── Scanlines (retro) ── */
+    .banner-texture-scanlines {
+        background-image: repeating-linear-gradient(
+            0deg,
+            rgba(0, 0, 0, 0.08) 0px,
+            rgba(0, 0, 0, 0.08) 1px,
+            transparent 1px,
+            transparent 4px
+        );
+        opacity: 0.35;
+        mix-blend-mode: multiply;
+    }
+    .dark .banner-texture-scanlines {
+        background-image: repeating-linear-gradient(
+            0deg,
+            rgba(0, 0, 0, 0.25) 0px,
+            rgba(0, 0, 0, 0.25) 1px,
+            transparent 1px,
+            transparent 4px
+        );
+        opacity: 0.4;
+    }
+
+    /* ── Shine (light: putih; dark: putih lebih tipis) ── */
+    .banner-shine {
+        background: linear-gradient(
+            90deg,
+            transparent,
+            rgba(255, 255, 255, 0.35),
+            transparent
+        );
+    }
+    .dark .banner-shine {
+        background: linear-gradient(
+            90deg,
+            transparent,
+            rgba(255, 255, 255, 0.12),
+            transparent
+        );
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .banner-animated,
+        .banner-blob-1,
+        .banner-blob-2,
+        .banner-shine {
+            animation: none;
+        }
+    }
+    /* =========================================================
+   BANNER TEXTURES
+   ========================================================= */
+
+    /* ── 1. Grain / Noise (paling natural, subtle) ── */
+    .banner-texture-noise {
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+        background-size: 180px 180px;
+        opacity: 0.35;
+        mix-blend-mode: overlay;
+    }
+
+    /* ── 2. Dots grid (terstruktur, digital feel) ── */
+    .banner-texture-dots {
+        background-image: radial-gradient(
+            rgba(255, 255, 255, 0.35) 1px,
+            transparent 1px
+        );
+        background-size: 12px 12px;
+        opacity: 0.45;
+    }
+
+    /* ── 3. Diagonal lines (teknis, blueprint) ── */
+    .banner-texture-lines {
+        background-image: repeating-linear-gradient(
+            45deg,
+            rgba(255, 255, 255, 0.18) 0px,
+            rgba(255, 255, 255, 0.18) 1px,
+            transparent 1px,
+            transparent 8px
+        );
+        opacity: 0.5;
+    }
+
+    /* ── 4. Mesh grid (halus, modern) ── */
+    .banner-texture-mesh {
+        background-image:
+            linear-gradient(rgba(255, 255, 255, 0.12) 1px, transparent 1px),
+            linear-gradient(
+                90deg,
+                rgba(255, 255, 255, 0.12) 1px,
+                transparent 1px
+            );
+        background-size: 20px 20px;
+        opacity: 0.6;
+    }
+
+    /* ── 5. Halftone (titik rapat, retro) ── */
+    .banner-texture-halftone {
+        background-image: radial-gradient(
+            circle,
+            rgba(255, 255, 255, 0.4) 1.2px,
+            transparent 1.4px
+        );
+        background-size: 6px 6px;
+        opacity: 0.35;
+    }
+
+    /* ── 6. Cross-hatch (X pattern) ── */
+    .banner-texture-cross {
+        background-image:
+            repeating-linear-gradient(
+                45deg,
+                rgba(255, 255, 255, 0.15) 0px,
+                rgba(255, 255, 255, 0.15) 1px,
+                transparent 1px,
+                transparent 10px
+            ),
+            repeating-linear-gradient(
+                -45deg,
+                rgba(255, 255, 255, 0.15) 0px,
+                rgba(255, 255, 255, 0.15) 1px,
+                transparent 1px,
+                transparent 10px
+            );
+        opacity: 0.5;
+    }
+
+    /* ── Vignette (gelapkan tepi, fokus ke tengah) ── */
+    .banner-texture-vignette {
+        background: radial-gradient(
+            ellipse at center,
+            transparent 30%,
+            rgba(0, 0, 0, 0.35) 100%
+        );
+        opacity: 0.6;
+    }
+
+    /* ── Scanlines (efek CRT/retro) ── */
+    .banner-texture-scanlines {
+        background-image: repeating-linear-gradient(
+            0deg,
+            rgba(0, 0, 0, 0.15) 0px,
+            rgba(0, 0, 0, 0.15) 1px,
+            transparent 1px,
+            transparent 3px
+        );
+        opacity: 0.4;
+        mix-blend-mode: multiply;
     }
 }
 
