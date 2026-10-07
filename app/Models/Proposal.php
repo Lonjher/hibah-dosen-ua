@@ -32,6 +32,8 @@ use Illuminate\Support\Carbon;
  * @method BelongsTo<User> reviewer()
  * @method BelongsTo<Period> period()
  * @method HasMany<BudgetProposal> budgetProposals()
+ * @method HasMany<ProposalMember> proposalMembers()
+ * @method HasMany<ProposalStudent> proposalStudents()
  * @method HasOne<ProgressReport> progressReport()
  * @method HasOne<FinalReport> finalReport()
  * @method HasOne<Outcome> outcome()
@@ -42,6 +44,7 @@ use Illuminate\Support\Carbon;
 class Proposal extends Model
 {
     use HasFactory;
+
     protected function casts(): array
     {
         return [
@@ -75,6 +78,17 @@ class Proposal extends Model
         return $this->hasMany(BudgetProposal::class);
     }
 
+    // === Anggota ===
+    public function proposalMembers(): HasMany
+    {
+        return $this->hasMany(ProposalMember::class);
+    }
+
+    public function proposalStudents(): HasMany
+    {
+        return $this->hasMany(ProposalStudent::class);
+    }
+
     // === Satu Anak per Tahap ===
     public function progressReport(): HasOne
     {
@@ -102,7 +116,61 @@ class Proposal extends Model
         return $this->morphMany(AdminNote::class, 'noteable');
     }
 
-    // === Status Helpers ===
+    /* ============================================================
+     |  MEMBER HELPERS
+     ============================================================ */
+
+    /**
+     * Ambil semua anggota (user internal + mahasiswa) dalam satu collection.
+     * Setiap item dinormalisasi ke array dengan struktur seragam.
+     *
+     * @return \Illuminate\Support\Collection<int, array{
+     *     id: int,
+     *     type: 'user'|'student',
+     *     name: string,
+     *     identifier: string|null,
+     *     role: string,
+     *     source: \Illuminate\Database\Eloquent\Model
+     * }>
+     */
+    public function allMembers(): \Illuminate\Support\Collection
+    {
+        $users = $this->proposalMembers()
+            ->with('user')
+            ->get()
+            ->map(fn (ProposalMember $m) => [
+                'id'         => $m->id,
+                'type'       => 'user',
+                'name'       => $m->user?->full_name ?? '—',
+                'identifier' => $m->user?->nidn,
+                'role'       => $m->role,
+                'source'     => $m,
+            ]);
+
+        $students = $this->proposalStudents()
+            ->get()
+            ->map(fn (ProposalStudent $s) => [
+                'id'         => $s->id,
+                'type'       => 'student',
+                'name'       => $s->name,
+                'identifier' => $s->nim,
+                'role'       => $s->role,
+                'source'     => $s,
+            ]);
+
+        return $users->concat($students)->values();
+    }
+
+    public function totalMembers(): int
+    {
+        return $this->proposalMembers()->count()
+            + $this->proposalStudents()->count();
+    }
+
+    /* ============================================================
+     |  STATUS HELPERS
+     ============================================================ */
+
     public function isPending(): bool
     {
         return $this->status === 'pending';
@@ -131,6 +199,15 @@ class Proposal extends Model
     public function isRejected(): bool
     {
         return $this->status === 'rejected';
+    }
+
+    /**
+     * Cek apakah anggota masih bisa diedit.
+     * Bisa edit kalau status pending / revised.
+     */
+    public function canEditMembers(): bool
+    {
+        return in_array($this->status, ['pending', 'revised']);
     }
 
     /**

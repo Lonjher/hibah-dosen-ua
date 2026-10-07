@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('noteable_id');
             $table->string('noteable_type');
-            // Morph Map: 'proposal' | 'progress_report' | 'final_report' | 'output'
+            // Morph Map: 'proposal' | 'progress_report' | 'final_report' | 'outcome'
             $table->unsignedBigInteger('admin_id');
             $table->text('comment')->nullable();
             $table->text('recommendation')->nullable();

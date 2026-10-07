@@ -21,7 +21,8 @@ use Illuminate\Support\Carbon;
  * @property string $status // ongoing, completed, cancelled
  * @property int $fund_amount
  * @property string|null $description
- * @property string|null $document_path
+ * @property string|null $proposal_document_path
+ * @property string|null $report_document_path
  * @property bool $is_verified
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at

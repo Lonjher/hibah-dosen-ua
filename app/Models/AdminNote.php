@@ -12,7 +12,7 @@ use Illuminate\Support\Carbon;
 /**
  * @property int $id
  * @property int $noteable_id
- * @property string $noteable_type // Morph map: proposal, progress_report, final_report, output
+ * @property string $noteable_type // Morph map: proposal, progress_report, final_report, outcome
  * @property int $admin_id
  * @property string|null $comment
  * @property string|null $recommendation
@@ -26,6 +26,7 @@ use Illuminate\Support\Carbon;
 class AdminNote extends Model
 {
     use HasFactory;
+
     public function noteable(): MorphTo
     {
         return $this->morphTo();

@@ -20,7 +20,7 @@ class AdminNoteForm extends Form
     {
         return [
             'noteable_id'    => ['required', 'integer', 'min:1'],
-            'noteable_type'  => ['required', 'string', 'in:proposal,progress_report,final_report,output'],
+            'noteable_type'  => ['required', 'string', 'in:proposal,progress_report,final_report,outcome'],
             'admin_id'       => ['required', 'exists:users,id'],
             'comment'        => ['nullable', 'string'],
             'recommendation' => ['nullable', 'string'],

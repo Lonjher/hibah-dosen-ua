@@ -22,12 +22,13 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $updated_at
  *
  * @method BelongsTo<Proposal> proposal()
- * @method MorphMany<AdminNote> adminNotes()
+ * @method MorphMany<AdminNote> adminNotes() // Morph map: outcome
  */
 #[Guarded(['id'])]
 class Outcome extends Model
 {
     use HasFactory;
+
     public function proposal(): BelongsTo
     {
         return $this->belongsTo(Proposal::class);
