@@ -8,10 +8,9 @@ use Livewire\Form;
 class BudgetProposalForm extends Form
 {
     public ?BudgetProposal $budgetProposal = null;
-
-    public ?int    $proposal_id = null;
-    public string  $item_name = '';
-    public ?string $amount = null;   // ← ubah dari ?int ke ?string
+    public ?int $proposal_id = null;
+    public string $item_name = '';
+    public ?string $amount = null; // ← changed from ?int to ?string
 
     // ═══════════════ Validation ═══════════════
 
@@ -27,12 +26,12 @@ class BudgetProposalForm extends Form
     public function messages(): array
     {
         return [
-            'item_name.required' => 'Nama item wajib diisi.',
-            'item_name.max'      => 'Nama item maksimal 255 karakter.',
-            'amount.required'    => 'Jumlah wajib diisi.',
-            'amount.numeric'     => 'Jumlah harus berupa angka.',
-            'amount.min'         => 'Jumlah tidak boleh negatif.',
-            'amount.max'         => 'Jumlah terlalu besar.',
+            'item_name.required' => 'Item name is required.',
+            'item_name.max'      => 'Item name must not exceed 255 characters.',
+            'amount.required'    => 'Amount is required.',
+            'amount.numeric'     => 'Amount must be a number.',
+            'amount.min'         => 'Amount cannot be negative.',
+            'amount.max'         => 'Amount is too large.',
         ];
     }
 
@@ -52,7 +51,7 @@ class BudgetProposalForm extends Form
     {
         $this->validate();
 
-        // Bersihkan separator (misal "1.000.000" → 1000000)
+        // Remove separators (e.g. "1.000.000" → 1000000)
         $amount = (int) preg_replace('/\D/', '', (string) $this->amount);
 
         $budget = BudgetProposal::create([

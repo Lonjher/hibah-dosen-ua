@@ -13,38 +13,61 @@ class ResearchSchemeForm extends Form
     public string $code = '';
     public string $description = '';
     public string $budget_limit = '';
-    public bool   $is_active = true;
+    public bool $is_active = true;
 
     // ═══════════════ Validation ═══════════════
 
     public function rules(): array
     {
         return [
-            'name'         => ['required', 'string', 'max:255'],
-            'code'         => ['required', 'string', 'max:255', 'unique:research_schemes,code,'.($this->researchScheme?->id ?? 'NULL')],
-            'description'  => ['required', 'string', 'max:255'],
-            'budget_limit' => ['required', 'string', 'max:255'],
-            'is_active'    => ['boolean'],
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+            ],
+
+            'code' => [
+                'required',
+                'string',
+                'max:255',
+                'unique:research_schemes,code,' . ($this->researchScheme?->id ?? 'NULL'),
+            ],
+
+            'description' => [
+                'required',
+                'string',
+                'max:255',
+            ],
+
+            'budget_limit' => [
+                'required',
+                'string',
+                'max:255',
+            ],
+
+            'is_active' => [
+                'boolean',
+            ],
         ];
     }
 
     public function messages(): array
     {
         return [
-            'name.required'         => 'Nama skema wajib diisi.',
-            'name.max'              => 'Nama skema maksimal 255 karakter.',
+            'name.required' => 'Scheme name is required.',
+            'name.max' => 'Scheme name must not exceed 255 characters.',
 
-            'code.required'         => 'Kode skema wajib diisi.',
-            'code.unique'           => 'Kode skema sudah digunakan.',
-            'code.max'              => 'Kode skema maksimal 255 karakter.',
+            'code.required' => 'Scheme code is required.',
+            'code.unique' => 'Scheme code has already been taken.',
+            'code.max' => 'Scheme code must not exceed 255 characters.',
 
-            'description.required'  => 'Deskripsi wajib diisi.',
-            'description.max'       => 'Deskripsi maksimal 255 karakter.',
+            'description.required' => 'Description is required.',
+            'description.max' => 'Description must not exceed 255 characters.',
 
-            'budget_limit.required' => 'Batas anggaran wajib diisi.',
-            'budget_limit.max'      => 'Batas anggaran maksimal 255 karakter.',
+            'budget_limit.required' => 'Budget limit is required.',
+            'budget_limit.max' => 'Budget limit must not exceed 255 characters.',
 
-            'is_active.boolean'     => 'Status aktif harus true atau false.',
+            'is_active.boolean' => 'Active status must be true or false.',
         ];
     }
 
@@ -53,11 +76,12 @@ class ResearchSchemeForm extends Form
     public function setResearchScheme(ResearchScheme $researchScheme): void
     {
         $this->researchScheme = $researchScheme;
-        $this->name           = $researchScheme->name;
-        $this->code           = $researchScheme->code;
-        $this->description    = $researchScheme->description;
-        $this->budget_limit   = $researchScheme->budget_limit;
-        $this->is_active      = (bool) $researchScheme->is_active;
+
+        $this->name = $researchScheme->name;
+        $this->code = $researchScheme->code;
+        $this->description = $researchScheme->description;
+        $this->budget_limit = $researchScheme->budget_limit;
+        $this->is_active = (bool) $researchScheme->is_active;
     }
 
     // ═══════════════ Actions ═══════════════
@@ -67,11 +91,11 @@ class ResearchSchemeForm extends Form
         $this->validate();
 
         $scheme = ResearchScheme::create([
-            'name'         => $this->name,
-            'code'         => $this->code,
-            'description'  => $this->description,
+            'name' => $this->name,
+            'code' => $this->code,
+            'description' => $this->description,
             'budget_limit' => $this->budget_limit,
-            'is_active'    => $this->is_active,
+            'is_active' => $this->is_active,
         ]);
 
         $this->reset();
@@ -81,7 +105,7 @@ class ResearchSchemeForm extends Form
 
     public function update(): ResearchScheme
     {
-        if (! $this->researchScheme) {
+        if (!$this->researchScheme) {
             throw new \RuntimeException(
                 'No research scheme loaded. Call setResearchScheme() before update().'
             );
@@ -90,11 +114,11 @@ class ResearchSchemeForm extends Form
         $this->validate();
 
         $this->researchScheme->update([
-            'name'         => $this->name,
-            'code'         => $this->code,
-            'description'  => $this->description,
+            'name' => $this->name,
+            'code' => $this->code,
+            'description' => $this->description,
             'budget_limit' => $this->budget_limit,
-            'is_active'    => $this->is_active,
+            'is_active' => $this->is_active,
         ]);
 
         $updated = $this->researchScheme;

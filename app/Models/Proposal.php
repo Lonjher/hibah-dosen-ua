@@ -21,6 +21,7 @@ use Illuminate\Support\Carbon;
  * @property string $keywords
  * @property bool $is_research
  * @property string $file_path
+ * @property string $rab_path
  * @property string $status // pending, revised, submitted, rejected, under_review, accepted
  * @property int $period_id
  * @property Carbon|null $created_at

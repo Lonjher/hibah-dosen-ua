@@ -19,9 +19,9 @@ class PeriodForm extends Form
     public function rules(): array
     {
         return [
-            'periode' => ['required', 'string', 'max:255'],
+            'periode'   => ['required', 'string', 'max:255'],
             'open_from' => ['required', 'date'],
-            'open_to' => ['required', 'date', 'after_or_equal:open_from'],
+            'open_to'   => ['required', 'date', 'after_or_equal:open_from'],
             'is_active' => ['boolean'],
         ];
     }
@@ -29,18 +29,18 @@ class PeriodForm extends Form
     public function messages(): array
     {
         return [
-            'periode.required' => 'Nama periode wajib diisi.',
-            'periode.string' => 'Nama periode harus berupa teks.',
-            'periode.max' => 'Nama periode maksimal 255 karakter.',
+            'periode.required'       => 'Period name is required.',
+            'periode.string'         => 'Period name must be a text.',
+            'periode.max'            => 'Period name must not exceed 255 characters.',
 
-            'open_from.required' => 'Tanggal buka wajib diisi.',
-            'open_from.date' => 'Tanggal buka harus tanggal valid.',
+            'open_from.required'     => 'Start date is required.',
+            'open_from.date'         => 'Start date must be a valid date.',
 
-            'open_to.required' => 'Tanggal tutup wajib diisi.',
-            'open_to.date' => 'Tanggal tutup harus tanggal valid.',
-            'open_to.after_or_equal' => 'Tanggal tutup harus sama atau setelah tanggal buka.',
+            'open_to.required'       => 'End date is required.',
+            'open_to.date'           => 'End date must be a valid date.',
+            'open_to.after_or_equal' => 'End date must be the same as or later than the start date.',
 
-            'is_active.boolean' => 'Status aktif harus true atau false.',
+            'is_active.boolean'      => 'Active status must be true or false.',
         ];
     }
 
@@ -48,10 +48,10 @@ class PeriodForm extends Form
 
     public function setPeriod(Period $period): void
     {
-        $this->period = $period;
-        $this->periode = $period->periode;
+        $this->period    = $period;
+        $this->periode   = $period->periode;
         $this->open_from = $period->open_from?->format('Y-m-d');
-        $this->open_to = $period->open_to?->format('Y-m-d');
+        $this->open_to   = $period->open_to?->format('Y-m-d');
         $this->is_active = (bool) $period->is_active;
     }
 
@@ -61,15 +61,16 @@ class PeriodForm extends Form
     {
         $this->validate();
 
-        // Guard: kalau is_active = true, nonaktifkan yang lain
+        // Guard: if is_active = true, deactivate all other periods
         if ($this->is_active) {
-            Period::where('is_active', true)->update(['is_active' => false]);
+            Period::where('is_active', true)
+                ->update(['is_active' => false]);
         }
 
         $period = Period::create([
-            'periode' => $this->periode,
+            'periode'   => $this->periode,
             'open_from' => $this->open_from,
-            'open_to' => $this->open_to,
+            'open_to'   => $this->open_to,
             'is_active' => $this->is_active,
         ]);
 
@@ -80,13 +81,13 @@ class PeriodForm extends Form
 
     public function update(): Period
     {
-        if (!$this->period) {
+        if (! $this->period) {
             throw new \RuntimeException('No period loaded.');
         }
 
         $this->validate();
 
-        // Guard: kalau is_active = true, nonaktifkan yang lain (kecuali diri sendiri)
+        // Guard: if is_active = true, deactivate all other periods except itself
         if ($this->is_active) {
             Period::where('is_active', true)
                 ->where('id', '!=', $this->period->id)
@@ -94,13 +95,14 @@ class PeriodForm extends Form
         }
 
         $this->period->update([
-            'periode' => $this->periode,
+            'periode'   => $this->periode,
             'open_from' => $this->open_from,
-            'open_to' => $this->open_to,
+            'open_to'   => $this->open_to,
             'is_active' => $this->is_active,
         ]);
 
         $updated = $this->period;
+
         $this->reset();
 
         return $updated;

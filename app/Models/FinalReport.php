@@ -15,8 +15,7 @@ use Illuminate\Support\Carbon;
  * @property string $summary
  * @property string $keyword
  * @property string $report_path
- * @property string $ppt_path
- * @property string $research_output
+ * @property string $sptb_path
  * @property string $submission_proof
  * @property string $status // pending, revised, accepted, rejected
  * @property Carbon|null $created_at

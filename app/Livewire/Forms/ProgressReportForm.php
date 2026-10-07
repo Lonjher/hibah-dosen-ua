@@ -9,13 +9,13 @@ class ProgressReportForm extends Form
 {
     public ?ProgressReport $progressReport = null;
 
-    public ?int    $proposal_id = null;
-    public ?int    $reviewer_id = null;
-    public string  $summary = '';
-    public string  $keyword = '';
+    public ?int $proposal_id = null;
+    public ?int $reviewer_id = null;
+    public string $summary = '';
+    public string $keyword = '';
     public ?string $report_path = null;
     public ?string $ppt_path = null;
-    public string  $status = 'pending';
+    public string $status = 'pending';
     public ?string $reviewed_at = null;
 
     // ═══════════════ Validation ═══════════════
@@ -27,7 +27,11 @@ class ProgressReportForm extends Form
             'reviewer_id' => ['nullable', 'exists:users,id'],
             'summary'     => ['required', 'string', 'min:20'],
             'keyword'     => ['required', 'string', 'max:255'],
-            'status'      => ['required', 'string', 'in:pending,revised,submitted,rejected,under_review,accepted'],
+            'status'      => [
+                'required',
+                'string',
+                'in:pending,revised,submitted,rejected,under_review,accepted',
+            ],
             'reviewed_at' => ['nullable', 'date'],
         ];
     }
@@ -35,21 +39,21 @@ class ProgressReportForm extends Form
     public function messages(): array
     {
         return [
-            'proposal_id.required' => 'Proposal wajib diisi.',
-            'proposal_id.exists'   => 'Proposal tidak valid.',
+            'proposal_id.required' => 'Proposal is required.',
+            'proposal_id.exists'   => 'Invalid proposal.',
 
-            'reviewer_id.exists'   => 'Reviewer tidak valid.',
+            'reviewer_id.exists'   => 'Invalid reviewer.',
 
-            'summary.required'     => 'Ringkasan wajib diisi.',
-            'summary.min'          => 'Ringkasan minimal 20 karakter.',
+            'summary.required'     => 'Summary is required.',
+            'summary.min'          => 'Summary must be at least 20 characters.',
 
-            'keyword.required'     => 'Kata kunci wajib diisi.',
-            'keyword.max'          => 'Kata kunci maksimal 255 karakter.',
+            'keyword.required'     => 'Keyword is required.',
+            'keyword.max'          => 'Keyword must not exceed 255 characters.',
 
-            'status.required'      => 'Status wajib diisi.',
-            'status.in'            => 'Status tidak valid.',
+            'status.required'      => 'Status is required.',
+            'status.in'            => 'Invalid status.',
 
-            'reviewed_at.date'     => 'Reviewed At harus tanggal valid.',
+            'reviewed_at.date'     => 'Reviewed At must be a valid date.',
         ];
     }
 

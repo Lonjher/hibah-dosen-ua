@@ -8,10 +8,9 @@ use Livewire\Form;
 class AdminNoteForm extends Form
 {
     public ?AdminNote $adminNote = null;
-
-    public ?int    $noteable_id = null;
-    public string  $noteable_type = 'proposal';
-    public ?int    $admin_id = null;
+    public ?int $noteable_id = null;
+    public string $noteable_type = 'proposal';
+    public ?int $admin_id = null;
     public ?string $comment = null;
     public ?string $recommendation = null;
 
@@ -31,13 +30,12 @@ class AdminNoteForm extends Form
     public function messages(): array
     {
         return [
-            'noteable_id.required'   => 'Noteable wajib diisi.',
-            'noteable_id.min'        => 'Noteable tidak valid.',
-            'noteable_type.required' => 'Tipe noteable wajib diisi.',
-            'noteable_type.in'       => 'Tipe noteable tidak valid.',
-
-            'admin_id.required'      => 'Admin wajib diisi.',
-            'admin_id.exists'        => 'Admin tidak valid.',
+            'noteable_id.required'   => 'Noteable is required.',
+            'noteable_id.min'        => 'Invalid noteable.',
+            'noteable_type.required' => 'Noteable type is required.',
+            'noteable_type.in'       => 'Invalid noteable type.',
+            'admin_id.required'      => 'Admin is required.',
+            'admin_id.exists'        => 'Invalid admin.',
         ];
     }
 

@@ -14,6 +14,7 @@ class DownloadForm extends Form
     public string $description = '';
     public string $category = 'general';
     public $file = null;
+
     public bool $is_active = true;
     public bool $show_on_welcome = true;
     public bool $show_on_dashboard = true;
@@ -21,19 +22,29 @@ class DownloadForm extends Form
 
     /* ============================================================
      |  VALIDATION
-     ============================================================ */
+     | ============================================================ */
 
     protected function rules(): array
     {
         return [
-            'title'             => ['required', 'string', 'max:180'],
-            'description'       => ['nullable', 'string', 'max:1000'],
-            'category'          => ['required', 'in:guideline,template,form,general'],
-            'file'              => $this->download
-                                    ? ['nullable', 'file', 'max:20480',
-                                       'mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,zip,rar,txt']
-                                    : ['required', 'file', 'max:20480',
-                                       'mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,zip,rar,txt'],
+            'title'       => ['required', 'string', 'max:180'],
+            'description' => ['nullable', 'string', 'max:1000'],
+            'category'    => ['required', 'in:guideline,template,form,general'],
+
+            'file' => $this->download
+                ? [
+                    'nullable',
+                    'file',
+                    'max:20480',
+                    'mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,zip,rar,txt',
+                ]
+                : [
+                    'required',
+                    'file',
+                    'max:20480',
+                    'mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,zip,rar,txt',
+                ],
+
             'is_active'         => ['boolean'],
             'show_on_welcome'   => ['boolean'],
             'show_on_dashboard' => ['boolean'],
@@ -44,22 +55,22 @@ class DownloadForm extends Form
     protected function messages(): array
     {
         return [
-            'title.required'        => 'Title is required.',
-            'title.max'             => 'Title must not exceed 180 characters.',
-            'description.max'       => 'Description must not exceed 1000 characters.',
-            'category.required'     => 'Category is required.',
-            'category.in'           => 'Category is invalid.',
-            'file.required'         => 'Please select a file to upload.',
-            'file.mimes'            => 'File format must be: pdf, doc, docx, xls, xlsx, ppt, pptx, zip, rar, or txt.',
-            'file.max'              => 'Maximum file size is 20 MB.',
-            'sort_order.integer'    => 'Sort order must be a number.',
-            'sort_order.min'        => 'Sort order must be at least 0.',
+            'title.required'       => 'Title is required.',
+            'title.max'            => 'Title must not exceed 180 characters.',
+            'description.max'      => 'Description must not exceed 1000 characters.',
+            'category.required'    => 'Category is required.',
+            'category.in'          => 'Invalid category.',
+            'file.required'       => 'Please select a file to upload.',
+            'file.mimes'          => 'File format must be: pdf, doc, docx, xls, xlsx, ppt, pptx, zip, rar, or txt.',
+            'file.max'            => 'Maximum file size is 20 MB.',
+            'sort_order.integer'  => 'Sort order must be a number.',
+            'sort_order.min'      => 'Sort order must be at least 0.',
         ];
     }
 
     /* ============================================================
      |  SETUP
-     ============================================================ */
+     | ============================================================ */
 
     public function setDownload(Download $download): void
     {
@@ -75,7 +86,7 @@ class DownloadForm extends Form
 
     /* ============================================================
      |  PERSIST
-     ============================================================ */
+     | ============================================================ */
 
     public function create(): Download
     {
@@ -116,16 +127,19 @@ class DownloadForm extends Form
             'sort_order'        => $this->sort_order,
         ];
 
-        // Replace file if user uploads new one
+        // Replace file if the user uploads a new one
         if ($this->file) {
-            if ($this->download->file_path && \Storage::disk('public')->exists($this->download->file_path)) {
+            if (
+                $this->download->file_path &&
+                \Storage::disk('public')->exists($this->download->file_path)
+            ) {
                 \Storage::disk('public')->delete($this->download->file_path);
             }
 
             $payload['file_path'] = $this->file->store('downloads', 'public');
-            $payload['file_name'] = $this->file->getClientOriginalName();
-            $payload['file_size'] = $this->file->getSize();
-            $payload['mime_type'] = $this->file->getMimeType();
+            $payload['file_name']  = $this->file->getClientOriginalName();
+            $payload['file_size']  = $this->file->getSize();
+            $payload['mime_type']  = $this->file->getMimeType();
         }
 
         $this->download->update($payload);
