@@ -33,7 +33,7 @@ use Illuminate\Support\Carbon;
  * @method HasMany<BudgetProposal> budgetProposals()
  * @method HasOne<ProgressReport> progressReport()
  * @method HasOne<FinalReport> finalReport()
- * @method HasOne<Output> output()
+ * @method HasOne<Outcome> outcome()
  * @method MorphMany<ReviewerNote> reviewerNotes()
  * @method MorphMany<AdminNote> adminNotes()
  */
@@ -85,9 +85,9 @@ class Proposal extends Model
         return $this->hasOne(FinalReport::class);
     }
 
-    public function output(): HasOne
+    public function outcome(): HasOne
     {
-        return $this->hasOne(Output::class);
+        return $this->hasOne(Outcome::class);
     }
 
     // === Polymorphic Notes ===

@@ -1,30 +1,30 @@
 <?php
 
-use App\Livewire\Forms\OutputForm;
-use App\Models\Output;
+use App\Livewire\Forms\outcomeForm;
+use App\Models\outcome;
 use Flux\Flux;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
 new class extends Component {
-    public OutputForm $form;
+    public outcomeForm $form;
 
-    #[On('open-edit-output')]
+    #[On('open-edit-outcome')]
     public function load(int $id): void
     {
-        $output = Output::whereHas('proposal', fn ($q) => $q->where('user_id', auth()->id()))
+        $outcome = outcome::whereHas('proposal', fn ($q) => $q->where('user_id', auth()->id()))
             ->findOrFail($id);
 
-        if (! in_array($output->status, ['pending', 'revised'])) {
-            Flux::toast('Output ini tidak dapat diedit.', variant: 'danger');
+        if (! in_array($outcome->status, ['pending', 'revised'])) {
+            Flux::toast('outcome ini tidak dapat diedit.', variant: 'danger');
             return;
         }
 
-        $this->form->setOutput($output);
+        $this->form->setoutcome($outcome);
         $this->resetErrorBag();
         $this->resetValidation();
 
-        $this->dispatch('show-edit-output');
+        $this->dispatch('show-edit-outcome');
     }
 
     public function save(): void
@@ -34,8 +34,8 @@ new class extends Component {
         $this->form->status = 'pending';
         $this->form->update();
 
-        Flux::toast('Output berhasil diperbarui.', variant: 'success');
-        $this->dispatch('output-updated');
+        Flux::toast('outcome berhasil diperbarui.', variant: 'success');
+        $this->dispatch('outcome-updated');
         $this->form->reset();
     }
 };
@@ -46,12 +46,12 @@ new class extends Component {
         show: false,
         errorMessage: '',
         init() {
-            window.addEventListener('show-edit-output', () => {
+            window.addEventListener('show-edit-outcome', () => {
                 this.errorMessage = '';
                 this.show = true;
             });
-            window.addEventListener('output-error', (e) => { this.errorMessage = e.detail.message; });
-            window.addEventListener('output-updated', () => { this.show = false; });
+            window.addEventListener('outcome-error', (e) => { this.errorMessage = e.detail.message; });
+            window.addEventListener('outcome-updated', () => { this.show = false; });
         }
     }"
     x-show="show" x-transition.opacity x-cloak
@@ -76,7 +76,7 @@ new class extends Component {
                         </div>
                         <div class="min-w-0 flex-1">
                             <h3 class="font-heading text-[15px] font-semibold text-white leading-tight">
-                                Edit Output
+                                Edit outcome
                             </h3>
                             <p class="text-[11px] text-white/75 mt-0.5">
                                 Perbarui luaran penelitian.

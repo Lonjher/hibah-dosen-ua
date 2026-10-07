@@ -14,12 +14,12 @@ new class extends Component {
 
     public $report_file = null;
     public $ppt_file = null;
-    public $research_output_file = null;
+    public $research_outcome_file = null;
     public $submission_proof_file = null;
 
     public ?string $existing_report_path = null;
     public ?string $existing_ppt_path = null;
-    public ?string $existing_research_output = null;
+    public ?string $existing_research_outcome = null;
     public ?string $existing_submission_proof = null;
 
     #[On('open-edit-final-report')]
@@ -36,10 +36,10 @@ new class extends Component {
         $this->form->setFinalReport($report);
         $this->existing_report_path      = $report->report_path;
         $this->existing_ppt_path         = $report->ppt_path;
-        $this->existing_research_output  = $report->research_output;
+        $this->existing_research_outcome  = $report->research_outcome;
         $this->existing_submission_proof = $report->submission_proof;
 
-        $this->reset(['report_file', 'ppt_file', 'research_output_file', 'submission_proof_file']);
+        $this->reset(['report_file', 'ppt_file', 'research_outcome_file', 'submission_proof_file']);
         $this->resetErrorBag();
         $this->resetValidation();
 
@@ -53,7 +53,7 @@ new class extends Component {
         $this->validate([
             'report_file'           => ['nullable', 'file', 'mimes:pdf', 'max:10240'],
             'ppt_file'              => ['nullable', 'file', 'mimes:ppt,pptx', 'max:20480'],
-            'research_output_file'  => ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:10240'],
+            'research_outcome_file'  => ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:10240'],
             'submission_proof_file' => ['nullable', 'image', 'max:5120'],
         ]);
 
@@ -63,8 +63,8 @@ new class extends Component {
         if ($this->ppt_file) {
             $this->form->ppt_path = $this->ppt_file->store('final-reports/ppt', 'public');
         }
-        if ($this->research_output_file) {
-            $this->form->research_output = $this->research_output_file->store('final-reports/output', 'public');
+        if ($this->research_outcome_file) {
+            $this->form->research_outcome = $this->research_outcome_file->store('final-reports/outcome', 'public');
         }
         if ($this->submission_proof_file) {
             $this->form->submission_proof = $this->submission_proof_file->store('final-reports/proofs', 'public');
@@ -82,8 +82,8 @@ new class extends Component {
     {
         $this->form->reset();
         $this->reset([
-            'report_file', 'ppt_file', 'research_output_file', 'submission_proof_file',
-            'existing_report_path', 'existing_ppt_path', 'existing_research_output', 'existing_submission_proof',
+            'report_file', 'ppt_file', 'research_outcome_file', 'submission_proof_file',
+            'existing_report_path', 'existing_ppt_path', 'existing_research_outcome', 'existing_submission_proof',
         ]);
         $this->resetErrorBag();
         $this->resetValidation();
@@ -237,27 +237,27 @@ new class extends Component {
                         @enderror
                     </div>
 
-                    {{-- Research Output --}}
+                    {{-- Research outcome --}}
                     <div>
                         <x-input
                             type="file"
-                            wire:model="research_output_file"
-                            label="Research Output — Opsional"
+                            wire:model="research_outcome_file"
+                            label="Research outcome — Opsional"
                             accept=".pdf,.doc,.docx"
                             rounded="full"
                             hint="Max 10 MB · PDF, DOC, DOCX" />
 
-                        @if ($existing_research_output)
+                        @if ($existing_research_outcome)
                             <p class="mt-1 text-[10px] text-slate-500 dark:text-zinc-500 flex items-center gap-1">
                                 <flux:icon.document-text class="size-3 shrink-0" />
-                                File saat ini: {{ basename($existing_research_output) }}
+                                File saat ini: {{ basename($existing_research_outcome) }}
                             </p>
                         @endif
-                        <div wire:loading wire:target="research_output_file"
+                        <div wire:loading wire:target="research_outcome_file"
                             class="mt-1 text-[10px] text-blue-600 dark:text-blue-400">
                             Uploading...
                         </div>
-                        @error('research_output_file')
+                        @error('research_outcome_file')
                             <p class="mt-1 text-[11px] text-rose-600">{{ $message }}</p>
                         @enderror
                     </div>

@@ -2,7 +2,7 @@
 
 use App\Models\ExternalProposal;
 use App\Models\FinalReport;
-use App\Models\Output;
+use App\Models\Outcome;
 use App\Models\Period;
 use App\Models\ProgressReport;
 use App\Models\Proposal;
@@ -110,8 +110,8 @@ new #[Title('Dashboard')] class extends Component {
             'ext_dedication' => $allYears->map(fn ($y) => (int) (optional($externalPerYear->firstWhere('year', $y))->dedication_count ?? 0))->values(),
         ];
 
-        // ── Output by level per year ──
-        $outputsByLevel = Output::query()
+        // ── Outcome by level per year ──
+        $OutcomesByLevel = Outcome::query()
             ->whereNotNull('level')
             ->when($yearFrom, fn ($q) => $q->whereYear('created_at', '>=', $yearFrom))
             ->when($yearTo, fn ($q) => $q->whereYear('created_at', '<=', $yearTo))
@@ -136,14 +136,14 @@ new #[Title('Dashboard')] class extends Component {
             'progress_accepted' => ProgressReport::whereHas('proposal', $pipeProposal)->where('status', 'accepted')->count(),
             'final_pending'     => FinalReport::whereHas('proposal', $pipeProposal)->whereIn('status', ['pending', 'revised'])->count(),
             'final_accepted'    => FinalReport::whereHas('proposal', $pipeProposal)->where('status', 'accepted')->count(),
-            'output_pending'    => Output::whereHas('proposal', $pipeProposal)->whereIn('status', ['pending', 'revised'])->count(),
-            'output_accepted'   => Output::whereHas('proposal', $pipeProposal)->where('status', 'accepted')->count(),
+            'Outcome_pending'    => Outcome::whereHas('proposal', $pipeProposal)->whereIn('status', ['pending', 'revised'])->count(),
+            'Outcome_accepted'   => Outcome::whereHas('proposal', $pipeProposal)->where('status', 'accepted')->count(),
         ];
 
         // ── Chart data JSON ──
         $chartData = [
             'perYear' => $chartPerYear,
-            'byLevel' => $outputsByLevel
+            'byLevel' => $OutcomesByLevel
                 ->map(fn ($items, $year) => [
                     'year'  => $year,
                     'items' => $items->map(fn ($i) => ['level' => $i->level, 'total' => $i->total]),
@@ -156,7 +156,7 @@ new #[Title('Dashboard')] class extends Component {
             'statusBreakdown'  => $statusBreakdown,
             'proposalsPerYear' => $proposalsPerYear,
             'externalPerYear'  => $externalPerYear,
-            'outputsByLevel'   => $outputsByLevel,
+            'OutcomesByLevel'   => $OutcomesByLevel,
             'recentProposals'  => $recentProposals,
             'pipeline'         => $pipeline,
             'chartData'        => $chartData,
@@ -330,9 +330,9 @@ new #[Title('Dashboard')] class extends Component {
             </div>
         </div>
 
-        {{-- Chart 2: Output by Level --}}
-        <div wire:ignore wire:key="chart-output-level-{{ $periodFilter }}"
-            x-data="outputLevelChart(@js($chartData['byLevel']))" x-init="init()"
+        {{-- Chart 2: Outcome by Level --}}
+        <div wire:ignore wire:key="chart-Outcome-level-{{ $periodFilter }}"
+            x-data="OutcomeLevelChart(@js($chartData['byLevel']))" x-init="init()"
             class="rounded-full border border-slate-200 dark:border-zinc-800
                    bg-white dark:bg-zinc-900 p-3 shadow-sm">
 
@@ -342,7 +342,7 @@ new #[Title('Dashboard')] class extends Component {
                         Luaran Berdasarkan Level
                     </h3>
                     <p class="text-[9.5px] text-slate-500 dark:text-zinc-400 mt-0.5">
-                        Scopus & Sinta 1-6 per tahun
+                        Reputable International Journal, International & Sinta 1-6 per tahun
                     </p>
                 </div>
 
@@ -376,7 +376,7 @@ new #[Title('Dashboard')] class extends Component {
                     $pipelineData = [
                         ['label' => 'Progress Report', 'pending' => $pipeline['progress_pending'], 'accepted' => $pipeline['progress_accepted']],
                         ['label' => 'Final Report',    'pending' => $pipeline['final_pending'],    'accepted' => $pipeline['final_accepted']],
-                        ['label' => 'Output',          'pending' => $pipeline['output_pending'],   'accepted' => $pipeline['output_accepted']],
+                        ['label' => 'Outcome',          'pending' => $pipeline['Outcome_pending'],   'accepted' => $pipeline['Outcome_accepted']],
                     ];
                 @endphp
 
@@ -482,13 +482,14 @@ new #[Title('Dashboard')] class extends Component {
 
 @script
 <script>
-    Alpine.data('outputLevelChart', (data) => ({
+    Alpine.data('OutcomeLevelChart', (data) => ({
         chart: null,
         chartType: 'bar',
         data: data,
 
         levelColors: {
-            'Scopus':  '#6366f1',
+            'Reputable International Journal':  '#6366f1',
+            'International':  '#6366f1',
             'Sinta 1': '#10b981',
             'Sinta 2': '#14b8a6',
             'Sinta 3': '#06b6d4',
@@ -497,15 +498,15 @@ new #[Title('Dashboard')] class extends Component {
             'Sinta 6': '#f59e0b',
         },
 
-        allLevels: ['Scopus', 'Sinta 1', 'Sinta 2', 'Sinta 3', 'Sinta 4', 'Sinta 5', 'Sinta 6'],
+        allLevels: ['Reputable International Journal', 'International', 'Sinta 1', 'Sinta 2', 'Sinta 3', 'Sinta 4', 'Sinta 5', 'Sinta 6'],
 
         init() {
             if (typeof ApexCharts === 'undefined') {
-                console.error('[Chart Output] ApexCharts not loaded');
+                console.error('[Chart Outcome] ApexCharts not loaded');
                 return;
             }
             if (!this.data || this.data.length === 0) {
-                console.warn('[Chart Output] No data');
+                console.warn('[Chart Outcome] No data');
                 return;
             }
             this.$nextTick(() => setTimeout(() => this.render(), 100));

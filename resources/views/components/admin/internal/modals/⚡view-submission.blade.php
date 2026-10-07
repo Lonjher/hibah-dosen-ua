@@ -3,11 +3,10 @@
 use App\Livewire\Forms\AdminNoteForm;
 use App\Models\AdminNote;
 use App\Models\FinalReport;
-use App\Models\Output;
+use App\Models\Outcome;
 use App\Models\ProgressReport;
 use App\Models\Proposal;
 use App\Models\ReviewerNote;
-use App\Models\User;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\On;
@@ -20,7 +19,7 @@ new class extends Component {
 
     public ?ProgressReport $progressReport = null;
     public ?FinalReport $finalReport = null;
-    public ?Output $output = null;
+    public ?outcome $outcome = null;
 
     public AdminNoteForm $adminNoteForm;
 
@@ -42,7 +41,7 @@ new class extends Component {
         $this->activeTab = match (true) {
             $this->progressReport !== null => 'progress_report',
             $this->finalReport    !== null => 'final_report',
-            $this->output         !== null => 'output',
+            $this->outcome         !== null => 'outcome',
             default                        => 'progress_report',
         };
 
@@ -82,7 +81,7 @@ new class extends Component {
             'adminNotes' => fn ($q) => $q->latest()->with('admin'),
         ])->where('proposal_id', $this->proposal_id)->first();
 
-        $this->output = Output::with([
+        $this->outcome = outcome::with([
             'adminNotes' => fn ($q) => $q->latest()->with('admin'),
         ])->where('proposal_id', $this->proposal_id)->first();
     }
@@ -100,7 +99,7 @@ new class extends Component {
         return match ($this->activeTab) {
             'progress_report' => $this->progressReport,
             'final_report'    => $this->finalReport,
-            'output'          => $this->output,
+            'outcome'          => $this->outcome,
             default           => null,
         };
     }
@@ -424,27 +423,27 @@ new class extends Component {
                         @endif
                     </button>
 
-                    {{-- Tab: Output --}}
-                    <button type="button" wire:click="switchTab('output')"
+                    {{-- Tab: Outcome --}}
+                    <button type="button" wire:click="switchTab('outcome')"
                         @class([
                             'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full
                              text-[10.5px] font-semibold transition-all whitespace-nowrap',
                             'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300
                              shadow-sm shadow-amber-500/20'
-                                => $activeTab === 'output',
+                                => $activeTab === 'outcome',
                             'text-slate-500 dark:text-zinc-400
                              hover:text-slate-700 dark:hover:text-zinc-200
                              hover:bg-slate-100 dark:hover:bg-zinc-800/60'
-                                => $activeTab !== 'output',
-                            'opacity-50' => ! $output,
+                                => $activeTab !== 'outcome',
+                            'opacity-50' => ! $outcome,
                         ])>
                         <flux:icon.trophy class="size-3" />
-                        <span>Output</span>
-                        @if ($output)
+                        <span>Outcome</span>
+                        @if ($outcome)
                             <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full
                                          bg-amber-200 text-amber-800
                                          dark:bg-amber-800 dark:text-amber-200">
-                                {{ $output->adminNotes->count() }}
+                                {{ $outcome->adminNotes->count() }}
                             </span>
                         @endif
                     </button>
@@ -468,7 +467,7 @@ new class extends Component {
                                 {{ match ($activeTab) {
                                     'progress_report' => 'Progress Report Not Uploaded',
                                     'final_report'    => 'Final Report Not Uploaded',
-                                    'output'          => 'Output Not Uploaded',
+                                    'outcome'          => 'outcome Not Uploaded',
                                     default           => 'No Data',
                                 } }}
                             </p>
@@ -477,8 +476,8 @@ new class extends Component {
                                     User must upload the progress report after the proposal is accepted.
                                 @elseif ($activeTab === 'final_report')
                                     Final report can be uploaded after the progress report is accepted.
-                                @elseif ($activeTab === 'output')
-                                    Output can be uploaded after the final report is accepted.
+                                @elseif ($activeTab === 'outcome')
+                                    outcome can be uploaded after the final report is accepted.
                                 @endif
                             </p>
                         </div>
@@ -623,8 +622,8 @@ new class extends Component {
                                         Presentation
                                     </a>
                                 @endif
-                                @if ($submission->research_output)
-                                    <a href="{{ Storage::disk('public')->url($submission->research_output) }}"
+                                @if ($submission->research_outcome)
+                                    <a href="{{ Storage::disk('public')->url($submission->research_outcome) }}"
                                         target="_blank"
                                         class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full
                                                bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20
@@ -633,7 +632,7 @@ new class extends Component {
                                                hover:scale-[1.02] active:scale-[0.97]
                                                transition-all duration-150">
                                         <flux:icon.document-arrow-down class="size-3.5" />
-                                        Research Output
+                                        Research outcome
                                     </a>
                                 @endif
                                 @if ($submission->submission_proof)
@@ -651,8 +650,8 @@ new class extends Component {
                                 @endif
                             @endif
 
-                            {{-- Output Files --}}
-                            @if ($activeTab === 'output')
+                            {{-- outcome Files --}}
+                            @if ($activeTab === 'outcome')
                                 <a href="{{ $submission->journal_link }}" target="_blank"
                                     class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full
                                            bg-sky-50 hover:bg-sky-100 dark:bg-sky-900/20
@@ -667,8 +666,8 @@ new class extends Component {
                         </div>
                     </div>
 
-                    {{-- ══════════ OUTPUT DETAILS ══════════ --}}
-                    @if ($activeTab === 'output')
+                    {{-- ══════════ outcome DETAILS ══════════ --}}
+                    @if ($activeTab === 'outcome')
                         <div class="rounded-2xl border border-slate-200 dark:border-zinc-700/70 overflow-hidden">
                             <div class="px-3 py-2 bg-slate-50 dark:bg-zinc-800/40
                                         border-b border-slate-200 dark:border-zinc-700/70">
@@ -1111,8 +1110,8 @@ new class extends Component {
                             </button>
                         @endif
 
-                        {{-- Final Report & Output: Accept --}}
-                        @if (in_array($activeTab, ['final_report', 'output']) && in_array($submission->status, ['pending', 'revised']))
+                        {{-- Final Report & outcome: Accept --}}
+                        @if (in_array($activeTab, ['final_report', 'outcome']) && in_array($submission->status, ['pending', 'revised']))
                             <button type="button" wire:click="accept"
                                 wire:loading.attr="disabled" wire:target="accept"
                                 class="inline-flex items-center justify-center gap-1

@@ -4,7 +4,7 @@ namespace Database\Factories;
 
 use App\Models\AdminNote;
 use App\Models\FinalReport;
-use App\Models\Output;
+use App\Models\Outcome;
 use App\Models\ProgressReport;
 use App\Models\Proposal;
 use App\Models\User;
@@ -55,11 +55,11 @@ class AdminNoteFactory extends Factory
         ]);
     }
 
-    public function forOutput(?Output $output = null, ?User $admin = null): static
+    public function forOutcome(?Outcome $Outcome = null, ?User $admin = null): static
     {
         return $this->state(fn () => [
-            'noteable_id'   => $output?->id ?? Output::factory(),
-            'noteable_type' => 'output',
+            'noteable_id'   => $Outcome?->id ?? Outcome::factory(),
+            'noteable_type' => 'Outcome',
             'admin_id'      => $admin?->id ?? User::factory()->admin(),
         ]);
     }

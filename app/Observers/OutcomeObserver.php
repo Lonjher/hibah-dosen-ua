@@ -5,7 +5,7 @@ namespace App\Observers;
 use App\Models\User;
 use App\Concerns\NotifiesSubmission;
 
-class OutputObserver
+class OutcomeObserver
 {
     use NotifiesSubmission;
 

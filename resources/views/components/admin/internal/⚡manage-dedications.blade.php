@@ -498,7 +498,7 @@ new #[Title('Manage Dedications')] class extends Component {
                                                     </flux:menu.item>
                                                 @endif
 
-                                                @if ($proposal->progressReport || $proposal->finalReport || $proposal->output)
+                                                @if ($proposal->progressReport || $proposal->finalReport || $proposal->outcome)
                                                     <flux:menu.separator />
                                                     <flux:menu.item icon="eye" x-data
                                                         x-on:click="$dispatch('open-view-submission', { proposalId: {{ $proposal->id }} })">

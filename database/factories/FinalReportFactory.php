@@ -20,8 +20,7 @@ class FinalReportFactory extends Factory
             'summary'          => fake()->paragraph(5),
             'keyword'          => implode(', ', fake()->words(3)),
             'report_path'      => 'final-reports/dummy-' . fake()->uuid() . '.pdf',
-            'ppt_path'         => 'final-reports/dummy-' . fake()->uuid() . '.pptx',
-            'research_output'  => 'final-reports/dummy-' . fake()->uuid() . '.docx',
+            'sptb_path'  => 'final-reports/dummy-' . fake()->uuid() . '.docx',
             'submission_proof' => 'final-reports/dummy-' . fake()->uuid() . '.jpg',
             'status'           => 'pending',
         ];

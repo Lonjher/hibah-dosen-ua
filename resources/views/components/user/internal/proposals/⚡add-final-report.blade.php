@@ -14,14 +14,14 @@ new class extends Component {
 
     public $report_file = null;
     public $ppt_file = null;
-    public $research_output_file = null;
+    public $research_outcome_file = null;
     public $submission_proof_file = null;
 
     #[On('open-add-final-report')]
     public function load(int $proposalId): void
     {
         $this->form->reset();
-        $this->reset(['report_file', 'ppt_file', 'research_output_file', 'submission_proof_file']);
+        $this->reset(['report_file', 'ppt_file', 'research_outcome_file', 'submission_proof_file']);
         $this->resetErrorBag();
         $this->resetValidation();
 
@@ -38,12 +38,12 @@ new class extends Component {
         $this->validate([
             'report_file'           => ['required', 'file', 'mimes:pdf', 'max:10240'],
             'ppt_file'              => ['required', 'file', 'mimes:ppt,pptx', 'max:20480'],
-            'research_output_file'  => ['required', 'file', 'mimes:pdf,doc,docx', 'max:10240'],
+            'research_outcome_file'  => ['required', 'file', 'mimes:pdf,doc,docx', 'max:10240'],
             'submission_proof_file' => ['required', 'image', 'max:5120'],
         ], [
             'report_file.required'           => 'File laporan wajib diunggah.',
             'ppt_file.required'              => 'File presentasi wajib diunggah.',
-            'research_output_file.required'  => 'File output penelitian wajib diunggah.',
+            'research_outcome_file.required'  => 'File outcome penelitian wajib diunggah.',
             'submission_proof_file.required' => 'Bukti submit wajib diunggah.',
         ]);
 
@@ -56,7 +56,7 @@ new class extends Component {
 
         $this->form->report_path      = $this->report_file->store('final-reports/reports', 'public');
         $this->form->ppt_path         = $this->ppt_file->store('final-reports/ppt', 'public');
-        $this->form->research_output  = $this->research_output_file->store('final-reports/output', 'public');
+        $this->form->research_outcome  = $this->research_outcome_file->store('final-reports/outcome', 'public');
         $this->form->submission_proof = $this->submission_proof_file->store('final-reports/proofs', 'public');
 
         $this->form->create();
@@ -69,7 +69,7 @@ new class extends Component {
     public function resetAll(): void
     {
         $this->form->reset();
-        $this->reset(['report_file', 'ppt_file', 'research_output_file', 'submission_proof_file']);
+        $this->reset(['report_file', 'ppt_file', 'research_outcome_file', 'submission_proof_file']);
         $this->resetErrorBag();
         $this->resetValidation();
     }
@@ -210,21 +210,21 @@ new class extends Component {
                         @enderror
                     </div>
 
-                    {{-- Research Output --}}
+                    {{-- Research outcome --}}
                     <div>
                         <x-input
                             type="file"
-                            wire:model="research_output_file"
-                            label="Research Output (PDF/DOC)"
+                            wire:model="research_outcome_file"
+                            label="Research outcome (PDF/DOC)"
                             accept=".pdf,.doc,.docx"
                             rounded="full"
                             required
                             hint="Max 10 MB · PDF, DOC, DOCX" />
-                        <div wire:loading wire:target="research_output_file"
+                        <div wire:loading wire:target="research_outcome_file"
                             class="mt-1 text-[10px] text-emerald-600 dark:text-emerald-400">
                             Uploading...
                         </div>
-                        @error('research_output_file')
+                        @error('research_outcome_file')
                             <p class="mt-1 text-[11px] text-rose-600">{{ $message }}</p>
                         @enderror
                     </div>

@@ -145,7 +145,7 @@ new #[Title('Research Proposals')] class extends Component {
         $selectedPeriod = $this->periodFilter === 'all' ? null : Period::find((int) $this->periodFilter);
 
         $proposals = Proposal::query()
-            ->with(['researchScheme', 'period', 'reviewer', 'progressReport', 'finalReport', 'output', 'adminNotes', 'reviewerNotes'])
+            ->with(['researchScheme', 'period', 'reviewer', 'progressReport', 'finalReport', 'outcome', 'adminNotes', 'reviewerNotes'])
             ->where('user_id', $userId)
             ->where('is_research', $this->isResearch)
             ->when($selectedPeriod, fn($q) => $q->where('period_id', $selectedPeriod->id))
@@ -646,8 +646,8 @@ new #[Title('Research Proposals')] class extends Component {
     <livewire:user.internal.proposals.edit-progress-report wire:key="edit-progress-research" />
     <livewire:user.internal.proposals.add-final-report wire:key="add-final-research" />
     <livewire:user.internal.proposals.edit-final-report wire:key="edit-final-research" />
-    <livewire:user.internal.proposals.add-output wire:key="add-output-research" />
-    <livewire:user.internal.proposals.edit-output wire:key="edit-output-research" />
+    <livewire:user.internal.proposals.add-outcome wire:key="add-outcome-research" />
+    <livewire:user.internal.proposals.edit-outcome wire:key="edit-outcome-research" />
 
     <livewire:user.internal.modals.view-admin-notes />
     <livewire:user.internal.modals.view-reviewer-notes />

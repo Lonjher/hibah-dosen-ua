@@ -25,7 +25,7 @@ use Illuminate\Support\Carbon;
  * @method MorphMany<AdminNote> adminNotes()
  */
 #[Guarded(['id'])]
-class Output extends Model
+class Outcome extends Model
 {
     use HasFactory;
     public function proposal(): BelongsTo

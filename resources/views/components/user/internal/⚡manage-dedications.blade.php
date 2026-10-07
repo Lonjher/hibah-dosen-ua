@@ -126,9 +126,9 @@ new #[Title('Community Service Proposals')] class extends Component {
         return $p->progressReport?->status === 'accepted' && !$p->finalReport;
     }
 
-    public function canAddOutput(Proposal $p): bool
+    public function canAddoutcome(Proposal $p): bool
     {
-        return $p->finalReport?->status === 'accepted' && !$p->output;
+        return $p->finalReport?->status === 'accepted' && !$p->outcome;
     }
 
     /* ============================================================
@@ -160,7 +160,7 @@ new #[Title('Community Service Proposals')] class extends Component {
         $selectedPeriod = $this->periodFilter === 'all' ? null : Period::find((int) $this->periodFilter);
 
         $proposals = Proposal::query()
-            ->with(['researchScheme', 'period', 'reviewer', 'progressReport', 'finalReport', 'output', 'adminNotes', 'reviewerNotes'])
+            ->with(['researchScheme', 'period', 'reviewer', 'progressReport', 'finalReport', 'coutcome', 'adminNotes', 'reviewerNotes'])
             ->where('user_id', $userId)
             ->where('is_research', false)
             ->when($selectedPeriod, fn($q) => $q->where('period_id', $selectedPeriod->id))
@@ -464,18 +464,18 @@ new #[Title('Community Service Proposals')] class extends Component {
                                                     </flux:menu.item>
                                                 @endif
 
-                                                @if ($this->canAddOutput($proposal))
+                                                @if ($this->canAddoutcome($proposal))
                                                     <flux:menu.item icon="trophy" x-data
-                                                        x-on:click="$dispatch('open-add-output', { proposalId: {{ $proposal->id }} })"
+                                                        x-on:click="$dispatch('open-add-outcome', { proposalId: {{ $proposal->id }} })"
                                                         class="text-amber-600 dark:text-amber-400">
-                                                        Upload Output
+                                                        Upload outcome
                                                     </flux:menu.item>
                                                 @endif
 
-                                                @if ($proposal->output && $this->canEdit($proposal->output->status))
+                                                @if ($proposal->outcome && $this->canEdit($proposal->outcome->status))
                                                     <flux:menu.item icon="pencil-square" x-data
-                                                        x-on:click="$dispatch('open-edit-output', { id: {{ $proposal->output->id }} })">
-                                                        Edit Output
+                                                        x-on:click="$dispatch('open-edit-outcome', { id: {{ $proposal->outcome->id }} })">
+                                                        Edit outcome
                                                     </flux:menu.item>
                                                 @endif
 
@@ -587,8 +587,8 @@ new #[Title('Community Service Proposals')] class extends Component {
     <livewire:user.internal.proposals.edit-progress-report wire:key="edit-progress-dedication" />
     <livewire:user.internal.proposals.add-final-report wire:key="add-final-dedication" />
     <livewire:user.internal.proposals.edit-final-report wire:key="edit-final-dedication" />
-    <livewire:user.internal.proposals.add-output wire:key="add-output-dedication" />
-    <livewire:user.internal.proposals.edit-output wire:key="edit-output-dedication" />
+    <livewire:user.internal.proposals.add-outcome wire:key="add-outcome-dedication" />
+    <livewire:user.internal.proposals.edit-outcome wire:key="edit-outcome-dedication" />
 
     <livewire:user.internal.modals.view-admin-notes />
     <livewire:user.internal.modals.view-reviewer-notes />

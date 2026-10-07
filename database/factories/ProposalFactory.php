@@ -26,6 +26,7 @@ class ProposalFactory extends Factory
             'keywords' => implode(', ', fake()->words(4)),
             'is_research' => true,
             'file_path' => 'proposals/dummy-' . fake()->uuid() . '.pdf',
+            'rab_path' => 'rab/dummy-' . fake()->uuid() . '.pdf',
             'status' => 'pending',
             'period_id' => Period::factory(),
         ];

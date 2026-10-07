@@ -5,7 +5,7 @@ namespace Database\Seeders;
 use App\Models\AdminNote;
 use App\Models\BudgetProposal;
 use App\Models\FinalReport;
-use App\Models\Output;
+use App\Models\Outcome;
 use App\Models\Period;
 use App\Models\ProgressReport;
 use App\Models\Proposal;
@@ -82,7 +82,7 @@ class ProposalSeeder extends Seeder
         $this->command->info("✅ Proposals seeded: {$totalProposals}");
         $this->command->info('   - Progress Reports: ' . ProgressReport::count());
         $this->command->info('   - Final Reports: '    . FinalReport::count());
-        $this->command->info('   - Outputs: '          . Output::count());
+        $this->command->info('   - Outcomes: '          . Outcome::count());
         $this->command->info('   - Reviewer Notes: '   . ReviewerNote::count());
         $this->command->info('   - Admin Notes: '      . AdminNote::count());
     }
@@ -210,7 +210,7 @@ class ProposalSeeder extends Seeder
     }
 
     /**
-     * Buat final report + output.
+     * Buat final report + Outcome.
      */
     protected function createFinalReport(
         Proposal $proposal,
@@ -238,26 +238,26 @@ class ProposalSeeder extends Seeder
                 ->create();
         }
 
-        // ── Kalau accepted → buat Output ──
+        // ── Kalau accepted → buat Outcome ──
         if ($status !== 'accepted') return;
         if (! fake()->boolean(75)) return;
 
-        $output = Output::factory()
+        $Outcome = Outcome::factory()
             ->state([
                 'proposal_id' => $proposal->id,
-                'status'      => $this->randomOutputStatus(),
+                'status'      => $this->randomOutcomeStatus(),
             ])
             ->create();
 
         $createdAt = $finalReport->created_at->copy()->addMonths(rand(2, 6));
-        $output->update([
+        $Outcome->update([
             'created_at' => $createdAt,
             'updated_at' => $createdAt,
         ]);
 
         if (fake()->boolean(50)) {
             AdminNote::factory()
-                ->forOutput($output, $admin)
+                ->forOutcome($Outcome, $admin)
                 ->create();
         }
     }
@@ -301,7 +301,7 @@ class ProposalSeeder extends Seeder
         return $this->weightedPick($pool);
     }
 
-    protected function randomOutputStatus(): string
+    protected function randomOutcomeStatus(): string
     {
         $pool = [
             'pending'  => 3,

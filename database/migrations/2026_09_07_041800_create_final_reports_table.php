@@ -14,8 +14,7 @@ return new class extends Migration
             $table->text('summary');
             $table->string('keyword');
             $table->string('report_path');       // PDF
-            $table->string('ppt_path');          // PPT
-            $table->string('research_output');   // PDF/WORD
+            $table->string('sptb_path');   // Expenditure Responsibility Statement/SPTB (Word or PDF)
             $table->string('submission_proof');  // img
             $table->string('status')->default('pending');
             // pending, revised, accepted, rejected

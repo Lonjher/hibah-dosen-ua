@@ -1,10 +1,10 @@
 <?php
 
 use App\Livewire\Forms\FinalReportForm;
-use App\Livewire\Forms\OutputForm;
+use App\Livewire\Forms\OutcomeForm;
 use App\Livewire\Forms\ProgressReportForm;
 use App\Models\FinalReport;
-use App\Models\Output;
+use App\Models\Outcome;
 use App\Models\ProgressReport;
 use App\Models\Proposal;
 use Flux\Flux;
@@ -25,12 +25,12 @@ new class extends Component {
     // Submissions
     public ?ProgressReport $progressReport = null;
     public ?FinalReport $finalReport = null;
-    public ?Output $output = null;
+    public ?outcome $outcome = null;
 
     // Forms
     public ProgressReportForm $progressForm;
     public FinalReportForm $finalForm;
-    public OutputForm $outputForm;
+    public outcomeForm $outcomeForm;
 
     // Files untuk upload
     public $progress_report_file = null;
@@ -38,13 +38,13 @@ new class extends Component {
 
     public $final_report_file = null;
     public $final_ppt_file = null;
-    public $final_research_output_file = null;
+    public $final_research_outcome_file = null;
     public $final_submission_proof_file = null;
 
     // Mode form: show/hide upload form per tab
     public bool $showProgressForm = false;
     public bool $showFinalForm = false;
-    public bool $showOutputForm = false;
+    public bool $showoutcomeForm = false;
 
     #[On('open-view-submission-user')]
     public function load(int $proposalId): void
@@ -55,7 +55,7 @@ new class extends Component {
         $this->activeTab = 'progress_report';
         $this->showProgressForm = false;
         $this->showFinalForm = false;
-        $this->showOutputForm = false;
+        $this->showoutcomeForm = false;
 
         $this->setupForms();
         $this->dispatch('show-view-submission-user');
@@ -71,7 +71,7 @@ new class extends Component {
             return;
         }
 
-        if ($tab === 'output' && $this->finalReport?->status !== 'accepted') {
+        if ($tab === 'outcome' && $this->finalReport?->status !== 'accepted') {
             Flux::toast('Final Report harus di-accept dulu.', variant: 'danger');
             return;
         }
@@ -99,7 +99,7 @@ new class extends Component {
             ->where('proposal_id', $this->proposal_id)
             ->first();
 
-        $this->output = Output::with([
+        $this->outcome = outcome::with([
             'adminNotes' => fn($q) => $q->latest()->with('admin'),
         ])
             ->where('proposal_id', $this->proposal_id)
@@ -110,9 +110,9 @@ new class extends Component {
     {
         $this->progressForm->reset();
         $this->finalForm->reset();
-        $this->outputForm->reset();
+        $this->outcomeForm->reset();
 
-        $this->reset(['progress_report_file', 'progress_ppt_file', 'final_report_file', 'final_ppt_file', 'final_research_output_file', 'final_submission_proof_file']);
+        $this->reset(['progress_report_file', 'progress_ppt_file', 'final_report_file', 'final_ppt_file', 'final_research_outcome_file', 'final_submission_proof_file']);
     }
 
     // ═══════════════ TAB UNLOCK CHECK ═══════════════
@@ -122,7 +122,7 @@ new class extends Component {
         return $this->progressReport?->status === 'accepted';
     }
 
-    public function isOutputUnlocked(): bool
+    public function isoutcomeUnlocked(): bool
     {
         return $this->finalReport?->status === 'accepted';
     }
@@ -234,7 +234,7 @@ new class extends Component {
         $this->finalForm->reset();
         $this->finalForm->proposal_id = $this->proposal_id;
         $this->finalForm->status = 'pending';
-        $this->reset(['final_report_file', 'final_ppt_file', 'final_research_output_file', 'final_submission_proof_file']);
+        $this->reset(['final_report_file', 'final_ppt_file', 'final_research_outcome_file', 'final_submission_proof_file']);
         $this->showFinalForm = true;
         $this->resetErrorBag();
         $this->resetValidation();
@@ -247,7 +247,7 @@ new class extends Component {
         }
 
         $this->finalForm->setFinalReport($this->finalReport);
-        $this->reset(['final_report_file', 'final_ppt_file', 'final_research_output_file', 'final_submission_proof_file']);
+        $this->reset(['final_report_file', 'final_ppt_file', 'final_research_outcome_file', 'final_submission_proof_file']);
         $this->showFinalForm = true;
         $this->resetErrorBag();
         $this->resetValidation();
@@ -257,7 +257,7 @@ new class extends Component {
     {
         $this->showFinalForm = false;
         $this->finalForm->reset();
-        $this->reset(['final_report_file', 'final_ppt_file', 'final_research_output_file', 'final_submission_proof_file']);
+        $this->reset(['final_report_file', 'final_ppt_file', 'final_research_outcome_file', 'final_submission_proof_file']);
         $this->resetErrorBag();
         $this->resetValidation();
     }
@@ -272,13 +272,13 @@ new class extends Component {
             [
                 'final_report_file' => [$isEdit ? 'nullable' : 'required', 'file', 'mimes:pdf', 'max:10240'],
                 'final_ppt_file' => [$isEdit ? 'nullable' : 'required', 'file', 'mimes:ppt,pptx', 'max:20480'],
-                'final_research_output_file' => [$isEdit ? 'nullable' : 'required', 'file', 'mimes:pdf,doc,docx', 'max:10240'],
+                'final_research_outcome_file' => [$isEdit ? 'nullable' : 'required', 'file', 'mimes:pdf,doc,docx', 'max:10240'],
                 'final_submission_proof_file' => [$isEdit ? 'nullable' : 'required', 'image', 'max:5120'],
             ],
             [
                 'final_report_file.required' => 'File laporan wajib diunggah.',
                 'final_ppt_file.required' => 'File presentasi wajib diunggah.',
-                'final_research_output_file.required' => 'File output penelitian wajib diunggah.',
+                'final_research_outcome_file.required' => 'File outcome penelitian wajib diunggah.',
                 'final_submission_proof_file.required' => 'Bukti submit wajib diunggah.',
             ],
         );
@@ -300,8 +300,8 @@ new class extends Component {
         if ($this->final_ppt_file) {
             $this->finalForm->ppt_path = $this->final_ppt_file->store('final-reports/ppt', 'public');
         }
-        if ($this->final_research_output_file) {
-            $this->finalForm->research_output = $this->final_research_output_file->store('final-reports/output', 'public');
+        if ($this->final_research_outcome_file) {
+            $this->finalForm->research_outcome = $this->final_research_outcome_file->store('final-reports/outcome', 'public');
         }
         if ($this->final_submission_proof_file) {
             $this->finalForm->submission_proof = $this->final_submission_proof_file->store('final-reports/proofs', 'public');
@@ -320,72 +320,72 @@ new class extends Component {
         $this->reload();
     }
 
-    // ═══════════════ OUTPUT ACTIONS ═══════════════
+    // ═══════════════ outcome ACTIONS ═══════════════
 
-    public function showUploadOutput(): void
+    public function showUploadoutcome(): void
     {
-        if ($this->output) {
+        if ($this->outcome) {
             return;
         }
-        if (!$this->isOutputUnlocked()) {
+        if (!$this->isoutcomeUnlocked()) {
             Flux::toast('Final Report harus di-accept dulu.', variant: 'danger');
             return;
         }
 
-        $this->outputForm->reset();
-        $this->outputForm->proposal_id = $this->proposal_id;
-        $this->outputForm->status = 'pending';
-        $this->showOutputForm = true;
+        $this->outcomeForm->reset();
+        $this->outcomeForm->proposal_id = $this->proposal_id;
+        $this->outcomeForm->status = 'pending';
+        $this->showoutcomeForm = true;
         $this->resetErrorBag();
         $this->resetValidation();
     }
 
-    public function showEditOutput(): void
+    public function showEditoutcome(): void
     {
-        if (!$this->output) {
+        if (!$this->outcome) {
             return;
         }
-        $this->outputForm->setOutput($this->output);
-        $this->showOutputForm = true;
+        $this->outcomeForm->setoutcome($this->outcome);
+        $this->showoutcomeForm = true;
         $this->resetErrorBag();
         $this->resetValidation();
     }
 
-    public function cancelOutputForm(): void
+    public function canceloutcomeForm(): void
     {
-        $this->showOutputForm = false;
-        $this->outputForm->reset();
+        $this->showoutcomeForm = false;
+        $this->outcomeForm->reset();
         $this->resetErrorBag();
         $this->resetValidation();
     }
 
-    public function saveOutput(): void
+    public function saveoutcome(): void
     {
-        $this->outputForm->validate();
+        $this->outcomeForm->validate();
 
-        $isEdit = $this->output !== null;
+        $isEdit = $this->outcome !== null;
 
         if (!$isEdit) {
             if ($this->finalReport?->status !== 'accepted') {
                 Flux::toast('Final Report harus di-accept dulu.', variant: 'danger');
                 return;
             }
-            if ($this->proposal->output) {
-                Flux::toast('Output sudah ada.', variant: 'danger');
+            if ($this->proposal->outcome) {
+                Flux::toast('outcome sudah ada.', variant: 'danger');
                 return;
             }
         }
 
         if ($isEdit) {
-            $this->outputForm->status = 'pending';
-            $this->outputForm->update();
-            Flux::toast('Output berhasil diperbarui.', variant: 'success');
+            $this->outcomeForm->status = 'pending';
+            $this->outcomeForm->update();
+            Flux::toast('outcome berhasil diperbarui.', variant: 'success');
         } else {
-            $this->outputForm->create();
-            Flux::toast('Output berhasil diunggah.', variant: 'success');
+            $this->outcomeForm->create();
+            Flux::toast('outcome berhasil diunggah.', variant: 'success');
         }
 
-        $this->showOutputForm = false;
+        $this->showoutcomeForm = false;
         $this->reload();
     }
     public function levelMeta(?string $level): array
@@ -492,25 +492,25 @@ new class extends Component {
                         @endif
                     </button>
 
-                    {{-- Tab: Output --}}
-                    <button type="button" wire:click="switchTab('output')" @class([
+                    {{-- Tab: outcome --}}
+                    <button type="button" wire:click="switchTab('outcome')" @class([
                         'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all whitespace-nowrap',
                         'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 shadow-sm shadow-amber-500/20' =>
-                            $activeTab === 'output',
+                            $activeTab === 'outcome',
                         'text-slate-500 dark:text-zinc-400 hover:text-slate-700 dark:hover:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800/60' =>
-                            $activeTab !== 'output',
-                        'opacity-40 cursor-not-allowed' => !$this->isOutputUnlocked(),
+                            $activeTab !== 'outcome',
+                        'opacity-40 cursor-not-allowed' => !$this->isoutcomeUnlocked(),
                     ])>
                         <span
                             class="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold
                          bg-amber-100 text-amber-700
                          dark:bg-amber-900/40 dark:text-amber-300">3</span>
-                        <span>Output</span>
-                        @if (!$this->isOutputUnlocked())
+                        <span>outcome</span>
+                        @if (!$this->isoutcomeUnlocked())
                             <flux:icon.lock-closed class="size-3" />
-                        @elseif ($output)
+                        @elseif ($outcome)
                             <span
-                                class="w-1.5 h-1.5 rounded-full {{ $output->status === 'accepted' ? 'bg-emerald-500' : ($output->status === 'rejected' ? 'bg-rose-500' : 'bg-amber-500') }}"></span>
+                                class="w-1.5 h-1.5 rounded-full {{ $outcome->status === 'accepted' ? 'bg-emerald-500' : ($outcome->status === 'rejected' ? 'bg-rose-500' : 'bg-amber-500') }}"></span>
                         @endif
                     </button>
 
@@ -986,17 +986,17 @@ new class extends Component {
                                 </div>
 
                                 <div>
-                                    <x-input type="file" wire:model="final_research_output_file"
-                                        label="Research Output" accept=".pdf,.doc,.docx" rounded="full"
+                                    <x-input type="file" wire:model="final_research_outcome_file"
+                                        label="Research outcome" accept=".pdf,.doc,.docx" rounded="full"
                                         :required="!$finalReport" />
                                     @if ($finalReport)
                                         <p
                                             class="mt-1 text-[10px] text-slate-500 dark:text-zinc-500 flex items-center gap-1">
                                             <flux:icon.document-text class="size-3 shrink-0" />
-                                            File: {{ basename($finalReport->research_output) }}
+                                            File: {{ basename($finalReport->research_outcome) }}
                                         </p>
                                     @endif
-                                    @error('final_research_output_file')
+                                    @error('final_research_outcome_file')
                                         <p class="mt-1 text-[11px] text-rose-600">{{ $message }}</p>
                                     @enderror
                                 </div>
@@ -1123,8 +1123,8 @@ new class extends Component {
                                         Presentation
                                     </a>
                                 @endif
-                                @if ($finalReport->research_output)
-                                    <a href="{{ Storage::disk('public')->url($finalReport->research_output) }}"
+                                @if ($finalReport->research_outcome)
+                                    <a href="{{ Storage::disk('public')->url($finalReport->research_outcome) }}"
                                         target="_blank"
                                         class="inline-flex items-center gap-2 px-3 py-2 rounded-full
                                                bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30
@@ -1132,7 +1132,7 @@ new class extends Component {
                                                text-blue-700 dark:text-blue-300 text-[11px] font-semibold
                                                hover:scale-[1.02] active:scale-[0.97] transition-all duration-150">
                                         <flux:icon.document-arrow-down class="size-4" />
-                                        Research Output
+                                        Research outcome
                                     </a>
                                 @endif
                                 @if ($finalReport->submission_proof)
@@ -1209,11 +1209,11 @@ new class extends Component {
                 @endif
 
                 {{-- ═══════════════════════════════════════════════ --}}
-                {{-- TAB 3: OUTPUT                                   --}}
+                {{-- TAB 3: outcome                                   --}}
                 {{-- ═══════════════════════════════════════════════ --}}
-                @if ($activeTab === 'output')
+                @if ($activeTab === 'outcome')
 
-                    @if (!$this->isOutputUnlocked())
+                    @if (!$this->isoutcomeUnlocked())
                         <div class="flex flex-col items-center justify-center py-12">
                             <div
                                 class="w-16 h-16 rounded-3xl bg-slate-100 dark:bg-zinc-800
@@ -1221,13 +1221,13 @@ new class extends Component {
                                 <flux:icon.lock-closed class="size-8 text-slate-400 dark:text-zinc-600" />
                             </div>
                             <p class="text-[13px] font-semibold text-slate-700 dark:text-zinc-300">
-                                Output Terkunci
+                                outcome Terkunci
                             </p>
                             <p class="text-[11px] text-slate-500 dark:text-zinc-400 mt-1 text-center max-w-xs">
-                                Output dapat diunggah setelah Final Report di-accept oleh admin.
+                                outcome dapat diunggah setelah Final Report di-accept oleh admin.
                             </p>
                         </div>
-                    @elseif (!$output && !$showOutputForm)
+                    @elseif (!$outcome && !$showoutcomeForm)
                         <div class="flex flex-col items-center justify-center py-12">
                             <div
                                 class="w-16 h-16 rounded-3xl bg-amber-100 dark:bg-amber-900/30
@@ -1235,57 +1235,57 @@ new class extends Component {
                                 <flux:icon.trophy class="size-8 text-amber-600 dark:text-amber-400" />
                             </div>
                             <p class="text-[13px] font-semibold text-slate-700 dark:text-zinc-300">
-                                Output Belum Diunggah
+                                outcome Belum Diunggah
                             </p>
                             <p class="text-[11px] text-slate-500 dark:text-zinc-400 mt-1 text-center max-w-xs">
                                 Silakan unggah luaran penelitian Anda.
                             </p>
-                            <button type="button" wire:click="showUploadOutput"
+                            <button type="button" wire:click="showUploadoutcome"
                                 class="mt-4 inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded-full text-white
                                        bg-amber-600/90 hover:bg-amber-600
                                        shadow-sm shadow-amber-500/20 hover:shadow-sm hover:shadow-amber-500/30
                                        hover:scale-[1.02] active:scale-[0.97]
                                        transition-all duration-150">
                                 <flux:icon.plus class="size-3.5" />
-                                Upload Output
+                                Upload outcome
                             </button>
                         </div>
-                    @elseif ($showOutputForm)
+                    @elseif ($showoutcomeForm)
                         <div class="space-y-4">
                             <div class="flex items-center justify-between">
                                 <h4 class="text-[13px] font-heading font-semibold text-slate-900 dark:text-white">
-                                    {{ $output ? 'Edit Output' : 'Upload Output' }}
+                                    {{ $outcome ? 'Edit outcome' : 'Upload outcome' }}
                                 </h4>
                             </div>
 
                             <div>
-                                <x-input wire:model="outputForm.journal_name" label="Journal Name" required
+                                <x-input wire:model="outcomeForm.journal_name" label="Journal Name" required
                                     rounded="full" />
-                                @error('outputForm.journal_name')
+                                @error('outcomeForm.journal_name')
                                     <p class="mt-1 text-[11px] text-rose-600">{{ $message }}</p>
                                 @enderror
                             </div>
 
                             <div>
-                                <x-input type="url" wire:model="outputForm.journal_link" label="Journal Link"
+                                <x-input type="url" wire:model="outcomeForm.journal_link" label="Journal Link"
                                     required rounded="full" placeholder="https://..." />
-                                @error('outputForm.journal_link')
+                                @error('outcomeForm.journal_link')
                                     <p class="mt-1 text-[11px] text-rose-600">{{ $message }}</p>
                                 @enderror
                             </div>
 
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                 <div>
-                                    <x-input wire:model="outputForm.edition" label="Edition" required
+                                    <x-input wire:model="outcomeForm.edition" label="Edition" required
                                         rounded="full" />
                                 </div>
 
                                 <div>
-                                    <x-input wire:model="outputForm.volume" label="Volume" required rounded="full" />
+                                    <x-input wire:model="outcomeForm.volume" label="Volume" required rounded="full" />
                                 </div>
 
                                 <div>
-                                    <x-select wire:model="outputForm.level" label="Level" required size="lg"
+                                    <x-select wire:model="outcomeForm.level" label="Level" required size="lg"
                                         color="amber">
                                         <option value="">— Pilih —</option>
                                         <option value="Scopus">Scopus</option>
@@ -1299,7 +1299,7 @@ new class extends Component {
                             </div>
 
                             <div class="flex justify-end gap-1.5 pt-2">
-                                <button type="button" wire:click="cancelOutputForm"
+                                <button type="button" wire:click="canceloutcomeForm"
                                     class="px-3 py-1.5 text-[11px] font-medium rounded-full
                                            text-slate-700 dark:text-zinc-300
                                            bg-white dark:bg-zinc-800
@@ -1310,30 +1310,30 @@ new class extends Component {
                                            transition-all duration-150">
                                     Batal
                                 </button>
-                                <button type="button" wire:click="saveOutput" wire:loading.attr="disabled"
-                                    wire:target="saveOutput"
+                                <button type="button" wire:click="saveoutcome" wire:loading.attr="disabled"
+                                    wire:target="saveoutcome"
                                     class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded-full text-white
                                            bg-amber-600/90 hover:bg-amber-600
                                            shadow-sm shadow-amber-500/20 hover:shadow-sm hover:shadow-amber-500/30
                                            disabled:opacity-60 disabled:cursor-wait
                                            hover:scale-[1.02] active:scale-[0.97] disabled:hover:scale-100
                                            transition-all duration-150">
-                                    <svg wire:loading wire:target="saveOutput" class="animate-spin size-3"
+                                    <svg wire:loading wire:target="saveoutcome" class="animate-spin size-3"
                                         viewBox="0 0 24 24" fill="none">
                                         <circle cx="12" cy="12" r="10" stroke="currentColor"
                                             stroke-width="4" opacity=".25" />
                                         <path d="M4 12a8 8 0 018-8" stroke="currentColor" stroke-width="4"
                                             stroke-linecap="round" />
                                     </svg>
-                                    <span wire:loading.remove wire:target="saveOutput">
-                                        {{ $output ? 'Update' : 'Upload' }}
+                                    <span wire:loading.remove wire:target="saveoutcome">
+                                        {{ $outcome ? 'Update' : 'Upload' }}
                                     </span>
-                                    <span wire:loading wire:target="saveOutput">Menyimpan...</span>
+                                    <span wire:loading wire:target="saveoutcome">Menyimpan...</span>
                                 </button>
                             </div>
                         </div>
                     @else
-                        @php $meta = $output->statusMeta(); @endphp
+                        @php $meta = $outcome->statusMeta(); @endphp
 
                         <div class="flex items-center justify-between gap-3">
                             <div class="flex items-center gap-2">
@@ -1341,12 +1341,12 @@ new class extends Component {
                                     {{ $meta['label'] }}
                                 </span>
                                 <span class="text-[10px] text-slate-500 dark:text-zinc-400">
-                                    {{ $output->created_at?->format('d M Y, H:i') }}
+                                    {{ $outcome->created_at?->format('d M Y, H:i') }}
                                 </span>
                             </div>
 
-                            @if (in_array($output->status, ['pending', 'revised']))
-                                <button type="button" wire:click="showEditOutput"
+                            @if (in_array($outcome->status, ['pending', 'revised']))
+                                <button type="button" wire:click="showEditoutcome"
                                     class="inline-flex items-center gap-1 px-2.5 py-1 text-[10.5px] font-medium rounded-full
                                            text-slate-600 dark:text-zinc-300
                                            bg-white dark:bg-zinc-800
@@ -1368,7 +1368,7 @@ new class extends Component {
                                     class="text-[9px] uppercase tracking-wider font-semibold text-slate-500 dark:text-zinc-400">
                                     Journal</p>
                                 <p class="text-[11px] font-semibold text-slate-900 dark:text-zinc-100 mt-0.5">
-                                    {{ $output->journal_name }}
+                                    {{ $outcome->journal_name }}
                                 </p>
                             </div>
                             <div
@@ -1377,12 +1377,12 @@ new class extends Component {
                                 <p
                                     class="text-[9px] uppercase tracking-wider font-semibold text-slate-500 dark:text-zinc-400">
                                     Level</p>
-                                @php $levelMeta = $this->levelMeta($output->level); @endphp
+                                @php $levelMeta = $this->levelMeta($outcome->level); @endphp
                                 <span
                                     class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold mt-0.5
                                              {{ $levelMeta['class'] }}">
                                     <flux:icon.star class="size-2.5" />
-                                    {{ $output->level }}
+                                    {{ $outcome->level }}
                                 </span>
                             </div>
                             <div
@@ -1392,7 +1392,7 @@ new class extends Component {
                                     class="text-[9px] uppercase tracking-wider font-semibold text-slate-500 dark:text-zinc-400">
                                     Edition</p>
                                 <p class="text-[11px] font-semibold text-slate-900 dark:text-zinc-100 mt-0.5">
-                                    {{ $output->edition }}
+                                    {{ $outcome->edition }}
                                 </p>
                             </div>
                             <div
@@ -1402,7 +1402,7 @@ new class extends Component {
                                     class="text-[9px] uppercase tracking-wider font-semibold text-slate-500 dark:text-zinc-400">
                                     Volume</p>
                                 <p class="text-[11px] font-semibold text-slate-900 dark:text-zinc-100 mt-0.5">
-                                    {{ $output->volume }}
+                                    {{ $outcome->volume }}
                                 </p>
                             </div>
                         </div>
@@ -1411,7 +1411,7 @@ new class extends Component {
                             <p
                                 class="text-[10px] uppercase tracking-wider font-semibold text-slate-500 dark:text-zinc-400 mb-2">
                                 Link</p>
-                            <a href="{{ $output->journal_link }}" target="_blank"
+                            <a href="{{ $outcome->journal_link }}" target="_blank"
                                 class="inline-flex items-center gap-2 px-3 py-2 rounded-full
                                        bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30
                                        border border-blue-200 dark:border-blue-800
@@ -1422,7 +1422,7 @@ new class extends Component {
                             </a>
                         </div>
 
-                        @if ($output->adminNotes->count() > 0)
+                        @if ($outcome->adminNotes->count() > 0)
                             <div class="rounded-2xl border border-amber-200 dark:border-amber-800 overflow-hidden">
                                 <div
                                     class="px-3 py-2.5 bg-amber-50 dark:bg-amber-900/20
@@ -1437,13 +1437,13 @@ new class extends Component {
                                         <span
                                             class="text-[9px] font-bold px-1.5 py-0.5 rounded-full
                                                      bg-amber-200 text-amber-800 dark:bg-amber-800 dark:text-amber-200">
-                                            {{ $output->adminNotes->count() }}
+                                            {{ $outcome->adminNotes->count() }}
                                         </span>
                                     </span>
                                 </div>
                                 <div class="p-3 space-y-2 max-h-60 overflow-y-auto">
-                                    @foreach ($output->adminNotes as $note)
-                                        <div wire:key="an-output-{{ $note->id }}"
+                                    @foreach ($outcome->adminNotes as $note)
+                                        <div wire:key="an-outcome-{{ $note->id }}"
                                             class="rounded-xl border border-amber-200 dark:border-amber-800
                                                    bg-amber-50 dark:bg-amber-900/20 p-2.5">
                                             <div class="flex items-center gap-2 mb-1">

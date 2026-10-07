@@ -3,12 +3,12 @@
 namespace App\Providers;
 
 use App\Models\FinalReport;
-use App\Models\Output;
+use App\Models\OutCome;
 use App\Models\ProgressReport;
 use App\Models\Proposal;
 use App\Models\User;
 use App\Observers\FinalReportObserver;
-use App\Observers\OutputObserver;
+use App\Observers\OutcomeObserver;
 use App\Observers\ProgressReportObserver;
 use App\Observers\ProposalObserver;
 use Carbon\CarbonImmutable;
@@ -38,14 +38,14 @@ class AppServiceProvider extends ServiceProvider
         Proposal::observe(ProposalObserver::class);
         ProgressReport::observe(ProgressReportObserver::class);
         FinalReport::observe(FinalReportObserver::class);
-        Output::observe(OutputObserver::class);
+        OutCome::observe(OutcomeObserver::class);
 
         Relation::enforceMorphMap([
             'user'            => User::class,
             'proposal'        => Proposal::class,
             'progress_report' => ProgressReport::class,
             'final_report'    => FinalReport::class,
-            'output'          => Output::class,
+            'outcome'          => Outcome::class,
         ]);
 
         $this->configureDefaults();

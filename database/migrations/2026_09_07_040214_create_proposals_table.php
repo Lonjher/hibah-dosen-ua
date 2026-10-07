@@ -20,7 +20,8 @@ return new class extends Migration
             $table->text('summary');
             $table->string('keywords');
             $table->boolean('is_research');
-            $table->string('file_path');
+            $table->string('file_path'); // Word or PDF for proposal file
+            $table->string('rab_path'); // Excel File for RAB
             $table->string('status');
             $table->unsignedBigInteger('period_id');
             $table->foreign('research_scheme_id')->references('id')->on('research_schemes')->onDelete('cascade');

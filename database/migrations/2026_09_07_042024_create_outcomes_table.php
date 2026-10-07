@@ -6,9 +6,12 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
-        Schema::create('outputs', function (Blueprint $table) {
+        Schema::create('outcomes', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('proposal_id');
             $table->string('journal_name');
@@ -23,8 +26,11 @@ return new class extends Migration
         });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
-        Schema::dropIfExists('outputs');
+        Schema::dropIfExists('outcomes');
     }
 };

@@ -1,15 +1,15 @@
 <?php
 
-use App\Livewire\Forms\OutputForm;
+use App\Livewire\Forms\outcomeForm;
 use App\Models\Proposal;
 use Flux\Flux;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
 new class extends Component {
-    public OutputForm $form;
+    public outcomeForm $form;
 
-    #[On('open-add-output')]
+    #[On('open-add-outcome')]
     public function load(int $proposalId): void
     {
         $this->form->reset();
@@ -19,7 +19,7 @@ new class extends Component {
         $this->form->proposal_id = $proposalId;
         $this->form->status = 'pending';
 
-        $this->dispatch('show-add-output');
+        $this->dispatch('show-add-outcome');
     }
 
     public function save(): void
@@ -28,15 +28,15 @@ new class extends Component {
 
         $proposal = Proposal::where('user_id', auth()->id())->findOrFail($this->form->proposal_id);
 
-        if ($proposal->finalReport?->status !== 'accepted' || $proposal->output) {
-            Flux::toast('Output tidak dapat diunggah.', variant: 'danger');
+        if ($proposal->finalReport?->status !== 'accepted' || $proposal->outcome) {
+            Flux::toast('outcome tidak dapat diunggah.', variant: 'danger');
             return;
         }
 
         $this->form->create();
 
-        Flux::toast('Output berhasil diunggah.', variant: 'success');
-        $this->dispatch('output-added');
+        Flux::toast('outcome berhasil diunggah.', variant: 'success');
+        $this->dispatch('outcome-added');
         $this->form->reset();
     }
 };
@@ -47,12 +47,12 @@ new class extends Component {
         show: false,
         errorMessage: '',
         init() {
-            window.addEventListener('show-add-output', () => {
+            window.addEventListener('show-add-outcome', () => {
                 this.errorMessage = '';
                 this.show = true;
             });
-            window.addEventListener('output-error', (e) => { this.errorMessage = e.detail.message; });
-            window.addEventListener('output-added', () => { this.show = false; });
+            window.addEventListener('outcome-error', (e) => { this.errorMessage = e.detail.message; });
+            window.addEventListener('outcome-added', () => { this.show = false; });
         }
     }"
     x-show="show" x-transition.opacity x-cloak
@@ -77,7 +77,7 @@ new class extends Component {
                         </div>
                         <div class="min-w-0 flex-1">
                             <h3 class="font-heading text-[15px] font-semibold text-white leading-tight">
-                                Upload Output
+                                Upload outcome
                             </h3>
                             <p class="text-[11px] text-white/75 mt-0.5">
                                 Unggah luaran penelitian.

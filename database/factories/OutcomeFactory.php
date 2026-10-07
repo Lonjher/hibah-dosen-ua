@@ -2,23 +2,24 @@
 
 namespace Database\Factories;
 
-use App\Models\Output;
+use App\Models\Outcome;
 use App\Models\Proposal;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<Output>
+ * @extends Factory<Outcome>
  */
-class OutputFactory extends Factory
+class OutcomeFactory extends Factory
 {
-    protected $model = Output::class;
+    protected $model = Outcome::class;
 
     /**
      * Distribusi level yang realistis:
      * Sinta 2-4 lebih banyak
      */
     protected array $levelWeights = [
-        'Scopus'  => 3,
+        'Reputable International Journal'  => 1,
+        'International'  => 3,
         'Sinta 1' => 4,
         'Sinta 2' => 6,
         'Sinta 3' => 7,

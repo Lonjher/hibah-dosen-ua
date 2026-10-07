@@ -27,7 +27,7 @@ new class extends Component {
             'proposal'        => Proposal::where('user_id', auth()->id())->find($id)?->title ?? '',
             'progress_report' => \App\Models\ProgressReport::whereHas('proposal', fn ($q) => $q->where('user_id', auth()->id()))->find($id)?->proposal?->title ?? '',
             'final_report'    => \App\Models\FinalReport::whereHas('proposal', fn ($q) => $q->where('user_id', auth()->id()))->find($id)?->proposal?->title ?? '',
-            'output'          => \App\Models\Output::whereHas('proposal', fn ($q) => $q->where('user_id', auth()->id()))->find($id)?->proposal?->title ?? '',
+            'outcome'          => \App\Models\Outcome::whereHas('proposal', fn ($q) => $q->where('user_id', auth()->id()))->find($id)?->proposal?->title ?? '',
             default           => '',
         };
 
