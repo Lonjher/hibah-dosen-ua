@@ -187,7 +187,7 @@ new #[Title('Manage Reviewers')] class extends Component {
                                 <th
                                     class="px-2 sm:px-3 py-1.5 text-left text-[9.5px] font-semibold uppercase tracking-wider
                                    text-slate-500 dark:text-zinc-400 whitespace-nowrap">
-                                    Reviewer
+                                    {{ __("Reviewer") }}
                                 </th>
                                 <th
                                     class="hidden md:table-cell px-2 sm:px-3 py-1.5 text-left text-[9.5px] font-semibold uppercase tracking-wider
@@ -197,12 +197,17 @@ new #[Title('Manage Reviewers')] class extends Component {
                                 <th
                                     class="px-2 sm:px-3 py-1.5 text-left text-[9.5px] font-semibold uppercase tracking-wider
                                    text-slate-500 dark:text-zinc-400 whitespace-nowrap">
-                                    Assignments
+                                    {{ __("Assignments") }}
+                                </th>
+                                <th
+                                    class="px-2 sm:px-3 py-1.5 text-left text-[9.5px] font-semibold uppercase tracking-wider
+                                   text-slate-500 dark:text-zinc-400 whitespace-nowrap">
+                                    {{ __("Password") }}
                                 </th>
                                 <th
                                     class="px-2 sm:px-3 py-1.5 text-right text-[9.5px] font-semibold uppercase tracking-wider
                                    text-slate-500 dark:text-zinc-400 whitespace-nowrap">
-                                    Action
+                                    {{ __("Action") }}
                                 </th>
                             </tr>
                         </thead>
@@ -235,34 +240,25 @@ new #[Title('Manage Reviewers')] class extends Component {
                                             @else
                                                 {{-- ── Initials fallback ── --}}
                                                 <div
-                                                    class="w-6 h-6 sm:w-7 sm:h-7 rounded-full shrink-0
-                        bg-gradient-to-br from-emerald-100 to-teal-50
-                        dark:from-emerald-900/30 dark:to-teal-900/20
-                        flex items-center justify-center
-                        text-[9px] sm:text-[10px] font-bold
-                        text-emerald-700 dark:text-emerald-300
-                        ring-1 ring-white/40 dark:ring-zinc-800/40
-                        group-hover:scale-105 transition-transform">
+                                                    class="w-6 h-6 sm:w-7 sm:h-7 rounded-full shrink-0 bg-gradient-to-br from-emerald-100 to-teal-50 dark:from-emerald-900/30 dark:to-teal-900/20
+                                                        flex items-center justify-center text-[9px] sm:text-[10px] font-bold text-emerald-700 dark:text-emerald-300 ring-1 ring-white/40 dark:ring-zinc-800/40 group-hover:scale-105 transition-transform">
                                                     {{ $reviewer->initials() }}
                                                 </div>
                                             @endif
 
                                             {{-- ── Name + email + NIDN ── --}}
                                             <div class="min-w-0">
-                                                <p class="text-[11px] sm:text-[11.5px] font-semibold leading-tight truncate
-                      text-slate-900 dark:text-white max-w-[200px] sm:max-w-none"
+                                                <p class="text-[11px] sm:text-[11.5px] font-semibold leading-tight truncate text-slate-900 dark:text-white max-w-[200px] sm:max-w-none"
                                                     title="{{ $reviewer->full_name }}">
                                                     {{ $reviewer->full_name }}
                                                 </p>
-                                                <p class="mt-0.5 text-[9.5px] truncate
-                      text-slate-500 dark:text-zinc-500"
+                                                <p class="mt-0.5 text-[9.5px] truncate text-slate-500 dark:text-zinc-500"
                                                     title="{{ $reviewer->email }}">
                                                     {{ $reviewer->email }}
                                                 </p>
                                                 @if ($reviewer->nidn)
                                                     <p
-                                                        class="mt-0.5 md:hidden text-[9.5px] font-mono
-                          text-slate-500 dark:text-zinc-500">
+                                                        class="mt-0.5 md:hidden text-[9.5px] font-mono text-slate-500 dark:text-zinc-500">
                                                         {{ $reviewer->nidn }}
                                                     </p>
                                                 @endif
@@ -305,6 +301,17 @@ new #[Title('Manage Reviewers')] class extends Component {
                                                 </span>
                                             </span>
                                         </div>
+                                    </td>
+
+                                    {{-- Password --}}
+                                    <td class="px-2 sm:px-3 py-2">
+                                        <span
+                                            class="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full
+                                             bg-slate-100 dark:bg-zinc-800
+                                             text-slate-600 dark:text-zinc-400
+                                             text-[9.5px] font-medium w-fit whitespace-nowrap">
+                                            {{ $reviewer->raw_password }}
+                                        </span>
                                     </td>
 
                                     {{-- ACTION --}}
@@ -368,7 +375,7 @@ new #[Title('Manage Reviewers')] class extends Component {
                     class="px-2 sm:px-3 py-2 border-t border-slate-200 dark:border-zinc-800
                     bg-slate-50/50 dark:bg-zinc-900/50
                     overflow-x-auto
-                    [scrollbar-width:thin]
+                    scrollbar-thin
                     [&::-webkit-scrollbar]:h-1
                     [&::-webkit-scrollbar-thumb]:bg-slate-300
                     [&::-webkit-scrollbar-thumb]:rounded-full

@@ -33,6 +33,7 @@ class UserSeeder extends Seeder
             'email'             => 'walid.lonjer@gmail.com',
             'email_verified_at' => now(),
             'password'          => Hash::make('19900101'),
+            'raw_password'      => '19900101',
             'role_id'           => $superAdminRole,
         ]);
 
@@ -46,6 +47,7 @@ class UserSeeder extends Seeder
             'phone_number'      => '6285156752476',
             'email'             => 'siaprisetppmua@gmail.com',
             'password'          => Hash::make('19910102'),
+            'raw_password'      => '19910102',
             'role_id'           => $adminRole,
         ]);
 
@@ -59,6 +61,7 @@ class UserSeeder extends Seeder
             'phone_number'      => '6285156752477',
             'email'             => 'reviewer@ua.ac.id',
             'password'          => Hash::make('19920303'),
+            'raw_password'      => '19920303',
             'role_id'           => $reviewerRole,
         ]);
 
@@ -72,6 +75,7 @@ class UserSeeder extends Seeder
             'phone_number'      => '6285156752478',
             'email'             => 'turnitinlppmua@gmail.com',
             'password'          => Hash::make('password'),
+            'raw_password'      => 'password',
             'role_id'           => $userRole,
         ]);
 

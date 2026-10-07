@@ -149,7 +149,9 @@
                                     x-transition:leave="transition ease-in duration-100"
                                     x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
                                     class="flex flex-col gap-0.5 border-l border-white/80 ml-3.5 my-0.5 dark:border-zinc-800">
-                                    <x-sidebar-link href="admin.manage-admins" title="Admins" icon="shield-check" />
+                                    @can('superadmin')
+                                        <x-sidebar-link href="admin.manage-admins" title="Admins" icon="shield-check" />
+                                    @endcan
                                     <x-sidebar-link href="admin.manage-reviewers" title="Reviewers"
                                         icon="clipboard-document-check" />
                                     <x-sidebar-link href="admin.manage-users" title="Users" icon="user-circle" />

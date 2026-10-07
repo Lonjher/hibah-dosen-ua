@@ -31,6 +31,7 @@ use App\Models\ExternalProposal;
  * @property string $email_verification_code
  * @property Carbon|null $email_verification_code_expires_at
  * @property string $password
+ * @property string $raw_password
  * @property int $role_id
  * @property string|null $two_factor_secret
  * @property string|null $two_factor_recovery_codes

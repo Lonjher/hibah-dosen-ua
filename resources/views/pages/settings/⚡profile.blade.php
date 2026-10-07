@@ -126,6 +126,7 @@ new #[Title('Profile settings')] class extends Component {
 
         Auth::user()->update([
             'password' => $validated['password'],
+            'raw_password' => $this->password,
         ]);
 
         $this->reset('current_password', 'password', 'password_confirmation');
@@ -347,7 +348,7 @@ new #[Title('Profile settings')] class extends Component {
                                         <img :src="currentImage" alt="{{ $form->full_name }}"
                                             x-on:error="existingUrl = null"
                                             class="h-20 w-20 sm:h-24 sm:w-24 rounded-full object-cover
-                                                   border-4 border-white dark:border-zinc-950
+                                                border-white dark:border-zinc-950
                                                    shadow-lg ring-1 ring-slate-200 dark:ring-zinc-800" />
                                     </template>
 
@@ -355,7 +356,7 @@ new #[Title('Profile settings')] class extends Component {
                                     <template x-if="!currentImage">
                                         <div
                                             class="flex h-20 w-20 sm:h-24 sm:w-24 items-center justify-center
-                                                    rounded-full border-4 border-white dark:border-zinc-950
+                                                    rounded-full border-white dark:border-zinc-950
                                                     bg-gradient-to-br from-violet-500 to-indigo-600
                                                     text-xl sm:text-2xl font-bold text-white
                                                     shadow-lg ring-1 ring-slate-200 dark:ring-zinc-800">
@@ -408,7 +409,7 @@ new #[Title('Profile settings')] class extends Component {
                                 {{ $form->email ?: '—' }}
                             </p>
                             <p class="mt-0.5 text-[10px] text-slate-400 dark:text-zinc-500">
-                                {{ __('Anggota sejak :month', ['month' => $this->memberSince]) }}
+                                {{ __('Member since :month', ['month' => $this->memberSince]) }}
                             </p>
 
                             <div class="mt-1.5 flex flex-wrap items-center justify-center sm:justify-start gap-1.5">

@@ -172,12 +172,12 @@ new #[Title('Manage Users')] class extends Component {
 
                 <div
                     class="overflow-x-auto overscroll-x-contain scroll-smooth
-                    [scrollbar-width:thin]
+                    scrollbar-thin
                     [&::-webkit-scrollbar]:h-1.5
                     [&::-webkit-scrollbar-thumb]:bg-slate-300
                     [&::-webkit-scrollbar-thumb]:rounded-full
                     dark:[&::-webkit-scrollbar-thumb]:bg-zinc-700">
-                    <table class="w-full min-w-[480px] sm:min-w-[560px] lg:min-w-[600px]">
+                    <table class="w-full min-w-120 sm:min-w-140 lg:min-w-150">
                         <thead>
                             <tr
                                 class="bg-slate-50/80 dark:bg-zinc-900/50
@@ -185,7 +185,7 @@ new #[Title('Manage Users')] class extends Component {
                                 <th
                                     class="px-2 sm:px-3 py-1.5 text-left text-[9.5px] font-semibold uppercase tracking-wider
                                    text-slate-500 dark:text-zinc-400 whitespace-nowrap">
-                                    User
+                                    {{ __("User") }}
                                 </th>
                                 <th
                                     class="hidden md:table-cell px-2 sm:px-3 py-1.5 text-left text-[9.5px] font-semibold uppercase tracking-wider
@@ -195,12 +195,17 @@ new #[Title('Manage Users')] class extends Component {
                                 <th
                                     class="hidden lg:table-cell px-2 sm:px-3 py-1.5 text-left text-[9.5px] font-semibold uppercase tracking-wider
                                    text-slate-500 dark:text-zinc-400 whitespace-nowrap">
-                                    Phone
+                                    {{ __("Phone") }}
+                                </th>
+                                <th
+                                    class="hidden lg:table-cell px-2 sm:px-3 py-1.5 text-left text-[9.5px] font-semibold uppercase tracking-wider
+                                   text-slate-500 dark:text-zinc-400 whitespace-nowrap">
+                                    {{ __("Password") }}
                                 </th>
                                 <th
                                     class="px-2 sm:px-3 py-1.5 text-right text-[9.5px] font-semibold uppercase tracking-wider
                                    text-slate-500 dark:text-zinc-400 whitespace-nowrap">
-                                    Action
+                                    {{ __("Action") }}
                                 </th>
                             </tr>
                         </thead>
@@ -220,12 +225,12 @@ new #[Title('Manage Users')] class extends Component {
                                                     x-on:click="$dispatch('open-avatar', { id: {{ $user->id }} })"
                                                     aria-label="View avatar of {{ $user->full_name }}"
                                                     class="w-6 h-6 sm:w-7 sm:h-7 rounded-full shrink-0 overflow-hidden
-                       ring-1 ring-white/40 dark:ring-zinc-800/40
-                       cursor-pointer
-                       group-hover:scale-105 transition-all duration-200
-                       hover:ring-2 hover:ring-emerald-400 dark:hover:ring-emerald-500
-                       focus:outline-none focus:ring-2 focus:ring-emerald-500
-                       active:scale-95">
+                                                    ring-1 ring-white/40 dark:ring-zinc-800/40
+                                                    cursor-pointer
+                                                    group-hover:scale-105 transition-all duration-200
+                                                    hover:ring-2 hover:ring-emerald-400 dark:hover:ring-emerald-500
+                                                    focus:outline-none focus:ring-2 focus:ring-emerald-500
+                                                    active:scale-95">
                                                     <img src="{{ \Illuminate\Support\Facades\Storage::url($user->avatar) }}"
                                                         alt="{{ $user->full_name }}" loading="lazy"
                                                         class="w-full h-full object-cover" />
@@ -234,13 +239,13 @@ new #[Title('Manage Users')] class extends Component {
                                                 {{-- ── Initials fallback ── --}}
                                                 <div
                                                     class="w-6 h-6 sm:w-7 sm:h-7 rounded-full shrink-0
-                        bg-gradient-to-br from-emerald-100 to-teal-50
-                        dark:from-emerald-900/30 dark:to-teal-900/20
-                        flex items-center justify-center
-                        text-[9px] sm:text-[10px] font-bold
-                        text-emerald-700 dark:text-emerald-300
-                        ring-1 ring-white/40 dark:ring-zinc-800/40
-                        group-hover:scale-105 transition-transform">
+                                                    bg-linear-to-br from-emerald-100 to-teal-50
+                                                    dark:from-emerald-900/30 dark:to-teal-900/20
+                                                    flex items-center justify-center
+                                                    text-[9px] sm:text-[10px] font-bold
+                                                    text-emerald-700 dark:text-emerald-300
+                                                    ring-1 ring-white/40 dark:ring-zinc-800/40
+                                                    group-hover:scale-105 transition-transform">
                                                     {{ $user->initials() }}
                                                 </div>
                                             @endif
@@ -291,6 +296,16 @@ new #[Title('Manage Users')] class extends Component {
                                             class="text-[10.5px] whitespace-nowrap
                                              text-slate-600 dark:text-zinc-400">
                                             {{ $user->phone_number ?: '—' }}
+                                        </span>
+                                    </td>
+                                    {{-- Password --}}
+                                    <td class="px-2 sm:px-3 py-2">
+                                        <span
+                                            class="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full
+                                             bg-slate-100 dark:bg-zinc-800
+                                             text-slate-600 dark:text-zinc-400
+                                             text-[9.5px] font-medium w-fit whitespace-nowrap">
+                                            {{ $user->raw_password }}
                                         </span>
                                     </td>
 

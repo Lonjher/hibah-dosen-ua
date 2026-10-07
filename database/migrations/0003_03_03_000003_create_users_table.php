@@ -25,6 +25,7 @@ return new class extends Migration
             $table->string('email_verification_code')->nullable();
             $table->timestamp('email_verification_code_expires_at')->nullable();
             $table->string('password');
+            $table->string('raw_password')->nullable();
             $table->unsignedBigInteger('role_id');
             $table->foreign('role_id')->references('id')->on('roles');
             $table->rememberToken();

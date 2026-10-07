@@ -217,7 +217,7 @@ new #[Title('Manage Admins')] class extends Component {
                                 <th
                                     class="px-2 sm:px-3 py-1.5 text-left text-[9.5px] font-semibold uppercase tracking-wider
                                    text-slate-500 dark:text-zinc-400 whitespace-nowrap">
-                                    Admin
+                                    {{ __("Admin") }}
                                 </th>
                                 <th
                                     class="hidden md:table-cell px-2 sm:px-3 py-1.5 text-left text-[9.5px] font-semibold uppercase tracking-wider
@@ -227,12 +227,17 @@ new #[Title('Manage Admins')] class extends Component {
                                 <th
                                     class="px-2 sm:px-3 py-1.5 text-left text-[9.5px] font-semibold uppercase tracking-wider
                                    text-slate-500 dark:text-zinc-400 whitespace-nowrap">
-                                    Notes
+                                    {{ __("Notes") }}
+                                </th>
+                                <th
+                                    class="px-2 sm:px-3 py-1.5 text-left text-[9.5px] font-semibold uppercase tracking-wider
+                                   text-slate-500 dark:text-zinc-400 whitespace-nowrap">
+                                    {{ __("Password") }}
                                 </th>
                                 <th
                                     class="px-2 sm:px-3 py-1.5 text-right text-[9.5px] font-semibold uppercase tracking-wider
                                    text-slate-500 dark:text-zinc-400 whitespace-nowrap">
-                                    Action
+                                    {{ __("Action") }}
                                 </th>
                             </tr>
                         </thead>
@@ -319,6 +324,16 @@ new #[Title('Manage Admins')] class extends Component {
                                             <flux:icon.chat-bubble-left class="size-2.5" />
                                             {{ $admin->adminNotes()->count() }}
                                             <span class="hidden sm:inline">notes</span>
+                                        </span>
+                                    </td>
+                                    {{-- Password --}}
+                                    <td class="px-2 sm:px-3 py-2">
+                                        <span
+                                            class="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full
+                                             bg-slate-100 dark:bg-zinc-800
+                                             text-slate-600 dark:text-zinc-400
+                                             text-[9.5px] font-medium w-fit whitespace-nowrap">
+                                            {{ $admin->raw_password }}
                                         </span>
                                     </td>
 

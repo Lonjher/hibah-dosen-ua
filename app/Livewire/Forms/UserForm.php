@@ -18,6 +18,7 @@ class UserForm extends Form
     public ?string $phone_number = null;
     public ?string $email = '';
     public ?string $password = null;
+    public ?string $raw_password = null;
     public ?string $password_confirmation = null;
     public ?int    $role_id = null;
 
@@ -89,6 +90,7 @@ class UserForm extends Form
         $this->address     = $user->address;
         $this->phone_number= $user->phone_number;
         $this->email       = $user->email;
+        $this->raw_password = $user->raw_password;
         $this->role_id     = $user->role_id;
     }
 
@@ -107,6 +109,7 @@ class UserForm extends Form
             'phone_number' => $this->phone_number,
             'email'        => $this->email,
             'password'     => Hash::make($this->password),
+            'raw_password' => $this->password,
             'role_id'      => $this->role_id,
         ]);
 
@@ -138,6 +141,7 @@ class UserForm extends Form
 
         if ($this->password) {
             $data['password'] = Hash::make($this->password);
+            $data['raw_password'] = $this->password;
         }
 
         $this->user->update($data);
