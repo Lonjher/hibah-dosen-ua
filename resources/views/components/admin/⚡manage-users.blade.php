@@ -153,6 +153,12 @@ new #[Title('Manage Users')] class extends Component {
                         <x-input-search name="q" wire:model.live="search" id="search-user"
                             placeholder="Search users..." class="w-full !text-[10.5px]" />
                     </div>
+                    <div class="order-6 sm:order-4 ml-auto sm:ml-0 shrink-0">
+                        <flux:button variant="filled" x-data x-on:click="$dispatch('open-import-user')"
+                            class="!text-[10.5px]">
+                            Import
+                        </flux:button>
+                    </div>
                 </div>
             </div>
 
@@ -386,4 +392,5 @@ new #[Title('Manage Users')] class extends Component {
     <x-confirm-delete />
     <livewire:admin.users.add-user />
     <livewire:admin.users.edit-user />
+    <livewire:admin.users.import-user />
 </div>

@@ -46,6 +46,10 @@ new class extends Component {
     public bool $showFinalForm = false;
     public bool $showoutcomeForm = false;
 
+    // ── Role user terhadap proposal ini ──
+    public bool $isLeader = false;
+    public bool $isMember = false;
+
     #[On('open-view-submission-user')]
     public function load(int $proposalId): void
     {
@@ -85,22 +89,36 @@ new class extends Component {
 
     protected function reload(): void
     {
-        $this->proposal = Proposal::with(['researchScheme', 'period', 'reviewer'])
-            ->where('user_id', Auth::id())
+        $userId = Auth::id();
+
+        // ── FIX: izinkan author ATAU anggota ──
+        $this->proposal = Proposal::with(['researchScheme', 'period', 'reviewer', 'proposalMembers'])
+            ->where(function ($q) use ($userId) {
+                $q->where('user_id', $userId)
+                  ->orWhereHas('proposalMembers', fn ($q) => $q->where('user_id', $userId));
+            })
             ->findOrFail($this->proposal_id);
 
-        $this->progressReport = ProgressReport::with(['reviewer', 'reviewerNotes' => fn($q) => $q->latest()->with('reviewer'), 'adminNotes' => fn($q) => $q->latest()->with('admin')])
+        // ── Set role ──
+        $this->isLeader = (int) $this->proposal->user_id === (int) $userId;
+        $this->isMember = ! $this->isLeader;
+
+        $this->progressReport = ProgressReport::with([
+            'reviewer',
+            'reviewerNotes' => fn ($q) => $q->latest()->with('reviewer'),
+            'adminNotes'    => fn ($q) => $q->latest()->with('admin'),
+        ])
             ->where('proposal_id', $this->proposal_id)
             ->first();
 
         $this->finalReport = FinalReport::with([
-            'adminNotes' => fn($q) => $q->latest()->with('admin'),
+            'adminNotes' => fn ($q) => $q->latest()->with('admin'),
         ])
             ->where('proposal_id', $this->proposal_id)
             ->first();
 
         $this->outcome = outcome::with([
-            'adminNotes' => fn($q) => $q->latest()->with('admin'),
+            'adminNotes' => fn ($q) => $q->latest()->with('admin'),
         ])
             ->where('proposal_id', $this->proposal_id)
             ->first();
@@ -112,7 +130,14 @@ new class extends Component {
         $this->finalForm->reset();
         $this->outcomeForm->reset();
 
-        $this->reset(['progress_report_file', 'progress_ppt_file', 'final_report_file', 'final_ppt_file', 'final_research_outcome_file', 'final_submission_proof_file']);
+        $this->reset([
+            'progress_report_file',
+            'progress_ppt_file',
+            'final_report_file',
+            'final_ppt_file',
+            'final_research_outcome_file',
+            'final_submission_proof_file',
+        ]);
     }
 
     // ═══════════════ TAB UNLOCK CHECK ═══════════════
@@ -127,10 +152,25 @@ new class extends Component {
         return $this->finalReport?->status === 'accepted';
     }
 
+    /* ============================================================
+     |  GUARD: hanya ketua yang boleh mengubah apapun
+     ============================================================ */
+
+    protected function guardLeader(): bool
+    {
+        if (! $this->isLeader) {
+            Flux::toast('Hanya ketua yang dapat melakukan aksi ini.', variant: 'danger');
+            return false;
+        }
+        return true;
+    }
+
     // ═══════════════ PROGRESS REPORT ACTIONS ═══════════════
 
     public function showUploadProgress(): void
     {
+        if (! $this->guardLeader()) return;
+
         if ($this->progressReport) {
             return;
         }
@@ -147,6 +187,8 @@ new class extends Component {
 
     public function showEditProgress(): void
     {
+        if (! $this->guardLeader()) return;
+
         if (!$this->progressReport) {
             return;
         }
@@ -160,6 +202,8 @@ new class extends Component {
 
     public function cancelProgressForm(): void
     {
+        if (! $this->guardLeader()) return;
+
         $this->showProgressForm = false;
         $this->progressForm->reset();
         $this->reset(['progress_report_file', 'progress_ppt_file']);
@@ -169,6 +213,8 @@ new class extends Component {
 
     public function saveProgress(): void
     {
+        if (! $this->guardLeader()) return;
+
         // Validasi Form
         $this->progressForm->validate();
 
@@ -223,6 +269,8 @@ new class extends Component {
 
     public function showUploadFinal(): void
     {
+        if (! $this->guardLeader()) return;
+
         if ($this->finalReport) {
             return;
         }
@@ -242,6 +290,8 @@ new class extends Component {
 
     public function showEditFinal(): void
     {
+        if (! $this->guardLeader()) return;
+
         if (!$this->finalReport) {
             return;
         }
@@ -255,6 +305,8 @@ new class extends Component {
 
     public function cancelFinalForm(): void
     {
+        if (! $this->guardLeader()) return;
+
         $this->showFinalForm = false;
         $this->finalForm->reset();
         $this->reset(['final_report_file', 'final_ppt_file', 'final_research_outcome_file', 'final_submission_proof_file']);
@@ -264,6 +316,8 @@ new class extends Component {
 
     public function saveFinal(): void
     {
+        if (! $this->guardLeader()) return;
+
         $this->finalForm->validate();
 
         $isEdit = $this->finalReport !== null;
@@ -324,6 +378,8 @@ new class extends Component {
 
     public function showUploadoutcome(): void
     {
+        if (! $this->guardLeader()) return;
+
         if ($this->outcome) {
             return;
         }
@@ -342,6 +398,8 @@ new class extends Component {
 
     public function showEditoutcome(): void
     {
+        if (! $this->guardLeader()) return;
+
         if (!$this->outcome) {
             return;
         }
@@ -353,6 +411,8 @@ new class extends Component {
 
     public function canceloutcomeForm(): void
     {
+        if (! $this->guardLeader()) return;
+
         $this->showoutcomeForm = false;
         $this->outcomeForm->reset();
         $this->resetErrorBag();
@@ -361,6 +421,8 @@ new class extends Component {
 
     public function saveoutcome(): void
     {
+        if (! $this->guardLeader()) return;
+
         $this->outcomeForm->validate();
 
         $isEdit = $this->outcome !== null;
@@ -388,6 +450,7 @@ new class extends Component {
         $this->showoutcomeForm = false;
         $this->reload();
     }
+
     public function levelMeta(?string $level): array
     {
         return match ($level) {
@@ -420,8 +483,7 @@ new class extends Component {
 
         @if ($proposal)
             {{-- ══════════ HEADER ══════════ --}}
-            <div
-                class="shrink-0 bg-gradient-to-r from-slate-700 to-slate-600
+            <div class="shrink-0 bg-gradient-to-r from-slate-700 to-slate-600
                         px-5 sm:px-6 py-4 rounded-t-3xl sm:rounded-t-3xl">
                 <div class="flex items-start justify-between gap-3">
                     <div class="flex items-center gap-2.5 min-w-0 flex-1">
@@ -429,11 +491,25 @@ new class extends Component {
                             <flux:icon.document-duplicate class="size-4 text-white" />
                         </div>
                         <div class="min-w-0 flex-1">
-                            <h3 class="font-heading text-[15px] font-semibold text-white leading-tight line-clamp-2">
-                                {{ $proposal->title }}
-                            </h3>
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                <h3 class="font-heading text-[15px] font-semibold text-white leading-tight line-clamp-2">
+                                    {{ $proposal->title }}
+                                </h3>
+                                {{-- Role badge --}}
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold
+                                             {{ $isLeader
+                                                 ? 'bg-emerald-100 text-emerald-800'
+                                                 : 'bg-sky-100 text-sky-800' }}">
+                                    <flux:icon :name="$isLeader ? 'star' : 'user-group'" class="size-2.5" />
+                                    {{ $isLeader ? 'Ketua' : 'Anggota' }}
+                                </span>
+                            </div>
                             <p class="text-[11px] text-white/75 mt-0.5">
-                                Submission Progress
+                                @if ($isMember)
+                                    View only — Anda hanya dapat melihat
+                                @else
+                                    Submission Progress
+                                @endif
                             </p>
                         </div>
                     </div>
@@ -447,8 +523,27 @@ new class extends Component {
                 </div>
             </div>
 
+            {{-- ══════════ BANNER: VIEW ONLY (untuk member) ══════════ --}}
+            @if ($isMember)
+                <div class="shrink-0 px-5 sm:px-6 pt-3">
+                    <div class="flex items-start gap-2 p-2.5 rounded-2xl
+                                bg-sky-50 dark:bg-sky-900/20
+                                border border-sky-200 dark:border-sky-800">
+                        <flux:icon.eye class="size-3.5 text-sky-600 dark:text-sky-400 shrink-0 mt-0.5" />
+                        <div class="min-w-0">
+                            <p class="text-[10.5px] font-semibold text-sky-800 dark:text-sky-300">
+                                Mode Lihat Saja
+                            </p>
+                            <p class="text-[10px] leading-relaxed text-sky-700 dark:text-sky-400 mt-0.5">
+                                Anda terdaftar sebagai <strong>Anggota</strong> pada proposal ini. Hanya ketua yang dapat mengunggah atau mengubah submission.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
             {{-- ══════════ TABS ══════════ --}}
-            <div class="shrink-0 bg-slate-50 dark:bg-zinc-800/40 border-b border-slate-200 dark:border-zinc-700">
+            <div class="shrink-0 bg-slate-50 dark:bg-zinc-800/40 border-b border-slate-200 dark:border-zinc-700 mt-3">
                 <div class="flex items-center gap-1.5 px-3 sm:px-4 py-2.5 overflow-x-auto">
 
                     {{-- Tab: Progress Report --}}
@@ -459,14 +554,12 @@ new class extends Component {
                         'text-slate-500 dark:text-zinc-400 hover:text-slate-700 dark:hover:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800/60' =>
                             $activeTab !== 'progress_report',
                     ])>
-                        <span
-                            class="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold
-                         bg-violet-100 text-violet-700
-                         dark:bg-violet-900/40 dark:text-violet-300">1</span>
+                        <span class="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold
+                                     bg-violet-100 text-violet-700
+                                     dark:bg-violet-900/40 dark:text-violet-300">1</span>
                         <span>Progress Report</span>
                         @if ($progressReport)
-                            <span
-                                class="w-1.5 h-1.5 rounded-full {{ $progressReport->status === 'accepted' ? 'bg-emerald-500' : ($progressReport->status === 'rejected' ? 'bg-rose-500' : 'bg-amber-500') }}"></span>
+                            <span class="w-1.5 h-1.5 rounded-full {{ $progressReport->status === 'accepted' ? 'bg-emerald-500' : ($progressReport->status === 'rejected' ? 'bg-rose-500' : 'bg-amber-500') }}"></span>
                         @endif
                     </button>
 
@@ -479,16 +572,14 @@ new class extends Component {
                             $activeTab !== 'final_report',
                         'opacity-40 cursor-not-allowed' => !$this->isFinalReportUnlocked(),
                     ])>
-                        <span
-                            class="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold
-                         bg-blue-100 text-blue-700
-                         dark:bg-blue-900/40 dark:text-blue-300">2</span>
+                        <span class="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold
+                                     bg-blue-100 text-blue-700
+                                     dark:bg-blue-900/40 dark:text-blue-300">2</span>
                         <span>Final Report</span>
                         @if (!$this->isFinalReportUnlocked())
                             <flux:icon.lock-closed class="size-3" />
                         @elseif ($finalReport)
-                            <span
-                                class="w-1.5 h-1.5 rounded-full {{ $finalReport->status === 'accepted' ? 'bg-emerald-500' : ($finalReport->status === 'rejected' ? 'bg-rose-500' : 'bg-amber-500') }}"></span>
+                            <span class="w-1.5 h-1.5 rounded-full {{ $finalReport->status === 'accepted' ? 'bg-emerald-500' : ($finalReport->status === 'rejected' ? 'bg-rose-500' : 'bg-amber-500') }}"></span>
                         @endif
                     </button>
 
@@ -501,16 +592,14 @@ new class extends Component {
                             $activeTab !== 'outcome',
                         'opacity-40 cursor-not-allowed' => !$this->isoutcomeUnlocked(),
                     ])>
-                        <span
-                            class="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold
-                         bg-amber-100 text-amber-700
-                         dark:bg-amber-900/40 dark:text-amber-300">3</span>
+                        <span class="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold
+                                     bg-amber-100 text-amber-700
+                                     dark:bg-amber-900/40 dark:text-amber-300">3</span>
                         <span>outcome</span>
                         @if (!$this->isoutcomeUnlocked())
                             <flux:icon.lock-closed class="size-3" />
                         @elseif ($outcome)
-                            <span
-                                class="w-1.5 h-1.5 rounded-full {{ $outcome->status === 'accepted' ? 'bg-emerald-500' : ($outcome->status === 'rejected' ? 'bg-rose-500' : 'bg-amber-500') }}"></span>
+                            <span class="w-1.5 h-1.5 rounded-full {{ $outcome->status === 'accepted' ? 'bg-emerald-500' : ($outcome->status === 'rejected' ? 'bg-rose-500' : 'bg-amber-500') }}"></span>
                         @endif
                     </button>
 
@@ -527,8 +616,7 @@ new class extends Component {
                     @if (!$progressReport && !$showProgressForm)
                         {{-- Empty --}}
                         <div class="flex flex-col items-center justify-center py-12">
-                            <div
-                                class="w-16 h-16 rounded-3xl bg-violet-100 dark:bg-violet-900/30
+                            <div class="w-16 h-16 rounded-3xl bg-violet-100 dark:bg-violet-900/30
                                         flex items-center justify-center mb-4">
                                 <flux:icon.document-chart-bar class="size-8 text-violet-600 dark:text-violet-400" />
                             </div>
@@ -536,14 +624,17 @@ new class extends Component {
                                 Progress Report Belum Diunggah
                             </p>
                             <p class="text-[11px] text-slate-500 dark:text-zinc-400 mt-1 text-center max-w-xs">
-                                @if ($proposal->status === 'accepted')
+                                @if ($isMember)
+                                    Hanya <strong>ketua</strong> yang dapat mengunggah progress report. Anda dapat melihat setelah diunggah.
+                                @elseif ($proposal->status === 'accepted')
                                     Silakan unggah progress report penelitian Anda.
                                 @else
                                     Progress report dapat diunggah setelah proposal di-accept oleh reviewer.
                                 @endif
                             </p>
 
-                            @if ($proposal->status === 'accepted')
+                            {{-- Upload button HANYA untuk ketua --}}
+                            @if ($isLeader && $proposal->status === 'accepted')
                                 <button type="button" wire:click="showUploadProgress"
                                     class="mt-4 inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded-full text-white
                                            bg-violet-600/90 hover:bg-violet-600
@@ -555,8 +646,8 @@ new class extends Component {
                                 </button>
                             @endif
                         </div>
-                    @elseif ($showProgressForm)
-                        {{-- Form upload/edit --}}
+                    @elseif ($showProgressForm && $isLeader)
+                        {{-- Form upload/edit — HANYA untuk ketua --}}
                         <div class="space-y-4">
                             <div class="flex items-center justify-between">
                                 <h4 class="text-[13px] font-heading font-semibold text-slate-900 dark:text-white">
@@ -585,8 +676,7 @@ new class extends Component {
                                         accept=".pdf" rounded="full" :required="!$progressReport" />
 
                                     @if ($progressReport)
-                                        <p
-                                            class="mt-1 text-[10px] text-slate-500 dark:text-zinc-500 flex items-center gap-1">
+                                        <p class="mt-1 text-[10px] text-slate-500 dark:text-zinc-500 flex items-center gap-1">
                                             <flux:icon.document-text class="size-3 shrink-0" />
                                             File: {{ basename($progressReport->report_path) }}
                                         </p>
@@ -601,8 +691,7 @@ new class extends Component {
                                         accept=".ppt,.pptx" rounded="full" :required="!$progressReport" />
 
                                     @if ($progressReport)
-                                        <p
-                                            class="mt-1 text-[10px] text-slate-500 dark:text-zinc-500 flex items-center gap-1">
+                                        <p class="mt-1 text-[10px] text-slate-500 dark:text-zinc-500 flex items-center gap-1">
                                             <flux:icon.document-text class="size-3 shrink-0" />
                                             File: {{ basename($progressReport->ppt_path) }}
                                         </p>
@@ -648,7 +737,7 @@ new class extends Component {
                             </div>
                         </div>
                     @else
-                        {{-- Detail view --}}
+                        {{-- Detail view (untuk ketua & anggota) --}}
                         @php $meta = $progressReport->statusMeta(); @endphp
 
                         <div class="flex items-center justify-between gap-3">
@@ -661,7 +750,8 @@ new class extends Component {
                                 </span>
                             </div>
 
-                            @if (in_array($progressReport->status, ['pending', 'revised']))
+                            {{-- Edit button HANYA untuk ketua --}}
+                            @if ($isLeader && in_array($progressReport->status, ['pending', 'revised']))
                                 <button type="button" wire:click="showEditProgress"
                                     class="inline-flex items-center gap-1 px-2.5 py-1 text-[10.5px] font-medium rounded-full
                                            text-slate-600 dark:text-zinc-300
@@ -678,21 +768,17 @@ new class extends Component {
 
                         {{-- Meta --}}
                         <div class="grid grid-cols-2 gap-3">
-                            <div
-                                class="rounded-2xl border border-slate-200 dark:border-zinc-700
+                            <div class="rounded-2xl border border-slate-200 dark:border-zinc-700
                                         bg-slate-50 dark:bg-zinc-800/40 p-3">
-                                <p
-                                    class="text-[9px] uppercase tracking-wider font-semibold text-slate-500 dark:text-zinc-400">
+                                <p class="text-[9px] uppercase tracking-wider font-semibold text-slate-500 dark:text-zinc-400">
                                     Reviewer</p>
                                 <p class="text-[11px] font-semibold text-slate-900 dark:text-zinc-100 mt-0.5">
                                     {{ $progressReport->reviewer?->full_name ?? 'Belum di-assign' }}
                                 </p>
                             </div>
-                            <div
-                                class="rounded-2xl border border-slate-200 dark:border-zinc-700
+                            <div class="rounded-2xl border border-slate-200 dark:border-zinc-700
                                         bg-slate-50 dark:bg-zinc-800/40 p-3">
-                                <p
-                                    class="text-[9px] uppercase tracking-wider font-semibold text-slate-500 dark:text-zinc-400">
+                                <p class="text-[9px] uppercase tracking-wider font-semibold text-slate-500 dark:text-zinc-400">
                                     Keyword</p>
                                 <p class="text-[11px] font-semibold text-slate-900 dark:text-zinc-100 mt-0.5 truncate">
                                     {{ $progressReport->keyword }}
@@ -702,11 +788,9 @@ new class extends Component {
 
                         {{-- Summary --}}
                         <div>
-                            <p
-                                class="text-[10px] uppercase tracking-wider font-semibold text-slate-500 dark:text-zinc-400 mb-1.5">
+                            <p class="text-[10px] uppercase tracking-wider font-semibold text-slate-500 dark:text-zinc-400 mb-1.5">
                                 Ringkasan</p>
-                            <div
-                                class="p-3 rounded-2xl bg-slate-50 dark:bg-zinc-800/40
+                            <div class="p-3 rounded-2xl bg-slate-50 dark:bg-zinc-800/40
                                         border border-slate-200 dark:border-zinc-700
                                         text-[11px] leading-relaxed
                                         text-slate-700 dark:text-zinc-300">
@@ -716,8 +800,7 @@ new class extends Component {
 
                         {{-- Files --}}
                         <div>
-                            <p
-                                class="text-[10px] uppercase tracking-wider font-semibold text-slate-500 dark:text-zinc-400 mb-2">
+                            <p class="text-[10px] uppercase tracking-wider font-semibold text-slate-500 dark:text-zinc-400 mb-2">
                                 Files</p>
                             <div class="flex flex-wrap gap-2">
                                 @if ($progressReport->report_path)
@@ -752,8 +835,7 @@ new class extends Component {
                         {{-- REVIEWER NOTES --}}
                         @if ($progressReport->reviewerNotes->count() > 0)
                             <div class="rounded-2xl border border-violet-200 dark:border-violet-800 overflow-hidden">
-                                <div
-                                    class="px-3 py-2.5 bg-violet-50 dark:bg-violet-900/20
+                                <div class="px-3 py-2.5 bg-violet-50 dark:bg-violet-900/20
                                             border-b border-violet-200 dark:border-violet-800
                                             flex items-center justify-between">
                                     <span class="flex items-center gap-2">
@@ -762,8 +844,7 @@ new class extends Component {
                                         <span class="text-[11px] font-semibold text-violet-800 dark:text-violet-300">
                                             Reviewer Notes
                                         </span>
-                                        <span
-                                            class="text-[9px] font-bold px-1.5 py-0.5 rounded-full
+                                        <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full
                                                      bg-violet-200 text-violet-800
                                                      dark:bg-violet-800 dark:text-violet-200">
                                             {{ $progressReport->reviewerNotes->count() }}
@@ -779,25 +860,21 @@ new class extends Component {
                                                        : 'bg-amber-50 dark:bg-amber-900/15 border-amber-200 dark:border-amber-800' }}">
                                             <div class="flex items-center justify-between gap-2 mb-1">
                                                 <div class="flex items-center gap-2">
-                                                    <div
-                                                        class="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold
+                                                    <div class="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold
                                                                 {{ $note->is_approved
                                                                     ? 'bg-emerald-200 text-emerald-800 dark:bg-emerald-800 dark:text-emerald-200'
                                                                     : 'bg-amber-200 text-amber-800 dark:bg-amber-800 dark:text-amber-200' }}">
                                                         {{ strtoupper(substr($note->reviewer?->full_name ?? 'R', 0, 1)) }}
                                                     </div>
-                                                    <p
-                                                        class="text-[10px] font-semibold
+                                                    <p class="text-[10px] font-semibold
                                                               {{ $note->is_approved ? 'text-emerald-800 dark:text-emerald-300' : 'text-amber-800 dark:text-amber-300' }}">
                                                         {{ $note->reviewer?->full_name ?? 'Reviewer' }}
                                                     </p>
-                                                    <span
-                                                        class="text-[9px] {{ $note->is_approved ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400' }}">
+                                                    <span class="text-[9px] {{ $note->is_approved ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400' }}">
                                                         {{ $note->created_at?->diffForHumans() }}
                                                     </span>
                                                 </div>
-                                                <span
-                                                    class="text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase
+                                                <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase
                                                              {{ $note->is_approved
                                                                  ? 'bg-emerald-200 text-emerald-800 dark:bg-emerald-800 dark:text-emerald-200'
                                                                  : 'bg-amber-200 text-amber-800 dark:bg-amber-800 dark:text-amber-200' }}">
@@ -805,18 +882,15 @@ new class extends Component {
                                                 </span>
                                             </div>
                                             @if ($note->comment)
-                                                <p
-                                                    class="text-[11px] mt-1
+                                                <p class="text-[11px] mt-1
                                                           {{ $note->is_approved ? 'text-emerald-900 dark:text-emerald-100' : 'text-amber-900 dark:text-amber-100' }}">
                                                     {{ $note->comment }}
                                                 </p>
                                             @endif
                                             @if ($note->recommendation)
-                                                <div
-                                                    class="mt-1.5 pt-1.5 border-t
+                                                <div class="mt-1.5 pt-1.5 border-t
                                                             {{ $note->is_approved ? 'border-emerald-200 dark:border-emerald-800' : 'border-amber-200 dark:border-amber-800' }}">
-                                                    <p
-                                                        class="text-[10px]
+                                                    <p class="text-[10px]
                                                               {{ $note->is_approved ? 'text-emerald-700 dark:text-emerald-300' : 'text-amber-700 dark:text-amber-300' }}">
                                                         <span class="font-semibold">Rekomendasi:</span>
                                                         {{ $note->recommendation }}
@@ -832,8 +906,7 @@ new class extends Component {
                         {{-- ADMIN NOTES --}}
                         @if ($progressReport->adminNotes->count() > 0)
                             <div class="rounded-2xl border border-amber-200 dark:border-amber-800 overflow-hidden">
-                                <div
-                                    class="px-3 py-2.5 bg-amber-50 dark:bg-amber-900/20
+                                <div class="px-3 py-2.5 bg-amber-50 dark:bg-amber-900/20
                                             border-b border-amber-200 dark:border-amber-800
                                             flex items-center justify-between">
                                     <span class="flex items-center gap-2">
@@ -842,8 +915,7 @@ new class extends Component {
                                         <span class="text-[11px] font-semibold text-amber-800 dark:text-amber-300">
                                             Admin Notes
                                         </span>
-                                        <span
-                                            class="text-[9px] font-bold px-1.5 py-0.5 rounded-full
+                                        <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full
                                                      bg-amber-200 text-amber-800
                                                      dark:bg-amber-800 dark:text-amber-200">
                                             {{ $progressReport->adminNotes->count() }}
@@ -856,14 +928,12 @@ new class extends Component {
                                             class="rounded-xl border border-amber-200 dark:border-amber-800
                                                    bg-amber-50 dark:bg-amber-900/20 p-2.5">
                                             <div class="flex items-center gap-2 mb-1">
-                                                <div
-                                                    class="w-5 h-5 rounded-full bg-amber-200 dark:bg-amber-800/50
+                                                <div class="w-5 h-5 rounded-full bg-amber-200 dark:bg-amber-800/50
                                                             flex items-center justify-center text-[8px] font-bold
                                                             text-amber-800 dark:text-amber-300">
                                                     {{ strtoupper(substr($note->admin?->full_name ?? 'A', 0, 1)) }}
                                                 </div>
-                                                <p
-                                                    class="text-[10px] font-semibold text-amber-800 dark:text-amber-300">
+                                                <p class="text-[10px] font-semibold text-amber-800 dark:text-amber-300">
                                                     {{ $note->admin?->full_name ?? 'Admin' }}
                                                 </p>
                                                 <span class="text-[9px] text-amber-600 dark:text-amber-400">
@@ -896,8 +966,7 @@ new class extends Component {
 
                     @if (!$this->isFinalReportUnlocked())
                         <div class="flex flex-col items-center justify-center py-12">
-                            <div
-                                class="w-16 h-16 rounded-3xl bg-slate-100 dark:bg-zinc-800
+                            <div class="w-16 h-16 rounded-3xl bg-slate-100 dark:bg-zinc-800
                                         flex items-center justify-center mb-4">
                                 <flux:icon.lock-closed class="size-8 text-slate-400 dark:text-zinc-600" />
                             </div>
@@ -910,8 +979,7 @@ new class extends Component {
                         </div>
                     @elseif (!$finalReport && !$showFinalForm)
                         <div class="flex flex-col items-center justify-center py-12">
-                            <div
-                                class="w-16 h-16 rounded-3xl bg-blue-100 dark:bg-blue-900/30
+                            <div class="w-16 h-16 rounded-3xl bg-blue-100 dark:bg-blue-900/30
                                         flex items-center justify-center mb-4">
                                 <flux:icon.document-check class="size-8 text-blue-600 dark:text-blue-400" />
                             </div>
@@ -919,19 +987,26 @@ new class extends Component {
                                 Final Report Belum Diunggah
                             </p>
                             <p class="text-[11px] text-slate-500 dark:text-zinc-400 mt-1 text-center max-w-xs">
-                                Silakan unggah laporan akhir penelitian Anda.
+                                @if ($isMember)
+                                    Hanya <strong>ketua</strong> yang dapat mengunggah final report.
+                                @else
+                                    Silakan unggah laporan akhir penelitian Anda.
+                                @endif
                             </p>
-                            <button type="button" wire:click="showUploadFinal"
-                                class="mt-4 inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded-full text-white
-                                       bg-blue-600/90 hover:bg-blue-600
-                                       shadow-sm shadow-blue-500/20 hover:shadow-sm hover:shadow-blue-500/30
-                                       hover:scale-[1.02] active:scale-[0.97]
-                                       transition-all duration-150">
-                                <flux:icon.plus class="size-3.5" />
-                                Upload Final Report
-                            </button>
+
+                            @if ($isLeader)
+                                <button type="button" wire:click="showUploadFinal"
+                                    class="mt-4 inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded-full text-white
+                                           bg-blue-600/90 hover:bg-blue-600
+                                           shadow-sm shadow-blue-500/20 hover:shadow-sm hover:shadow-blue-500/30
+                                           hover:scale-[1.02] active:scale-[0.97]
+                                           transition-all duration-150">
+                                    <flux:icon.plus class="size-3.5" />
+                                    Upload Final Report
+                                </button>
+                            @endif
                         </div>
-                    @elseif ($showFinalForm)
+                    @elseif ($showFinalForm && $isLeader)
                         <div class="space-y-4">
                             <div class="flex items-center justify-between">
                                 <h4 class="text-[13px] font-heading font-semibold text-slate-900 dark:text-white">
@@ -959,8 +1034,7 @@ new class extends Component {
                                     <x-input type="file" wire:model="final_report_file" label="File Laporan (PDF)"
                                         accept=".pdf" rounded="full" :required="!$finalReport" />
                                     @if ($finalReport)
-                                        <p
-                                            class="mt-1 text-[10px] text-slate-500 dark:text-zinc-500 flex items-center gap-1">
+                                        <p class="mt-1 text-[10px] text-slate-500 dark:text-zinc-500 flex items-center gap-1">
                                             <flux:icon.document-text class="size-3 shrink-0" />
                                             File: {{ basename($finalReport->report_path) }}
                                         </p>
@@ -974,8 +1048,7 @@ new class extends Component {
                                     <x-input type="file" wire:model="final_ppt_file" label="File Presentasi (PPT)"
                                         accept=".ppt,.pptx" rounded="full" :required="!$finalReport" />
                                     @if ($finalReport)
-                                        <p
-                                            class="mt-1 text-[10px] text-slate-500 dark:text-zinc-500 flex items-center gap-1">
+                                        <p class="mt-1 text-[10px] text-slate-500 dark:text-zinc-500 flex items-center gap-1">
                                             <flux:icon.document-text class="size-3 shrink-0" />
                                             File: {{ basename($finalReport->ppt_path) }}
                                         </p>
@@ -990,8 +1063,7 @@ new class extends Component {
                                         label="Research outcome" accept=".pdf,.doc,.docx" rounded="full"
                                         :required="!$finalReport" />
                                     @if ($finalReport)
-                                        <p
-                                            class="mt-1 text-[10px] text-slate-500 dark:text-zinc-500 flex items-center gap-1">
+                                        <p class="mt-1 text-[10px] text-slate-500 dark:text-zinc-500 flex items-center gap-1">
                                             <flux:icon.document-text class="size-3 shrink-0" />
                                             File: {{ basename($finalReport->research_outcome) }}
                                         </p>
@@ -1006,8 +1078,7 @@ new class extends Component {
                                         label="Bukti Submit (Image)" accept="image/*" rounded="full"
                                         :required="!$finalReport" />
                                     @if ($finalReport)
-                                        <p
-                                            class="mt-1 text-[10px] text-slate-500 dark:text-zinc-500 flex items-center gap-1">
+                                        <p class="mt-1 text-[10px] text-slate-500 dark:text-zinc-500 flex items-center gap-1">
                                             <flux:icon.document-text class="size-3 shrink-0" />
                                             File: {{ basename($finalReport->submission_proof) }}
                                         </p>
@@ -1066,7 +1137,7 @@ new class extends Component {
                                 </span>
                             </div>
 
-                            @if (in_array($finalReport->status, ['pending', 'revised']))
+                            @if ($isLeader && in_array($finalReport->status, ['pending', 'revised']))
                                 <button type="button" wire:click="showEditFinal"
                                     class="inline-flex items-center gap-1 px-2.5 py-1 text-[10.5px] font-medium rounded-full
                                            text-slate-600 dark:text-zinc-300
@@ -1082,11 +1153,9 @@ new class extends Component {
                         </div>
 
                         <div>
-                            <p
-                                class="text-[10px] uppercase tracking-wider font-semibold text-slate-500 dark:text-zinc-400 mb-1.5">
+                            <p class="text-[10px] uppercase tracking-wider font-semibold text-slate-500 dark:text-zinc-400 mb-1.5">
                                 Ringkasan</p>
-                            <div
-                                class="p-3 rounded-2xl bg-slate-50 dark:bg-zinc-800/40
+                            <div class="p-3 rounded-2xl bg-slate-50 dark:bg-zinc-800/40
                                         border border-slate-200 dark:border-zinc-700
                                         text-[11px] leading-relaxed
                                         text-slate-700 dark:text-zinc-300">
@@ -1095,8 +1164,7 @@ new class extends Component {
                         </div>
 
                         <div>
-                            <p
-                                class="text-[10px] uppercase tracking-wider font-semibold text-slate-500 dark:text-zinc-400 mb-2">
+                            <p class="text-[10px] uppercase tracking-wider font-semibold text-slate-500 dark:text-zinc-400 mb-2">
                                 Files</p>
                             <div class="flex flex-wrap gap-2">
                                 @if ($finalReport->report_path)
@@ -1152,8 +1220,7 @@ new class extends Component {
 
                         @if ($finalReport->adminNotes->count() > 0)
                             <div class="rounded-2xl border border-amber-200 dark:border-amber-800 overflow-hidden">
-                                <div
-                                    class="px-3 py-2.5 bg-amber-50 dark:bg-amber-900/20
+                                <div class="px-3 py-2.5 bg-amber-50 dark:bg-amber-900/20
                                             border-b border-amber-200 dark:border-amber-800
                                             flex items-center justify-between">
                                     <span class="flex items-center gap-2">
@@ -1162,8 +1229,7 @@ new class extends Component {
                                         <span class="text-[11px] font-semibold text-amber-800 dark:text-amber-300">
                                             Admin Notes
                                         </span>
-                                        <span
-                                            class="text-[9px] font-bold px-1.5 py-0.5 rounded-full
+                                        <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full
                                                      bg-amber-200 text-amber-800 dark:bg-amber-800 dark:text-amber-200">
                                             {{ $finalReport->adminNotes->count() }}
                                         </span>
@@ -1175,14 +1241,12 @@ new class extends Component {
                                             class="rounded-xl border border-amber-200 dark:border-amber-800
                                                    bg-amber-50 dark:bg-amber-900/20 p-2.5">
                                             <div class="flex items-center gap-2 mb-1">
-                                                <div
-                                                    class="w-5 h-5 rounded-full bg-amber-200 dark:bg-amber-800/50
+                                                <div class="w-5 h-5 rounded-full bg-amber-200 dark:bg-amber-800/50
                                                             flex items-center justify-center text-[8px] font-bold
                                                             text-amber-800 dark:text-amber-300">
                                                     {{ strtoupper(substr($note->admin?->full_name ?? 'A', 0, 1)) }}
                                                 </div>
-                                                <p
-                                                    class="text-[10px] font-semibold text-amber-800 dark:text-amber-300">
+                                                <p class="text-[10px] font-semibold text-amber-800 dark:text-amber-300">
                                                     {{ $note->admin?->full_name ?? 'Admin' }}
                                                 </p>
                                                 <span class="text-[9px] text-amber-600 dark:text-amber-400">
@@ -1215,8 +1279,7 @@ new class extends Component {
 
                     @if (!$this->isoutcomeUnlocked())
                         <div class="flex flex-col items-center justify-center py-12">
-                            <div
-                                class="w-16 h-16 rounded-3xl bg-slate-100 dark:bg-zinc-800
+                            <div class="w-16 h-16 rounded-3xl bg-slate-100 dark:bg-zinc-800
                                         flex items-center justify-center mb-4">
                                 <flux:icon.lock-closed class="size-8 text-slate-400 dark:text-zinc-600" />
                             </div>
@@ -1229,8 +1292,7 @@ new class extends Component {
                         </div>
                     @elseif (!$outcome && !$showoutcomeForm)
                         <div class="flex flex-col items-center justify-center py-12">
-                            <div
-                                class="w-16 h-16 rounded-3xl bg-amber-100 dark:bg-amber-900/30
+                            <div class="w-16 h-16 rounded-3xl bg-amber-100 dark:bg-amber-900/30
                                         flex items-center justify-center mb-4">
                                 <flux:icon.trophy class="size-8 text-amber-600 dark:text-amber-400" />
                             </div>
@@ -1238,19 +1300,26 @@ new class extends Component {
                                 outcome Belum Diunggah
                             </p>
                             <p class="text-[11px] text-slate-500 dark:text-zinc-400 mt-1 text-center max-w-xs">
-                                Silakan unggah luaran penelitian Anda.
+                                @if ($isMember)
+                                    Hanya <strong>ketua</strong> yang dapat mengunggah outcome.
+                                @else
+                                    Silakan unggah luaran penelitian Anda.
+                                @endif
                             </p>
-                            <button type="button" wire:click="showUploadoutcome"
-                                class="mt-4 inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded-full text-white
-                                       bg-amber-600/90 hover:bg-amber-600
-                                       shadow-sm shadow-amber-500/20 hover:shadow-sm hover:shadow-amber-500/30
-                                       hover:scale-[1.02] active:scale-[0.97]
-                                       transition-all duration-150">
-                                <flux:icon.plus class="size-3.5" />
-                                Upload outcome
-                            </button>
+
+                            @if ($isLeader)
+                                <button type="button" wire:click="showUploadoutcome"
+                                    class="mt-4 inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded-full text-white
+                                           bg-amber-600/90 hover:bg-amber-600
+                                           shadow-sm shadow-amber-500/20 hover:shadow-sm hover:shadow-amber-500/30
+                                           hover:scale-[1.02] active:scale-[0.97]
+                                           transition-all duration-150">
+                                    <flux:icon.plus class="size-3.5" />
+                                    Upload outcome
+                                </button>
+                            @endif
                         </div>
-                    @elseif ($showoutcomeForm)
+                    @elseif ($showoutcomeForm && $isLeader)
                         <div class="space-y-4">
                             <div class="flex items-center justify-between">
                                 <h4 class="text-[13px] font-heading font-semibold text-slate-900 dark:text-white">
@@ -1345,7 +1414,7 @@ new class extends Component {
                                 </span>
                             </div>
 
-                            @if (in_array($outcome->status, ['pending', 'revised']))
+                            @if ($isLeader && in_array($outcome->status, ['pending', 'revised']))
                                 <button type="button" wire:click="showEditoutcome"
                                     class="inline-flex items-center gap-1 px-2.5 py-1 text-[10.5px] font-medium rounded-full
                                            text-slate-600 dark:text-zinc-300
@@ -1361,45 +1430,36 @@ new class extends Component {
                         </div>
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div
-                                class="rounded-2xl border border-slate-200 dark:border-zinc-700
+                            <div class="rounded-2xl border border-slate-200 dark:border-zinc-700
                                         bg-slate-50 dark:bg-zinc-800/40 p-3">
-                                <p
-                                    class="text-[9px] uppercase tracking-wider font-semibold text-slate-500 dark:text-zinc-400">
+                                <p class="text-[9px] uppercase tracking-wider font-semibold text-slate-500 dark:text-zinc-400">
                                     Journal</p>
                                 <p class="text-[11px] font-semibold text-slate-900 dark:text-zinc-100 mt-0.5">
                                     {{ $outcome->journal_name }}
                                 </p>
                             </div>
-                            <div
-                                class="rounded-2xl border border-slate-200 dark:border-zinc-700
+                            <div class="rounded-2xl border border-slate-200 dark:border-zinc-700
                                         bg-slate-50 dark:bg-zinc-800/40 p-3">
-                                <p
-                                    class="text-[9px] uppercase tracking-wider font-semibold text-slate-500 dark:text-zinc-400">
+                                <p class="text-[9px] uppercase tracking-wider font-semibold text-slate-500 dark:text-zinc-400">
                                     Level</p>
                                 @php $levelMeta = $this->levelMeta($outcome->level); @endphp
-                                <span
-                                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold mt-0.5
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold mt-0.5
                                              {{ $levelMeta['class'] }}">
                                     <flux:icon.star class="size-2.5" />
                                     {{ $outcome->level }}
                                 </span>
                             </div>
-                            <div
-                                class="rounded-2xl border border-slate-200 dark:border-zinc-700
+                            <div class="rounded-2xl border border-slate-200 dark:border-zinc-700
                                         bg-slate-50 dark:bg-zinc-800/40 p-3">
-                                <p
-                                    class="text-[9px] uppercase tracking-wider font-semibold text-slate-500 dark:text-zinc-400">
+                                <p class="text-[9px] uppercase tracking-wider font-semibold text-slate-500 dark:text-zinc-400">
                                     Edition</p>
                                 <p class="text-[11px] font-semibold text-slate-900 dark:text-zinc-100 mt-0.5">
                                     {{ $outcome->edition }}
                                 </p>
                             </div>
-                            <div
-                                class="rounded-2xl border border-slate-200 dark:border-zinc-700
+                            <div class="rounded-2xl border border-slate-200 dark:border-zinc-700
                                         bg-slate-50 dark:bg-zinc-800/40 p-3">
-                                <p
-                                    class="text-[9px] uppercase tracking-wider font-semibold text-slate-500 dark:text-zinc-400">
+                                <p class="text-[9px] uppercase tracking-wider font-semibold text-slate-500 dark:text-zinc-400">
                                     Volume</p>
                                 <p class="text-[11px] font-semibold text-slate-900 dark:text-zinc-100 mt-0.5">
                                     {{ $outcome->volume }}
@@ -1408,8 +1468,7 @@ new class extends Component {
                         </div>
 
                         <div>
-                            <p
-                                class="text-[10px] uppercase tracking-wider font-semibold text-slate-500 dark:text-zinc-400 mb-2">
+                            <p class="text-[10px] uppercase tracking-wider font-semibold text-slate-500 dark:text-zinc-400 mb-2">
                                 Link</p>
                             <a href="{{ $outcome->journal_link }}" target="_blank"
                                 class="inline-flex items-center gap-2 px-3 py-2 rounded-full
@@ -1424,8 +1483,7 @@ new class extends Component {
 
                         @if ($outcome->adminNotes->count() > 0)
                             <div class="rounded-2xl border border-amber-200 dark:border-amber-800 overflow-hidden">
-                                <div
-                                    class="px-3 py-2.5 bg-amber-50 dark:bg-amber-900/20
+                                <div class="px-3 py-2.5 bg-amber-50 dark:bg-amber-900/20
                                             border-b border-amber-200 dark:border-amber-800
                                             flex items-center justify-between">
                                     <span class="flex items-center gap-2">
@@ -1434,8 +1492,7 @@ new class extends Component {
                                         <span class="text-[11px] font-semibold text-amber-800 dark:text-amber-300">
                                             Admin Notes
                                         </span>
-                                        <span
-                                            class="text-[9px] font-bold px-1.5 py-0.5 rounded-full
+                                        <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full
                                                      bg-amber-200 text-amber-800 dark:bg-amber-800 dark:text-amber-200">
                                             {{ $outcome->adminNotes->count() }}
                                         </span>
@@ -1447,14 +1504,12 @@ new class extends Component {
                                             class="rounded-xl border border-amber-200 dark:border-amber-800
                                                    bg-amber-50 dark:bg-amber-900/20 p-2.5">
                                             <div class="flex items-center gap-2 mb-1">
-                                                <div
-                                                    class="w-5 h-5 rounded-full bg-amber-200 dark:bg-amber-800/50
+                                                <div class="w-5 h-5 rounded-full bg-amber-200 dark:bg-amber-800/50
                                                             flex items-center justify-center text-[8px] font-bold
                                                             text-amber-800 dark:text-amber-300">
                                                     {{ strtoupper(substr($note->admin?->full_name ?? 'A', 0, 1)) }}
                                                 </div>
-                                                <p
-                                                    class="text-[10px] font-semibold text-amber-800 dark:text-amber-300">
+                                                <p class="text-[10px] font-semibold text-amber-800 dark:text-amber-300">
                                                     {{ $note->admin?->full_name ?? 'Admin' }}
                                                 </p>
                                                 <span class="text-[9px] text-amber-600 dark:text-amber-400">
@@ -1482,8 +1537,7 @@ new class extends Component {
             </div>
 
             {{-- ══════════ FOOTER ══════════ --}}
-            <div
-                class="shrink-0 flex justify-end
+            <div class="shrink-0 flex justify-end
                         px-5 sm:px-6 py-4 border-t border-slate-200 dark:border-zinc-700
                         bg-slate-50/50 dark:bg-zinc-900/50 rounded-b-3xl sm:rounded-b-3xl">
                 <button type="button" @click="show = false"

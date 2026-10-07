@@ -122,6 +122,11 @@ class ProposalForm extends Form
         $this->validateOnly('file');
     }
 
+    public function validateStep2(): void
+    {
+        $this->validateOnly('rab_file');
+    }
+
     // ═══════════════ Load ═══════════════
 
     public function setProposal(Proposal $proposal): void
@@ -145,8 +150,6 @@ class ProposalForm extends Form
         $this->file               = null;
         $this->rab_file           = null;
     }
-
-    // ═══════════════ Actions ═══════════════
 
     /**
      * Store a new file and return its path.

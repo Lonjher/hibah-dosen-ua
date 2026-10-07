@@ -48,6 +48,7 @@ new #[Title('Manage Dedications')] class extends Component {
     public function submit(int $id): void
     {
         $proposal = Proposal::find($id);
+
         if (!$proposal) {
             Flux::toast('Proposal not found.', variant: 'danger');
             return;
@@ -65,6 +66,7 @@ new #[Title('Manage Dedications')] class extends Component {
     public function reject(int $id): void
     {
         $proposal = Proposal::find($id);
+
         if (!$proposal) {
             Flux::toast('Proposal not found.', variant: 'danger');
             return;
@@ -79,15 +81,29 @@ new #[Title('Manage Dedications')] class extends Component {
         Flux::toast('Proposal rejected.', variant: 'success');
     }
 
+    /* ============================================================
+     |  DELETE FLOW
+     ============================================================ */
+
     public function confirmDelete(int $id): void
     {
         $proposal = Proposal::find($id);
+
         if (!$proposal) {
             Flux::toast('Proposal not found.', variant: 'danger');
             return;
         }
 
-        $this->dispatch('confirm-delete', title: 'Delete Proposal?', message: 'You are about to delete:', subject: $proposal->title, note: 'This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel', action: 'deleteProposal', payload: ['id' => $proposal->id]);
+        $this->dispatch('confirm-delete',
+            title: 'Delete Proposal?',
+            message: 'You are about to delete:',
+            subject: $proposal->title,
+            note: 'This action cannot be undone.',
+            confirmLabel: 'Delete',
+            cancelLabel: 'Cancel',
+            action: 'deleteProposal',
+            payload: ['id' => $proposal->id],
+        );
     }
 
     #[On('delete-confirmed')]
@@ -101,17 +117,21 @@ new #[Title('Manage Dedications')] class extends Component {
     public function deleteProposal(?int $id): void
     {
         if (!$id) {
+            Flux::toast('Invalid proposal ID.', variant: 'danger');
             return;
         }
 
         $proposal = Proposal::find($id);
+
         if (!$proposal) {
+            Flux::toast('Proposal not found.', variant: 'danger');
             return;
         }
 
         try {
             $title = $proposal->title;
             $proposal->delete();
+
             Flux::toast("Proposal \"{$title}\" deleted.", variant: 'success');
             $this->resetPage();
         } catch (\Throwable $e) {
@@ -129,7 +149,14 @@ new #[Title('Manage Dedications')] class extends Component {
         $selectedPeriod = $this->periodFilter === 'all' ? null : Period::find((int) $this->periodFilter);
 
         $dedications = Proposal::query()
-            ->with(['author', 'researchScheme', 'period', 'reviewer'])
+            ->with([
+                'author',
+                'researchScheme',
+                'period',
+                'reviewer',
+                'proposalMembers.user',
+                'proposalStudents',
+            ])
             ->where('is_research', false)
             ->when($selectedPeriod, fn($q) => $q->where('period_id', $selectedPeriod->id))
             ->when(
@@ -151,8 +178,8 @@ new #[Title('Manage Dedications')] class extends Component {
             ->paginate(10);
 
         return [
-            'dedications' => $dedications,
-            'periods' => Period::orderByDesc('open_from')->orderByDesc('id')->get(),
+            'dedications'    => $dedications,
+            'periods'        => Period::orderByDesc('open_from')->orderByDesc('id')->get(),
             'selectedPeriod' => $selectedPeriod,
         ];
     }
@@ -198,25 +225,12 @@ new #[Title('Manage Dedications')] class extends Component {
                     </div>
 
                     {{-- ─────── PERIOD FILTER ─────── --}}
-                    <div
-                        class="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full
-                        bg-white dark:bg-zinc-900
-                        border border-slate-200 dark:border-zinc-800
-                        shadow-sm shadow-slate-200/50 dark:shadow-zinc-950/50">
-                        <flux:icon.calendar-days class="size-3 text-slate-400 dark:text-zinc-500 shrink-0" />
-                        <select wire:model.live="periodFilter"
-                            class="text-[10.5px] font-medium bg-transparent border-0
-                           text-slate-700 dark:text-zinc-200
-                           focus:outline-none focus:ring-0 cursor-pointer
-                           pr-4 pl-0 py-0 max-w-[90px] sm:max-w-none
-                           [&>option]:text-slate-700 dark:[&>option]:text-zinc-200
-                           [&>option]:bg-white dark:[&>option]:bg-zinc-900">
-                            <option value="all">All Periods</option>
-                            @foreach ($periods as $p)
-                                <option value="{{ $p->id }}">{{ $p->periode }}</option>
-                            @endforeach
-                        </select>
-                    </div>
+                    <x-select wire:model.live="periodFilter">
+                        <option value="all">All Periods</option>
+                        @foreach ($periods as $p)
+                            <option value="{{ $p->id }}">{{ $p->periode }}</option>
+                        @endforeach
+                    </x-select>
 
                     {{-- ─────── LOADING SPINNER ─────── --}}
                     <div wire:loading wire:target="periodFilter"
@@ -233,7 +247,7 @@ new #[Title('Manage Dedications')] class extends Component {
 
                     {{-- ─────── STATUS FILTER ─────── --}}
                     <div class="shrink-0">
-                        <x-select wire:model.live="statusFilter" size="sm" color="rose" maxWidth="w-auto">
+                        <x-select wire:model.live="statusFilter" color="rose" maxWidth="w-auto">
                             <option value="">All Status</option>
                             <option value="pending">Pending</option>
                             <option value="submitted">Submitted</option>
@@ -272,6 +286,7 @@ new #[Title('Manage Dedications')] class extends Component {
                     Swipe to see more
                 </div>
 
+                {{-- Scrollable table wrapper --}}
                 <div
                     class="overflow-x-auto overscroll-x-contain scroll-smooth
                     [scrollbar-width:thin]
@@ -291,7 +306,7 @@ new #[Title('Manage Dedications')] class extends Component {
                                     Dedication
                                 </th>
                                 <th
-                                    class="hidden md:table-cell px-2 sm:px-3 py-1.5 text-left text-[9.5px] font-semibold uppercase tracking-wider
+                                    class="px-2 sm:px-3 py-1.5 text-left text-[9.5px] font-semibold uppercase tracking-wider
                                    text-slate-500 dark:text-zinc-400 whitespace-nowrap">
                                     Author
                                 </th>
@@ -304,6 +319,11 @@ new #[Title('Manage Dedications')] class extends Component {
                                     class="hidden lg:table-cell px-2 sm:px-3 py-1.5 text-left text-[9.5px] font-semibold uppercase tracking-wider
                                    text-slate-500 dark:text-zinc-400 whitespace-nowrap">
                                     Scheme
+                                </th>
+                                <th
+                                    class="hidden lg:table-cell px-2 sm:px-3 py-1.5 text-left text-[9.5px] font-semibold uppercase tracking-wider
+                                   text-slate-500 dark:text-zinc-400 whitespace-nowrap">
+                                    Members
                                 </th>
                                 <th
                                     class="px-2 sm:px-3 py-1.5 text-left text-[9.5px] font-semibold uppercase tracking-wider
@@ -326,9 +346,9 @@ new #[Title('Manage Dedications')] class extends Component {
                                     class="group transition-colors duration-150
                                    hover:bg-slate-50/70 dark:hover:bg-zinc-800/40">
 
-                                    {{-- DEDICATION --}}
+                                    {{-- ══════════ DEDICATION ══════════ --}}
                                     <td class="px-2 sm:px-3 py-2">
-                                        <div class="flex items-start gap-2">
+                                        <div class="flex items-start gap-2 min-w-0">
                                             <div
                                                 class="w-6 h-6 sm:w-7 sm:h-7 rounded-full shrink-0
                                                 bg-gradient-to-br from-rose-100 to-pink-50
@@ -361,8 +381,8 @@ new #[Title('Manage Dedications')] class extends Component {
                                         </div>
                                     </td>
 
-                                    {{-- AUTHOR --}}
-                                    <td class="hidden md:table-cell px-2 sm:px-3 py-2">
+                                    {{-- ══════════ AUTHOR ══════════ (mobile visible) --}}
+                                    <td class="px-2 sm:px-3 py-2">
                                         @if ($proposal->author)
                                             <div class="flex items-center gap-2 min-w-0">
                                                 <div
@@ -374,7 +394,7 @@ new #[Title('Manage Dedications')] class extends Component {
                                                     {{ strtoupper(substr($proposal->author->full_name, 0, 1)) }}
                                                 </div>
                                                 <span
-                                                    class="text-[10.5px] text-slate-700 dark:text-zinc-300 truncate whitespace-nowrap">
+                                                    class="text-[10.5px] text-slate-700 dark:text-zinc-300 truncate whitespace-nowrap max-w-[140px]">
                                                     {{ $proposal->author->full_name }}
                                                 </span>
                                             </div>
@@ -384,7 +404,7 @@ new #[Title('Manage Dedications')] class extends Component {
                                         @endif
                                     </td>
 
-                                    {{-- REVIEWER --}}
+                                    {{-- ══════════ REVIEWER ══════════ --}}
                                     <td class="hidden md:table-cell px-2 sm:px-3 py-2">
                                         @if ($proposal->reviewer)
                                             <div class="flex items-center gap-2 min-w-0">
@@ -397,7 +417,7 @@ new #[Title('Manage Dedications')] class extends Component {
                                                     {{ strtoupper(substr($proposal->reviewer->full_name, 0, 1)) }}
                                                 </div>
                                                 <span
-                                                    class="text-[10.5px] text-slate-700 dark:text-zinc-300 truncate whitespace-nowrap">
+                                                    class="text-[10.5px] text-slate-700 dark:text-zinc-300 truncate whitespace-nowrap max-w-[140px]">
                                                     {{ $proposal->reviewer->full_name }}
                                                 </span>
                                             </div>
@@ -409,7 +429,7 @@ new #[Title('Manage Dedications')] class extends Component {
                                         @endif
                                     </td>
 
-                                    {{-- SCHEME --}}
+                                    {{-- ══════════ SCHEME ══════════ --}}
                                     <td class="hidden lg:table-cell px-2 sm:px-3 py-2">
                                         <span
                                             class="text-[9.5px] px-1.5 py-0.5 rounded-full whitespace-nowrap
@@ -419,7 +439,26 @@ new #[Title('Manage Dedications')] class extends Component {
                                         </span>
                                     </td>
 
-                                    {{-- STATUS --}}
+                                    {{-- ══════════ MEMBERS ══════════ --}}
+                                    <td class="hidden lg:table-cell px-2 sm:px-3 py-2">
+                                        <button type="button" x-data
+                                            x-on:click="$dispatch('open-view-members', { id: {{ $proposal->id }} })"
+                                            class="cursor-pointer inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full
+                                                bg-slate-100 dark:bg-zinc-800
+                                                hover:bg-rose-100 dark:hover:bg-rose-900/30
+                                                text-[9.5px] font-medium
+                                                text-slate-600 dark:text-zinc-400
+                                                hover:text-rose-700 dark:hover:text-rose-300
+                                                hover:scale-[1.02] active:scale-[0.97]
+                                                transition-all duration-150">
+                                            <flux:icon.user-group class="size-2.5" />
+                                            <span>{{ $proposal->proposalMembers->count() }}</span>
+                                            <flux:icon.academic-cap class="size-2.5 ml-0.5" />
+                                            <span>{{ $proposal->proposalStudents->count() }}</span>
+                                        </button>
+                                    </td>
+
+                                    {{-- ══════════ STATUS ══════════ --}}
                                     <td class="px-2 sm:px-3 py-2">
                                         <span
                                             class="inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded-full whitespace-nowrap
@@ -429,7 +468,7 @@ new #[Title('Manage Dedications')] class extends Component {
                                         </span>
                                     </td>
 
-                                    {{-- ACTION --}}
+                                    {{-- ══════════ ACTION ══════════ --}}
                                     <td class="px-2 sm:px-3 py-2 text-right">
                                         <flux:dropdown position="bottom" align="end">
                                             <flux:button size="xs" variant="ghost" icon="ellipsis-horizontal"
@@ -441,6 +480,7 @@ new #[Title('Manage Dedications')] class extends Component {
 
                                             <flux:menu class="!text-[11px]">
 
+                                                {{-- ══════════ PENDING ══════════ --}}
                                                 @if ($proposal->status === 'pending')
                                                     <flux:menu.item icon="check-circle"
                                                         wire:click="submit({{ $proposal->id }})">
@@ -456,6 +496,7 @@ new #[Title('Manage Dedications')] class extends Component {
                                                     </flux:menu.item>
                                                 @endif
 
+                                                {{-- ══════════ REVISED ══════════ --}}
                                                 @if ($proposal->status === 'revised')
                                                     <flux:menu.item icon="check-circle"
                                                         wire:click="submit({{ $proposal->id }})">
@@ -471,6 +512,7 @@ new #[Title('Manage Dedications')] class extends Component {
                                                     </flux:menu.item>
                                                 @endif
 
+                                                {{-- ══════════ SUBMITTED ══════════ --}}
                                                 @if ($proposal->status === 'submitted')
                                                     <flux:menu.item icon="arrow-path" x-data
                                                         x-on:click="$dispatch('open-admin-note-revision', { id: {{ $proposal->id }} })">
@@ -487,6 +529,7 @@ new #[Title('Manage Dedications')] class extends Component {
                                                     </flux:menu.item>
                                                 @endif
 
+                                                {{-- ══════════ REJECTED ══════════ --}}
                                                 @if ($proposal->status === 'rejected')
                                                     <flux:menu.item icon="arrow-path" x-data
                                                         x-on:click="$dispatch('open-admin-note-revision', { id: {{ $proposal->id }} })">
@@ -498,14 +541,17 @@ new #[Title('Manage Dedications')] class extends Component {
                                                     </flux:menu.item>
                                                 @endif
 
+                                                {{-- ══════════ VIEW SUBMISSIONS ══════════ --}}
                                                 @if ($proposal->progressReport || $proposal->finalReport || $proposal->outcome)
                                                     <flux:menu.separator />
                                                     <flux:menu.item icon="eye" x-data
-                                                        x-on:click="$dispatch('open-view-submission', { proposalId: {{ $proposal->id }} })">
+                                                        x-on:click="$dispatch('open-view-submission', { proposalId: {{ $proposal->id }} })"
+                                                        class="text-slate-700 dark:text-zinc-300">
                                                         View Submissions
                                                     </flux:menu.item>
                                                 @endif
 
+                                                {{-- ══════════ UNDER REVIEW ══════════ --}}
                                                 @if ($proposal->status === 'under_review')
                                                     <flux:menu.item icon="arrow-path" x-data
                                                         x-on:click="$dispatch('open-admin-note-revision', { id: {{ $proposal->id }} })">
@@ -514,6 +560,7 @@ new #[Title('Manage Dedications')] class extends Component {
                                                     <flux:menu.separator />
                                                 @endif
 
+                                                {{-- ══════════ ACCEPTED ══════════ --}}
                                                 @if ($proposal->status === 'accepted')
                                                     <flux:menu.item variant="danger" icon="x-circle"
                                                         wire:click="reject({{ $proposal->id }})">
@@ -521,6 +568,7 @@ new #[Title('Manage Dedications')] class extends Component {
                                                     </flux:menu.item>
                                                 @endif
 
+                                                {{-- ══════════ NOTES & VIEW ══════════ --}}
                                                 <flux:menu.separator />
 
                                                 @if (!in_array($proposal->status, ['pending']))
@@ -556,7 +604,7 @@ new #[Title('Manage Dedications')] class extends Component {
 
                             @empty
                                 <tr>
-                                    <td colspan="6" class="px-4 py-10">
+                                    <td colspan="7" class="px-4 py-10">
                                         <div class="flex flex-col items-center gap-2 text-center">
                                             <div
                                                 class="w-11 h-11 rounded-full bg-slate-100 dark:bg-zinc-800
@@ -565,13 +613,13 @@ new #[Title('Manage Dedications')] class extends Component {
                                             </div>
                                             <div>
                                                 <p class="text-[12px] font-semibold text-slate-900 dark:text-white">
-                                                    No dedications yet
+                                                    {{ __("No dedications yet") }}
                                                 </p>
                                                 <p class="text-[10.5px] text-slate-500 dark:text-zinc-400 mt-0.5">
                                                     @if ($search || $statusFilter || ($periodFilter ?? 'all') !== 'all')
-                                                        No results match your filters.
+                                                        {{ __("No results match your filters.") }}
                                                     @else
-                                                        Dedications will appear after users submit them.
+                                                        {{ __("Dedications will appear after users submit them.") }}
                                                     @endif
                                                 </p>
                                             </div>
@@ -603,6 +651,7 @@ new #[Title('Manage Dedications')] class extends Component {
 
     {{-- ══════════ MODALS ══════════ --}}
     <x-confirm-delete />
+    <livewire:admin.internal.modals.view-members />
     <livewire:admin.internal.modals.assign-reviewer />
     <livewire:admin.internal.modals.admin-note-revision />
     <livewire:admin.internal.modals.reviewer-notes />

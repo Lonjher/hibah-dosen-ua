@@ -130,7 +130,7 @@ class Proposal extends Model
      *     name: string,
      *     identifier: string|null,
      *     role: string,
-     *     source: \Illuminate\Database\Eloquent\Model
+     *     source: Model
      * }>
      */
     public function allMembers(): \Illuminate\Support\Collection

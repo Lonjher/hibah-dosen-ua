@@ -18,6 +18,8 @@ new class extends Component {
             'period',
             'reviewer',
             'budgetProposals',
+            'proposalMembers.user',      // ← NEW
+            'proposalStudents',          // ← NEW
             'adminNotes'    => fn ($q) => $q->latest()->with('admin'),
             'reviewerNotes' => fn ($q) => $q->latest()->with('reviewer'),
         ])->find($id);
@@ -210,6 +212,153 @@ new class extends Component {
                         </div>
                     </div>
                 @endif
+
+                {{-- ═══════════════════════════════════════════════════ --}}
+                {{-- ─────── PROPOSAL MEMBERS (NEW) ─────── --}}
+                {{-- ═══════════════════════════════════════════════════ --}}
+                <div>
+                    <div class="flex items-center gap-1.5 mb-1.5">
+                        <flux:icon.user-group class="size-3 text-emerald-500 dark:text-emerald-400" />
+                        <p class="text-[9.5px] uppercase tracking-wider font-semibold
+                                  text-slate-500 dark:text-zinc-400">
+                            Proposal Members
+                        </p>
+                        <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full
+                                     bg-emerald-100 text-emerald-700
+                                     dark:bg-emerald-900/40 dark:text-emerald-300">
+                            {{ 1 + $proposal->proposalMembers->count() + $proposal->proposalStudents->count() }}
+                        </span>
+                    </div>
+
+                    <div class="space-y-2">
+
+                        {{-- ─────── KETUA ─────── --}}
+                        @if ($proposal->author)
+                            <div class="rounded-2xl border border-emerald-200 dark:border-emerald-800/60
+                                        bg-emerald-50/60 dark:bg-emerald-900/15 px-3 py-2.5">
+                                <div class="flex items-center gap-1.5 mb-1.5">
+                                    <flux:icon.star class="size-2.5 text-emerald-600 dark:text-emerald-400" />
+                                    <p class="text-[8.5px] uppercase tracking-wider font-bold
+                                              text-emerald-700 dark:text-emerald-400">
+                                        Ketua
+                                    </p>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <div class="w-7 h-7 rounded-full shrink-0
+                                                bg-emerald-200 dark:bg-emerald-800/50
+                                                flex items-center justify-center
+                                                text-[10px] font-bold
+                                                text-emerald-700 dark:text-emerald-300">
+                                        {{ strtoupper(substr($proposal->author->full_name, 0, 1)) }}
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-[11px] font-semibold truncate
+                                                  text-slate-900 dark:text-zinc-100">
+                                            {{ $proposal->author->full_name }}
+                                        </p>
+                                        <p class="text-[9.5px] text-slate-500 dark:text-zinc-500 truncate">
+                                            NIDN: {{ $proposal->author->nidn ?? '—' }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+
+                        {{-- ─────── ANGGOTA DOSEN ─────── --}}
+                        @if ($proposal->proposalMembers->isNotEmpty())
+                            <div class="rounded-2xl border border-blue-200 dark:border-blue-800/60
+                                        bg-blue-50/60 dark:bg-blue-900/15 px-3 py-2.5">
+                                <div class="flex items-center gap-1.5 mb-1.5">
+                                    <flux:icon.user-group class="size-2.5 text-blue-600 dark:text-blue-400" />
+                                    <p class="text-[8.5px] uppercase tracking-wider font-bold
+                                              text-blue-700 dark:text-blue-400">
+                                        Anggota Dosen
+                                    </p>
+                                    <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full
+                                                 bg-blue-100 text-blue-700
+                                                 dark:bg-blue-900/40 dark:text-blue-300">
+                                        {{ $proposal->proposalMembers->count() }}
+                                    </span>
+                                </div>
+                                <div class="space-y-1.5">
+                                    @foreach ($proposal->proposalMembers as $m)
+                                        <div wire:key="pm-{{ $m->id }}"
+                                            class="flex items-center gap-2">
+                                            <div class="w-6 h-6 rounded-full shrink-0
+                                                        bg-blue-200 dark:bg-blue-800/50
+                                                        flex items-center justify-center
+                                                        text-[9px] font-bold
+                                                        text-blue-700 dark:text-blue-300">
+                                                {{ strtoupper(substr($m->user?->full_name ?? '?', 0, 1)) }}
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <p class="text-[10.5px] font-medium truncate
+                                                          text-slate-900 dark:text-zinc-100">
+                                                    {{ $m->user?->full_name ?? '—' }}
+                                                </p>
+                                                <p class="text-[9px] text-slate-500 dark:text-zinc-500 truncate">
+                                                    NIDN: {{ $m->user?->nidn ?? '—' }}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+
+                        {{-- ─────── ANGGOTA MAHASISWA ─────── --}}
+                        @if ($proposal->proposalStudents->isNotEmpty())
+                            <div class="rounded-2xl border border-violet-200 dark:border-violet-800/60
+                                        bg-violet-50/60 dark:bg-violet-900/15 px-3 py-2.5">
+                                <div class="flex items-center gap-1.5 mb-1.5">
+                                    <flux:icon.academic-cap class="size-2.5 text-violet-600 dark:text-violet-400" />
+                                    <p class="text-[8.5px] uppercase tracking-wider font-bold
+                                              text-violet-700 dark:text-violet-400">
+                                        Anggota Mahasiswa
+                                    </p>
+                                    <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full
+                                                 bg-violet-100 text-violet-700
+                                                 dark:bg-violet-900/40 dark:text-violet-300">
+                                        {{ $proposal->proposalStudents->count() }}
+                                    </span>
+                                </div>
+                                <div class="space-y-1.5">
+                                    @foreach ($proposal->proposalStudents as $s)
+                                        <div wire:key="ps-{{ $s->id }}"
+                                            class="flex items-center gap-2">
+                                            <div class="w-6 h-6 rounded-full shrink-0
+                                                        bg-violet-200 dark:bg-violet-800/50
+                                                        flex items-center justify-center
+                                                        text-[9px] font-bold
+                                                        text-violet-700 dark:text-violet-300">
+                                                {{ strtoupper(substr($s->name, 0, 1)) }}
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <p class="text-[10.5px] font-medium truncate
+                                                          text-slate-900 dark:text-zinc-100">
+                                                    {{ $s->name }}
+                                                </p>
+                                                <p class="text-[9px] text-slate-500 dark:text-zinc-500 truncate">
+                                                    NIM: {{ $s->nim }} · {{ $s->program_study }}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+
+                        {{-- ─────── EMPTY STATE ─────── --}}
+                        @if ($proposal->proposalMembers->isEmpty() && $proposal->proposalStudents->isEmpty())
+                            <div class="rounded-2xl border border-dashed border-slate-200 dark:border-zinc-700
+                                        bg-slate-50/60 dark:bg-zinc-800/30 px-3 py-4 text-center">
+                                <p class="text-[10px] text-slate-400 dark:text-zinc-500 italic">
+                                    Tidak ada anggota — hanya ketua.
+                                </p>
+                            </div>
+                        @endif
+                    </div>
+                </div>
 
                 {{-- ─────── SUMMARY ─────── --}}
                 <div>

@@ -57,149 +57,191 @@ new class extends Component {
         x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
         x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
         class="flex max-h-[92vh] w-full sm:max-w-md flex-col overflow-hidden
-               bg-white dark:bg-zinc-900
-               rounded-t-2xl sm:rounded-xl shadow-2xl
+               bg-white dark:bg-zinc-900 rounded-t-3xl sm:rounded-3xl shadow-2xl
                border border-slate-200 dark:border-zinc-700"
         @click.stop>
 
         <form wire:submit.prevent="create" class="flex min-h-0 flex-1 flex-col">
 
             {{-- ══════════ HEADER ══════════ --}}
-            <div class="shrink-0 bg-gradient-to-r from-emerald-600 to-emerald-500 px-4 py-3">
-                <div class="flex items-start justify-between gap-3">
+            <div class="shrink-0 bg-gradient-to-r from-emerald-600 to-emerald-500 px-4 py-2.5">
+                <div class="flex items-center justify-between gap-2">
                     <div class="flex items-center gap-2 min-w-0">
-                        <div class="w-7 h-7 rounded-md bg-white/20 flex items-center justify-center shrink-0">
+                        <div class="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center shrink-0">
                             <flux:icon.calendar-days class="size-3.5 text-white" />
                         </div>
                         <div class="min-w-0">
-                            <h3 class="text-[13px] font-semibold text-white leading-tight">
+                            <h3 class="text-[12.5px] font-semibold text-white leading-tight">
                                 Add New Period
                             </h3>
-                            <p class="text-[10.5px] text-white/75 mt-0.5 leading-tight">
+                            <p class="text-[10px] text-white/75 mt-0.5 leading-tight">
                                 Fill in the period information
                             </p>
                         </div>
                     </div>
                     <button type="button" @click="show = false"
                         aria-label="Close"
-                        class="shrink-0 w-6 h-6 rounded-md flex items-center justify-center
+                        class="shrink-0 w-6 h-6 rounded-full flex items-center justify-center
                                text-white/80 hover:text-white hover:bg-white/10
                                transition-colors">
-                        <flux:icon.x-mark class="size-3.5" />
+                        <flux:icon.x-mark class="size-3" />
                     </button>
                 </div>
             </div>
 
             {{-- ══════════ BODY ══════════ --}}
-            <div class="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+            <div class="flex-1 overflow-y-auto px-4 py-3 space-y-3">
 
                 {{-- Global Error --}}
                 <template x-if="errorMessage">
-                    <div class="flex items-start gap-2 p-2.5 rounded-md
+                    <div class="flex items-start gap-2 p-2 rounded-2xl
                                 bg-rose-50 dark:bg-rose-900/20
                                 border border-rose-200 dark:border-rose-800">
                         <flux:icon.exclamation-triangle
-                            class="size-3.5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
-                        <p class="text-[10.5px] leading-relaxed
+                            class="size-3 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+                        <p class="text-[10px] leading-relaxed
                                   text-rose-700 dark:text-rose-300"
                             x-text="errorMessage"></p>
                     </div>
                 </template>
 
-                {{-- Period Name --}}
-                <div>
-                    <x-input
-                        id="periode"
-                        wire:model="form.periode"
-                        label="Period Name"
-                        required
-                        placeholder="e.g. 2025/2026" />
-                    @error('form.periode')
-                        <p class="mt-1 flex items-center gap-1 text-[10.5px] text-rose-600">
-                            <flux:icon.exclamation-circle class="size-3 shrink-0" />
+                {{-- ─── Section: Period Details ─── --}}
+                <section class="space-y-2.5">
+                    <header class="flex items-center gap-1.5">
+                        <flux:icon.calendar-days class="size-3 text-emerald-600 dark:text-emerald-400" />
+                        <h4 class="text-[10px] font-semibold uppercase tracking-wider
+                                   text-slate-500 dark:text-zinc-400">
+                            Period Details
+                        </h4>
+                        <div class="flex-1 h-px bg-slate-200 dark:bg-zinc-700"></div>
+                    </header>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        {{-- Period Name --}}
+                        <div class="sm:col-span-2">
+                            <x-input
+                                id="periode"
+                                wire:model="form.periode"
+                                label="Period Name"
+                                required
+                                placeholder="e.g. 2025/2026"
+                                class="rounded-full" />
+                            @error('form.periode')
+                                <p class="mt-1 flex items-center gap-1 text-[10px] text-rose-600">
+                                    <flux:icon.exclamation-circle class="size-2.5 shrink-0" />
+                                    {{ $message }}
+                                </p>
+                            @enderror
+                        </div>
+
+                        {{-- Open From --}}
+                        <div>
+                            <x-input
+                                type="datetime-local"
+                                id="open_from"
+                                wire:model="form.open_from"
+                                label="Open From"
+                                required
+                                class="rounded-full dark:[color-scheme:dark]" />
+                            @error('form.open_from')
+                                <p class="mt-1 flex items-center gap-1 text-[10px] text-rose-600">
+                                    <flux:icon.exclamation-circle class="size-2.5 shrink-0" />
+                                    {{ $message }}
+                                </p>
+                            @enderror
+                        </div>
+
+                        {{-- Open To --}}
+                        <div>
+                            <x-input
+                                type="datetime-local"
+                                id="open_to"
+                                wire:model="form.open_to"
+                                label="Open To"
+                                required
+                                class="rounded-full dark:[color-scheme:dark]" />
+                            @error('form.open_to')
+                                <p class="mt-1 flex items-center gap-1 text-[10px] text-rose-600">
+                                    <flux:icon.exclamation-circle class="size-2.5 shrink-0" />
+                                    {{ $message }}
+                                </p>
+                            @enderror
+                        </div>
+                    </div>
+                </section>
+
+                {{-- ─── Section: Status ─── --}}
+                <section class="space-y-2.5">
+                    <header class="flex items-center gap-1.5">
+                        <flux:icon.bolt class="size-3 text-emerald-600 dark:text-emerald-400" />
+                        <h4 class="text-[10px] font-semibold uppercase tracking-wider
+                                   text-slate-500 dark:text-zinc-400">
+                            Status
+                        </h4>
+                        <div class="flex-1 h-px bg-slate-200 dark:bg-zinc-700"></div>
+                    </header>
+
+                    {{-- Is Active --}}
+                    <label class="flex items-start gap-2 cursor-pointer select-none
+                                  p-2.5 rounded-full
+                                  bg-slate-50 dark:bg-zinc-800/40
+                                  border border-slate-200 dark:border-zinc-700/60
+                                  hover:bg-slate-100 dark:hover:bg-zinc-800/70
+                                  transition-colors">
+                        <input type="checkbox" wire:model="form.is_active"
+                            class="mt-0.5 rounded-full border-slate-300 dark:border-zinc-600
+                                   text-emerald-600 focus:ring-emerald-500 focus:ring-1
+                                   w-3.5 h-3.5 shrink-0" />
+                        <div class="flex-1 min-w-0">
+                            <span class="block text-[11px] font-medium
+                                         text-slate-700 dark:text-zinc-300">
+                                Set as active period
+                            </span>
+                            <span class="block mt-0.5 text-[9.5px] leading-relaxed
+                                         text-slate-500 dark:text-zinc-400">
+                                Automatically deactivates other active periods.
+                            </span>
+                        </div>
+                    </label>
+                    @error('form.is_active')
+                        <p class="flex items-center gap-1 text-[10px] text-rose-600">
+                            <flux:icon.exclamation-circle class="size-2.5 shrink-0" />
                             {{ $message }}
                         </p>
                     @enderror
-                </div>
-
-                {{-- Open From / Open To --}}
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    <div>
-                        <x-input
-                            type="datetime-local"
-                            id="open_from"
-                            wire:model="form.open_from"
-                            label="Open From"
-                            required
-                            class="dark:[color-scheme:dark]" />
-                        @error('form.open_from')
-                            <p class="mt-1 flex items-center gap-1 text-[10.5px] text-rose-600">
-                                <flux:icon.exclamation-circle class="size-3 shrink-0" />
-                                {{ $message }}
-                            </p>
-                        @enderror
-                    </div>
-
-                    <div>
-                        <x-input
-                            type="datetime-local"
-                            id="open_to"
-                            wire:model="form.open_to"
-                            label="Open To"
-                            required
-                            class="dark:[color-scheme:dark]" />
-                        @error('form.open_to')
-                            <p class="mt-1 flex items-center gap-1 text-[10.5px] text-rose-600">
-                                <flux:icon.exclamation-circle class="size-3 shrink-0" />
-                                {{ $message }}
-                            </p>
-                        @enderror
-                    </div>
-                </div>
-
-                {{-- Is Active --}}
-                <label class="flex items-start gap-2 cursor-pointer select-none
-                              p-2 rounded-full
-                              bg-slate-50 dark:bg-zinc-800/40
-                              border border-slate-200 dark:border-zinc-700/60
-                              hover:bg-slate-100 dark:hover:bg-zinc-800/70
-                              transition-colors">
-                    <input type="checkbox" wire:model="form.is_active"
-                        class="mt-0.5 rounded border-slate-300 dark:border-zinc-600
-                               text-emerald-600 focus:ring-emerald-500 focus:ring-1
-                               w-3.5 h-3.5" />
-                    <div class="flex-1 min-w-0">
-                        <span class="block text-[11px] font-medium
-                                     text-slate-700 dark:text-zinc-300">
-                            Set as active period
-                        </span>
-                        <span class="block mt-0.5 text-[9.5px] leading-relaxed
-                                     text-slate-500 dark:text-zinc-400">
-                            The active period will automatically deactivate other active periods.
-                        </span>
-                    </div>
-                </label>
-                @error('form.is_active')
-                    <p class="-mt-2 flex items-center gap-1 text-[10.5px] text-rose-600">
-                        <flux:icon.exclamation-circle class="size-3 shrink-0" />
-                        {{ $message }}
-                    </p>
-                @enderror
+                </section>
             </div>
 
             {{-- ══════════ FOOTER ══════════ --}}
             <div class="shrink-0 flex flex-col-reverse sm:flex-row sm:justify-end gap-1.5
-                        px-4 py-3
+                        px-4 py-2.5
                         border-t border-slate-200 dark:border-zinc-700
                         bg-slate-50/50 dark:bg-zinc-900/50">
 
-                <flux:button type="button" @click="show = false">
+                <button type="button" @click="show = false"
+                    class="w-full sm:w-auto px-3.5 py-1.5 text-[11px] font-medium
+                           rounded-full
+                           text-slate-700 dark:text-zinc-300
+                           bg-white dark:bg-zinc-800
+                           border border-slate-300 dark:border-zinc-600
+                           hover:bg-slate-50 dark:hover:bg-zinc-700
+                           shadow-sm shadow-zinc-200/40
+                           hover:scale-[1.02] active:scale-[0.97]
+                           transition-all duration-150">
                     Cancel
-                </flux:button>
+                </button>
 
-                <flux:button type="submit" variant="primary"
+                <button type="submit"
                     wire:loading.attr="disabled"
-                    wire:target="create">
+                    wire:target="create"
+                    class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5
+                           px-3.5 py-1.5 text-[11px] font-medium rounded-full
+                           text-white
+                           bg-emerald-600/90 hover:bg-emerald-600
+                           shadow-sm shadow-emerald-500/20 hover:shadow-sm hover:shadow-emerald-500/30
+                           disabled:opacity-60 disabled:cursor-wait
+                           hover:scale-[1.02] active:scale-[0.97]
+                           transition-all duration-150">
                     <svg wire:loading wire:target="create"
                          class="animate-spin size-3" viewBox="0 0 24 24" fill="none"
                          xmlns="http://www.w3.org/2000/svg">
@@ -208,7 +250,7 @@ new class extends Component {
                     </svg>
                     <span wire:loading.remove wire:target="create">Save Period</span>
                     <span wire:loading wire:target="create">Saving...</span>
-                </flux:button>
+                </button>
             </div>
         </form>
     </div>

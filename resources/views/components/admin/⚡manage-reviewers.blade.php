@@ -155,6 +155,12 @@ new #[Title('Manage Reviewers')] class extends Component {
                         <x-input-search name="q" wire:model.live="search" id="search-reviewer"
                             placeholder="Search reviewers..." class="w-full !text-[10.5px]" />
                     </div>
+                    <div class="order-6 sm:order-4 ml-auto sm:ml-0 shrink-0">
+                        <flux:button variant="filled" x-data x-on:click="$dispatch('open-import-reviewer')"
+                            class="!text-[10.5px]">
+                            Import
+                        </flux:button>
+                    </div>
                 </div>
             </div>
 
@@ -391,4 +397,5 @@ new #[Title('Manage Reviewers')] class extends Component {
     <x-confirm-delete />
     <livewire:admin.reviewers.add-reviewer />
     <livewire:admin.reviewers.edit-reviewer />
+    <livewire:admin.reviewers.import-reviewer />
 </div>

@@ -921,3 +921,13 @@ input.flux-input-date::-webkit-clear-button {
     -webkit-appearance: none;
     margin: 0;
 }
+
+/* atau kalau posisi bawah juga perlu jarak */
+ui-toast-group[position*="bottom"] {
+    padding-bottom: 1rem;
+}
+
+/* jarak dari kanan */
+ui-toast-group[position*="right"] {
+    margin-top: 3rem;
+}

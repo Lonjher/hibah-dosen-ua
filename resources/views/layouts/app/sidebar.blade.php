@@ -74,7 +74,7 @@
 
                 {{-- ─────── Header & Logo ─────── --}}
                 <div
-                    class="p-1 border-b border-white/60
+                    class="p-1 pl-4 border-b border-white/60
                            flex items-center gap-2
                            bg-white/60 dark:border-zinc-800 dark:bg-zinc-900/60">
 

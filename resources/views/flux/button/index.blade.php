@@ -117,7 +117,7 @@ $classes = Flux::classes()
     // ════════════════════════════════════════════════════════════
     ->add(match ($variant) {
         'primary' => 'bg-emerald-600/85 hover:bg-emerald-600/95 dark:bg-emerald-600/80 dark:hover:bg-emerald-600/90',
-        'filled'  => 'bg-zinc-100/80 hover:bg-zinc-100 dark:bg-zinc-800/70 dark:hover:bg-zinc-800',
+        'filled'  => 'bg-purple-600/85 hover:bg-purple-600/95 dark:bg-purple-60080 dark:hover:bg-purple-600/90',
         'outline' => 'bg-white/90 hover:bg-zinc-50 dark:bg-zinc-800/50 dark:hover:bg-zinc-800/70',
         'danger'  => 'bg-rose-600/85 hover:bg-rose-600/95 dark:bg-rose-600/80 dark:hover:bg-rose-600/90',
         'ghost'   => 'bg-transparent hover:bg-zinc-100/60 dark:hover:bg-zinc-800/50',
@@ -129,7 +129,7 @@ $classes = Flux::classes()
     // ════════════════════════════════════════════════════════════
     ->add(match ($variant) {
         'primary' => 'text-white',
-        'filled'  => 'text-zinc-700 hover:text-zinc-900 dark:text-zinc-200 dark:hover:text-white',
+        'filled'  => 'text-white',
         'outline' => 'text-zinc-700 hover:text-zinc-900 dark:text-zinc-200 dark:hover:text-white',
         'danger'  => 'text-white',
         'ghost'   => 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white',

@@ -140,7 +140,7 @@ new #[Title('Manage Researches')] class extends Component {
         $selectedPeriod = $this->periodFilter === 'all' ? null : Period::find((int) $this->periodFilter);
 
         $proposals = Proposal::query()
-            ->with(['author', 'researchScheme', 'period', 'reviewer'])
+            ->with(['author', 'researchScheme', 'period', 'reviewer', 'proposalMembers.user', 'proposalStudents'])
             ->where('is_research', true)
             ->when($selectedPeriod, fn($q) => $q->where('period_id', $selectedPeriod->id))
             ->when(
@@ -209,25 +209,12 @@ new #[Title('Manage Researches')] class extends Component {
                     </div>
 
                     {{-- ─────── PERIOD FILTER ─────── --}}
-                    <div
-                        class="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full
-                        bg-white dark:bg-zinc-900
-                        border border-slate-200 dark:border-zinc-800
-                        shadow-sm shadow-slate-200/50 dark:shadow-zinc-950/50">
-                        <flux:icon.calendar-days class="size-3 text-slate-400 dark:text-zinc-500 shrink-0" />
-                        <select wire:model.live="periodFilter"
-                            class="text-[10.5px] font-medium bg-transparent border-0
-                           text-slate-700 dark:text-zinc-200
-                           focus:outline-none focus:ring-0 cursor-pointer
-                           pr-4 pl-0 py-0 max-w-[90px] sm:max-w-none
-                           [&>option]:text-slate-700 dark:[&>option]:text-zinc-200
-                           [&>option]:bg-white dark:[&>option]:bg-zinc-900">
-                            <option value="all">All Periods</option>
-                            @foreach ($periods as $p)
-                                <option value="{{ $p->id }}">{{ $p->periode }}</option>
-                            @endforeach
-                        </select>
-                    </div>
+                    <x-select wire:model.live="periodFilter">
+                        <option value="all">All Periods</option>
+                        @foreach ($periods as $p)
+                            <option value="{{ $p->id }}">{{ $p->periode }}</option>
+                        @endforeach
+                    </x-select>
 
                     {{-- ─────── LOADING SPINNER ─────── --}}
                     <div wire:loading wire:target="periodFilter"
@@ -244,7 +231,7 @@ new #[Title('Manage Researches')] class extends Component {
 
                     {{-- ─────── STATUS FILTER ─────── --}}
                     <div class="shrink-0">
-                        <x-select wire:model.live="statusFilter" size="sm" color="emerald" maxWidth="w-auto">
+                        <x-select wire:model.live="statusFilter" color="emerald" maxWidth="w-auto">
                             <option value="">All Status</option>
                             <option value="pending">Pending</option>
                             <option value="submitted">Submitted</option>
@@ -316,6 +303,10 @@ new #[Title('Manage Researches')] class extends Component {
                                     class="hidden lg:table-cell px-2 sm:px-3 py-1.5 text-left text-[9.5px] font-semibold uppercase tracking-wider
                                    text-slate-500 dark:text-zinc-400 whitespace-nowrap">
                                     Scheme
+                                </th>
+                                <th class="hidden lg:table-cell px-2 sm:px-3 py-1.5 text-left text-[9.5px] font-semibold uppercase tracking-wider
+                                        text-slate-500 dark:text-zinc-400 whitespace-nowrap">
+                                    Members
                                 </th>
                                 <th
                                     class="px-2 sm:px-3 py-1.5 text-left text-[9.5px] font-semibold uppercase tracking-wider
@@ -431,6 +422,25 @@ new #[Title('Manage Researches')] class extends Component {
                                         </span>
                                     </td>
 
+                                    {{-- MEMBERS --}}
+                                    <td class="hidden lg:table-cell px-2 sm:px-3 py-2">
+                                        <button type="button" x-data
+                                            x-on:click="$dispatch('open-view-members', { id: {{ $proposal->id }} })"
+                                            class="cursor-pointer inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full
+                                                bg-slate-100 dark:bg-zinc-800
+                                                hover:bg-emerald-100 dark:hover:bg-emerald-900/30
+                                                text-[9.5px] font-medium
+                                                text-slate-600 dark:text-zinc-400
+                                                hover:text-emerald-700 dark:hover:text-emerald-300
+                                                hover:scale-[1.02] active:scale-[0.97]
+                                                transition-all duration-150">
+                                            <flux:icon.user-group class="size-2.5" />
+                                            <span>{{ $proposal->proposalMembers->count() }}</span>
+                                            <flux:icon.academic-cap class="size-2.5 ml-0.5" />
+                                            <span>{{ $proposal->proposalStudents->count() }}</span>
+                                        </button>
+                                    </td>
+
                                     {{-- ══════════ STATUS ══════════ --}}
                                     <td class="px-2 sm:px-3 py-2">
                                         <span
@@ -452,7 +462,6 @@ new #[Title('Manage Researches')] class extends Component {
                                                opacity-60 group-hover:opacity-100 transition-all duration-150" />
 
                                             <flux:menu class="!text-[11px]">
-
                                                 {{-- ══════════ PENDING ══════════ --}}
                                                 @if ($proposal->status === 'pending')
                                                     <flux:menu.item icon="check-circle"
@@ -587,13 +596,13 @@ new #[Title('Manage Researches')] class extends Component {
                                             </div>
                                             <div>
                                                 <p class="text-[12px] font-semibold text-slate-900 dark:text-white">
-                                                    No researches yet
+                                                    {{ __("No researches yet") }}
                                                 </p>
                                                 <p class="text-[10.5px] text-slate-500 dark:text-zinc-400 mt-0.5">
                                                     @if ($search || $statusFilter || ($periodFilter ?? 'all') !== 'all')
-                                                        No results match your filters.
+                                                        {{ __("No results match your filters.") }}
                                                     @else
-                                                        Researches will appear after users submit them.
+                                                        {{ __("Researches will appear after users submit them.") }}
                                                     @endif
                                                 </p>
                                             </div>
@@ -625,7 +634,7 @@ new #[Title('Manage Researches')] class extends Component {
 
     {{-- ══════════ MODALS ══════════ --}}
     <x-confirm-delete />
-
+    <livewire:admin.internal.modals.view-members />
     <livewire:admin.internal.modals.assign-reviewer />
     <livewire:admin.internal.modals.admin-note-revision />
     <livewire:admin.internal.modals.reviewer-notes />

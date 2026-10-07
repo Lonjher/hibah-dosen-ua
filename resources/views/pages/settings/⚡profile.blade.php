@@ -57,23 +57,19 @@ new #[Title('Profile settings')] class extends Component {
                     'avatar' => ['nullable', 'image', 'max:2048'],
                 ],
                 [
-                    'avatar.image' => 'File harus berupa gambar.',
-                    'avatar.max' => 'Ukuran gambar maksimal 2MB.',
+                    'avatar.image' => 'File must be an image.',
+                    'avatar.max' => 'The image must be 2MB in maximun size.',
                 ],
             );
         }
-
         // Validasi + simpan via UserForm (menggunakan rules & messages dari form)
         $this->form->update();
-
         $user = $user->fresh();
-
         // Reset verifikasi email kalau email berubah
         if ($user->email !== $oldEmail) {
             $user->email_verified_at = null;
             $user->save();
         }
-
         // Handle upload avatar
         if ($this->avatar) {
             if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
@@ -82,15 +78,11 @@ new #[Title('Profile settings')] class extends Component {
             $user->avatar = $this->avatar->store('avatars', 'public');
             $user->save();
         }
-
         // Re-load form dengan data user yang fresh (form->update() sudah reset state)
         $this->form->setUser($user);
-
         $this->avatar = null;
         $this->existingAvatarUrl = $user->avatar ? asset('storage/' . $user->avatar) : null;
-
         $this->dispatch('avatar-updated');
-
         Flux::toast(variant: 'success', text: __('Profile updated.'));
     }
 

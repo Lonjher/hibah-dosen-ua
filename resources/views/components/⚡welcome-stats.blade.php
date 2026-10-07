@@ -150,7 +150,7 @@ new class extends Component {
             ->whereDoesntHave('finalReport', fn ($q) => $q->where('status', 'accepted'))
             ->where(function ($q) {
                 $q->whereHas('progressReport', fn ($qq) => $qq->whereIn('status', ['submitted', 'under_review', 'revised']))
-                  ->orWhereHas('output', fn ($qq) => $qq->whereIn('status', ['pending', 'revised']));
+                  ->orWhereHas('outcome', fn ($qq) => $qq->whereIn('status', ['pending', 'revised']));
             })
             ->count();
 
