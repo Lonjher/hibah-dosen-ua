@@ -392,5 +392,5 @@ new #[Title('Manage Users')] class extends Component {
     <x-confirm-delete />
     <livewire:admin.users.add-user />
     <livewire:admin.users.edit-user />
-    <livewire:admin.users.import-user />
+    <livewire:import-users />
 </div>

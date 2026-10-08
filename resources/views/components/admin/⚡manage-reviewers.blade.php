@@ -397,5 +397,5 @@ new #[Title('Manage Reviewers')] class extends Component {
     <x-confirm-delete />
     <livewire:admin.reviewers.add-reviewer />
     <livewire:admin.reviewers.edit-reviewer />
-    <livewire:admin.reviewers.import-reviewer />
+    <livewire:import-users />
 </div>
