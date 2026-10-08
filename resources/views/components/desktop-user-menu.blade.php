@@ -39,12 +39,13 @@
         @can('superadminOrAdmin')
             @if (! session('impersonator_id'))
                 <flux:menu.item
-                    icon="arrows-right-left"
+                    icon="arrow-path"
                     x-on:click="$dispatch('open-switch-account')"
                     class="cursor-pointer">
                     {{ __('Switch Account') }}
                 </flux:menu.item>
             @endif
+        @endcan
             {{-- NEW: Return to my account — only when impersonating --}}
             @if (session('impersonator_id'))
                 <flux:menu.item
@@ -54,7 +55,6 @@
                     {{ __('Return to my account') }}
                 </flux:menu.item>
             @endif
-        @endcan
 
         <flux:menu.separator />
 
