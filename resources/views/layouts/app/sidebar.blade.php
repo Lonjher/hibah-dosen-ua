@@ -293,7 +293,9 @@
 
             {{-- Slot utama --}}
             <main class="flex-1">
+                @include('components.impersonation-banner')
                 {{ $slot }}
+                <livewire:switch-account/>
             </main>
         </div>
     </div>

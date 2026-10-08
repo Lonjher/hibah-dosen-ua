@@ -16,6 +16,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'password.reset.token' => \App\Http\Middleware\ValidatePasswordResetToken::class,
             'must.verify.email'    => \App\Http\Middleware\MustVerifyEmail::class,
         ]);
+        $middleware->append([
+            \App\Http\Middleware\BlockLogoutWhileImpersonating::class
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

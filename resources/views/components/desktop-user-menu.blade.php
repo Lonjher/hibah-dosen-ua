@@ -35,6 +35,27 @@
             {{ __('Settings') }}
         </flux:menu.item>
 
+        {{-- NEW: Switch Account — only for SUPERADMIN, and only when NOT impersonating --}}
+        @can('superadminOrAdmin')
+            @if (! session('impersonator_id'))
+                <flux:menu.item
+                    icon="arrows-right-left"
+                    x-on:click="$dispatch('open-switch-account')"
+                    class="cursor-pointer">
+                    {{ __('Switch Account') }}
+                </flux:menu.item>
+            @endif
+            {{-- NEW: Return to my account — only when impersonating --}}
+            @if (session('impersonator_id'))
+                <flux:menu.item
+                    icon="arrow-uturn-left"
+                    x-on:click="$dispatch('return-to-admin')"
+                    class="cursor-pointer text-amber-600 dark:text-amber-400">
+                    {{ __('Return to my account') }}
+                </flux:menu.item>
+            @endif
+        @endcan
+
         <flux:menu.separator />
 
         <form method="POST" action="{{ route('logout') }}" class="w-full">

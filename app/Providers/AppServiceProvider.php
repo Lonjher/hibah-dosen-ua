@@ -69,6 +69,10 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('reviewer', function ($user) {
             return $user->role->role_code === "REVIEWER";
         });
+
+        Gate::define('switch-account', function (User $user) {
+            return $user->role?->role_code === 'SUPERADMIN' || $user->role?->role_code === 'ADMIN';
+        });
     }
 
     /**

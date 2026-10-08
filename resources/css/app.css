@@ -931,3 +931,18 @@ ui-toast-group[position*="bottom"] {
 ui-toast-group[position*="right"] {
     margin-top: 3rem;
 }
+
+@keyframes list-item-in {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-list-item {
+    animation: list-item-in 0.25s ease-out both;
+}
