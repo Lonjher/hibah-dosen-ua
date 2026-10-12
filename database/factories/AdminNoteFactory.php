@@ -59,7 +59,7 @@ class AdminNoteFactory extends Factory
     {
         return $this->state(fn () => [
             'noteable_id'   => $Outcome?->id ?? Outcome::factory(),
-            'noteable_type' => 'Outcome',
+            'noteable_type' => 'outcome',
             'admin_id'      => $admin?->id ?? User::factory()->admin(),
         ]);
     }

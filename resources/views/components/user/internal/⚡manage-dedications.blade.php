@@ -2,7 +2,6 @@
 
 use App\Models\Proposal;
 use App\Models\Period;
-use App\Models\ProposalMember;
 use Flux\Flux;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Title;
@@ -51,8 +50,8 @@ new #[Title('Community Service Proposals')] class extends Component {
     public function roleMeta(Proposal $proposal): array
     {
         return $this->isLeader($proposal)
-            ? ['label' => 'Ketua', 'class' => 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300']
-            : ['label' => 'Anggota', 'class' => 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300'];
+            ? ['label' => 'Leader', 'class' => 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300']
+            : ['label' => 'Member', 'class' => 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300'];
     }
 
     /* ============================================================
@@ -69,11 +68,11 @@ new #[Title('Community Service Proposals')] class extends Component {
         }
 
         if (! $this->isLeader($proposal)) {
-            Flux::toast('Hanya ketua yang dapat menghapus proposal.', variant: 'danger');
+            Flux::toast('Only the leader can delete this proposal.', variant: 'danger');
             return;
         }
 
-        if (! $this->canDelete($proposal->status)) {
+        if (! $this->canDelete($proposal)) {
             Flux::toast('This proposal cannot be deleted.', variant: 'danger');
             return;
         }
@@ -113,11 +112,11 @@ new #[Title('Community Service Proposals')] class extends Component {
         }
 
         if (! $this->isLeader($proposal)) {
-            Flux::toast('Hanya ketua yang dapat menghapus proposal.', variant: 'danger');
+            Flux::toast('Only the leader can delete this proposal.', variant: 'danger');
             return;
         }
 
-        if (! $this->canDelete($proposal->status)) {
+        if (! $this->canDelete($proposal)) {
             Flux::toast('This proposal cannot be deleted.', variant: 'danger');
             return;
         }
@@ -134,6 +133,10 @@ new #[Title('Community Service Proposals')] class extends Component {
         }
     }
 
+    /* ============================================================
+     |  PERMISSIONS
+     ============================================================ */
+
     public function canEdit(Proposal $proposal): bool
     {
         return $this->isLeader($proposal) && $proposal->canUserResubmit();
@@ -147,7 +150,7 @@ new #[Title('Community Service Proposals')] class extends Component {
     public function canAddProgressReport(Proposal $p): bool
     {
         return $this->isLeader($p)
-            && $p->status === 'accepted'
+            && $p->status === Proposal::STATUS_ACCEPTED
             && ! $p->progressReport;
     }
 
@@ -158,7 +161,7 @@ new #[Title('Community Service Proposals')] class extends Component {
             && ! $p->finalReport;
     }
 
-    public function canAddoutcome(Proposal $p): bool
+    public function canAddOutcome(Proposal $p): bool
     {
         return $this->isLeader($p)
             && $p->finalReport?->status === 'accepted'
@@ -166,7 +169,7 @@ new #[Title('Community Service Proposals')] class extends Component {
     }
 
     /* ============================================================
-     |  BASE QUERY — user sebagai ketua ATAU anggota
+     |  BASE QUERY — user as leader OR member
      ============================================================ */
 
     protected function baseQuery()
@@ -247,13 +250,13 @@ new #[Title('Community Service Proposals')] class extends Component {
             : ['icon' => 'heart', 'color' => 'rose', 'label' => 'Community Service'];
 
         return [
-            'proposals'     => $proposals,
-            'canCreate'     => $this->canCreateProposal(),
-            'openPeriod'    => $this->activeOpenPeriod(),
-            'activePeriod'  => $this->activePeriod(),
-            'periods'       => Period::orderByDesc('open_from')->orderByDesc('id')->get(),
-            'selectedPeriod'=> $selectedPeriod,
-            'theme'         => $theme,
+            'proposals'      => $proposals,
+            'canCreate'      => $this->canCreateProposal(),
+            'openPeriod'     => $this->activeOpenPeriod(),
+            'activePeriod'   => $this->activePeriod(),
+            'periods'        => Period::orderByDesc('open_from')->orderByDesc('id')->get(),
+            'selectedPeriod' => $selectedPeriod,
+            'theme'          => $theme,
         ];
     }
 };
@@ -265,8 +268,11 @@ new #[Title('Community Service Proposals')] class extends Component {
     <div class="max-w-7xl mx-auto space-y-3">
 
         {{-- ══════════ HEADER ══════════ --}}
-        <x-dashboard-header :icon="$theme['icon']" title="Research Proposals"
-            leading="Manage your research proposals (as leader or member)." />
+        <x-dashboard-header
+            :icon="$theme['icon']"
+            :color="$theme['color']"
+            title="Community Service Proposals"
+            leading="Manage your community service proposals (as leader or member)." />
 
         {{-- ══════════ PERIOD INFO BANNER ══════════ --}}
         @if ($activePeriod)
@@ -275,7 +281,7 @@ new #[Title('Community Service Proposals')] class extends Component {
                 $bannerColor = $isOpen ? 'emerald' : 'amber';
             @endphp
 
-            <div class="rounded-full border border-{{ $bannerColor }}-200 dark:border-{{ $bannerColor }}-800/60
+            <div class="rounded-2xl border border-{{ $bannerColor }}-200 dark:border-{{ $bannerColor }}-800/60
                         bg-{{ $bannerColor }}-50/60 dark:bg-{{ $bannerColor }}-900/15
                         px-3 py-2 flex items-center gap-2.5">
 
@@ -325,7 +331,7 @@ new #[Title('Community Service Proposals')] class extends Component {
                 @endif
             </div>
         @else
-            <div class="rounded-lg border border-rose-200 dark:border-rose-800/60
+            <div class="rounded-2xl border border-rose-200 dark:border-rose-800/60
                         bg-rose-50/60 dark:bg-rose-900/15
                         px-3 py-2 flex items-center gap-2.5">
                 <div class="w-7 h-7 rounded-md bg-rose-100 dark:bg-rose-900/40
@@ -338,7 +344,7 @@ new #[Title('Community Service Proposals')] class extends Component {
                         No Active Period
                     </p>
                     <p class="text-[10px] text-rose-600 dark:text-rose-400 mt-0.5">
-                        You cannot add proposals right now. Contact admin.
+                        You cannot add proposals right now. Please contact the admin.
                     </p>
                 </div>
             </div>
@@ -370,12 +376,12 @@ new #[Title('Community Service Proposals')] class extends Component {
                         </span>
                     </div>
 
-                    {{-- ROLE FILTER ── NEW --}}
+                    {{-- ROLE FILTER --}}
                     <div class="shrink-0">
                         <flux:select wire:model.live="roleFilter" color="{{ $theme['color'] }}" maxWidth="w-auto">
                             <flux:select.option value="all">All Roles</flux:select.option>
-                            <flux:select.option value="leader">Ketua</flux:select.option>
-                            <flux:select.option value="member">Anggota</flux:select.option>
+                            <flux:select.option value="leader">Leader</flux:select.option>
+                            <flux:select.option value="member">Member</flux:select.option>
                         </flux:select>
                     </div>
 
@@ -502,7 +508,7 @@ new #[Title('Community Service Proposals')] class extends Component {
                                         </div>
                                     </td>
 
-                                    {{-- MY ROLE ── NEW --}}
+                                    {{-- MY ROLE --}}
                                     <td class="px-2 sm:px-3 py-2">
                                         <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full
                                                      text-[9.5px] font-semibold whitespace-nowrap
@@ -524,8 +530,8 @@ new #[Title('Community Service Proposals')] class extends Component {
                                         @if ($proposal->author)
                                             <div class="flex items-center gap-2 min-w-0">
                                                 <div class="w-6 h-6 rounded-full shrink-0
-                                                            bg-emerald-100 text-emerald-700
-                                                            dark:bg-emerald-900/40 dark:text-emerald-300
+                                                            bg-rose-100 text-rose-700
+                                                            dark:bg-rose-900/40 dark:text-rose-300
                                                             flex items-center justify-center
                                                             text-[9px] font-bold">
                                                     {{ strtoupper(substr($proposal->author->full_name, 0, 1)) }}
@@ -541,11 +547,12 @@ new #[Title('Community Service Proposals')] class extends Component {
 
                                     {{-- STATUS --}}
                                     <td class="px-2 sm:px-3 py-2">
-                                        <span class="inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded-full
-                                                     text-[9.5px] font-semibold whitespace-nowrap
-                                                     {{ $meta['class'] }}">
-                                            {{ $meta['label'] }}
-                                        </span>
+                                        <x-status-guide
+                                            variant="dedication"
+                                            :code="$meta['label']"
+                                            :full="$meta['full']"
+                                            :status-class="$meta['class']"
+                                        />
                                     </td>
 
                                     {{-- ACTIONS --}}
@@ -597,7 +604,7 @@ new #[Title('Community Service Proposals')] class extends Component {
                                                     </flux:menu.item>
                                                 @endif
 
-                                                @if ($isLeader && $this->canDelete($proposal->status))
+                                                @if ($isLeader && $this->canDelete($proposal))
                                                     <flux:menu.separator />
                                                     <flux:menu.item variant="danger" icon="trash"
                                                         wire:click="confirmDelete({{ $proposal->id }})">

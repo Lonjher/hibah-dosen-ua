@@ -84,7 +84,7 @@
 
                     {{-- Session Status --}}
                     <x-auth-session-status
-                        class="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700 dark:border-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300"
+                        class="mb-4 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700 dark:border-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300"
                         :status="session('status')" />
 
                     {{-- Form --}}

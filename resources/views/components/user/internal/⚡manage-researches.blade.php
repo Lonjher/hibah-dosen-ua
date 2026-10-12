@@ -239,7 +239,7 @@ new #[Title('Research Proposals')] class extends Component {
 };
 ?>
 
-<div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50
+<div class="min-h-screen bg-linear-to-br from-slate-50 via-white to-slate-50
             dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950
             p-2.5 sm:p-3 lg:p-4">
     <div class="max-w-7xl mx-auto space-y-3">
@@ -521,11 +521,12 @@ new #[Title('Research Proposals')] class extends Component {
 
                                     {{-- STATUS --}}
                                     <td class="px-2 sm:px-3 py-2">
-                                        <span class="inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded-full
-                                                     text-[9.5px] font-semibold whitespace-nowrap
-                                                     {{ $meta['class'] }}">
-                                            {{ $meta['label'] }}
-                                        </span>
+                                        <x-status-guide
+                                            variant="research"
+                                            :code="$meta['label']"
+                                            :full="$meta['full']"
+                                            :status-class="$meta['class']"
+                                        />
                                     </td>
 
                                     {{-- ACTIONS --}}

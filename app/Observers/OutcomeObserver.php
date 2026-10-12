@@ -11,7 +11,7 @@ class OutcomeObserver
 
     protected function notificationType(): string
     {
-        return 'output';
+        return 'outcome';
     }
 
     protected function authorOf(object $model): ?User

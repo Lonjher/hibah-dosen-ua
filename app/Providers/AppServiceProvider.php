@@ -3,7 +3,7 @@
 namespace App\Providers;
 
 use App\Models\FinalReport;
-use App\Models\OutCome;
+use App\Models\Outcome;
 use App\Models\ProgressReport;
 use App\Models\Proposal;
 use App\Models\User;

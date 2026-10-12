@@ -24,7 +24,7 @@
 
                 {{-- Session status --}}
                 @if (session('status'))
-                    <div class="rounded-lg border border-emerald-200 dark:border-emerald-900/50
+                    <div class="rounded-full border border-emerald-200 dark:border-emerald-900/50
                                 bg-emerald-50 dark:bg-emerald-950/30 px-3 py-2.5">
                         <div class="flex items-start gap-2.5">
                             <flux:icon.check-circle class="size-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />

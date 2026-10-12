@@ -139,8 +139,9 @@ class ProposalFactory extends Factory
     /**
      * Set created_at ke tahun spesifik (dengan waktu random).
      */
-    public function createdIn(int $year): static
+    public function createdIn(string $year): static
     {
+        $year = (int) explode('/',$year)[0];
         $date = \Carbon\Carbon::create(
             year:   $year,
             month:  rand(1, 12),

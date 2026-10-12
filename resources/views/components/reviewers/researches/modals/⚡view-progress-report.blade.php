@@ -627,25 +627,13 @@ new class extends Component {
                     Close
                 </button>
 
-                @if ($canReviewNotes && $progressReport->reviewerNotes->count() > 0)
-                    <button type="button" wire:click="finalize"
+                @if ($canReviewNotes)
+                    <flux:button type="button" wire:click="finalize" variant="filled"
                         wire:confirm="Approve all notes and finalize progress report?"
-                        wire:loading.attr="disabled" wire:target="finalize"
-                        class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5
-                               px-3 py-1.5 text-[11px] font-medium rounded-full text-white
-                               bg-violet-600/90 hover:bg-violet-600
-                               shadow-sm shadow-violet-500/20 hover:shadow-sm hover:shadow-violet-500/30
-                               disabled:opacity-60 disabled:cursor-wait disabled:hover:scale-100
-                               hover:scale-[1.02] active:scale-[0.97]
-                               transition-all duration-150">
-                        <svg wire:loading wire:target="finalize" class="animate-spin size-3" viewBox="0 0 24 24" fill="none">
-                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" opacity=".25"/>
-                            <path d="M4 12a8 8 0 018-8" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
-                        </svg>
-                        <flux:icon.check-circle wire:loading.remove wire:target="finalize" class="size-3.5" />
-                        <span wire:loading.remove wire:target="finalize">Finalize (Approve All)</span>
-                        <span wire:loading wire:target="finalize">Processing...</span>
-                    </button>
+                        wire:loading.attr="disabled" wire:target="finalize">
+                        <span wire:loading.remove wire:target="finalize">{{ __("Finalize") }}</span>
+                        <span wire:loading wire:target="finalize">{{ __("Processing...") }}</span>
+                    </flux:button>
                 @endif
             </div>
         @endif

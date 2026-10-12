@@ -14,6 +14,7 @@ new #[Title('External Researches')] class extends Component {
     public string $statusFilter = '';
     public string $verificationFilter = '';
     public string $roleFilter = '';
+    public $isResearch = true;
 
     public function updatingSearch(): void
     {
@@ -155,8 +156,11 @@ new #[Title('External Researches')] class extends Component {
             ->when($this->verificationFilter === 'unverified', fn($q) => $q->where('is_verified', false))
             ->orderByDesc('start_date')
             ->paginate(10);
+        $theme = $this->isResearch
+            ? ['icon' => 'globe-alt', 'color' => 'emerald', 'label' => 'Research']
+            : ['icon' => 'gift', 'color' => 'rose', 'label' => 'Community Service'];
 
-        return ['items' => $items];
+        return ['items' => $items, 'theme' => $theme];
     }
 };
 ?>
@@ -168,7 +172,10 @@ new #[Title('External Researches')] class extends Component {
     <div class="max-w-7xl mx-auto space-y-3">
 
         {{-- ══════════ HEADER ══════════ --}}
-        <x-dashboard-header icon="globe-alt" title="External Researches"
+        <x-dashboard-header
+            :icon="$theme['icon']"
+            :color="$theme['color']"
+            title="External Researches"
             leading="Record your research funded by external sources." />
 
         {{-- ══════════ MAIN CARD ══════════ --}}

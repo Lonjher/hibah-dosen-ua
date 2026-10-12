@@ -43,10 +43,10 @@ class ProposalSeeder extends Seeder
 
         // Distribusi per tahun (research, dedication)
         $distribution = [
-            2023 => ['research' => 8,  'dedication' => 5],
-            2024 => ['research' => 10, 'dedication' => 6],
-            2025 => ['research' => 12, 'dedication' => 8],
-            2026 => ['research' => 14, 'dedication' => 9],
+            '2023/2024' => ['research' => 8,  'dedication' => 5],
+            '2024/2025' => ['research' => 10, 'dedication' => 6],
+            '2025/2026' => ['research' => 12, 'dedication' => 8],
+            '2026/2027' => ['research' => 14, 'dedication' => 9],
         ];
 
         $totalProposals = 0;
@@ -96,7 +96,7 @@ class ProposalSeeder extends Seeder
      */
     protected function createFullProposal(
         bool $isResearch,
-        int $year,
+        string $year,
         ResearchScheme $scheme,
         User $user,
         User $reviewer,

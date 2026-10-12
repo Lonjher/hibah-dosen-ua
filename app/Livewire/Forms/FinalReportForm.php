@@ -41,26 +41,6 @@ class FinalReportForm extends Form
                 'max:255',
             ],
 
-            'report_path' => [
-                'required',
-                'file',
-                'mimes:docx,pdf',
-                'max:10240',
-            ],
-
-            'sptb_path' => [
-                'required',
-                'file',
-                'mimes:docx,pdf',
-                'max:10240',
-            ],
-
-            'submission_proof' => [
-                'required',
-                'image',
-                'max:10240',
-            ],
-
             'status' => [
                 'required',
                 'string',
@@ -80,20 +60,6 @@ class FinalReportForm extends Form
 
             'keyword.required' => 'Keyword is required.',
             'keyword.max' => 'Keyword must not exceed 255 characters.',
-
-            'report_path.required' => 'Final report file is required.',
-            'report_path.file' => 'Final report must be a valid file.',
-            'report_path.mimes' => 'Final report must be a DOCX or PDF file.',
-            'report_path.max' => 'Final report must not exceed 10 MB.',
-
-            'sptb_path.required' => 'SPTB file is required.',
-            'sptb_path.file' => 'SPTB must be a valid file.',
-            'sptb_path.mimes' => 'SPTB must be a DOCX or PDF file.',
-            'sptb_path.max' => 'SPTB file must not exceed 10 MB.',
-
-            'submission_proof.required' => 'Submission proof is required.',
-            'submission_proof.image' => 'Submission proof must be an image.',
-            'submission_proof.max' => 'Submission proof must not exceed 10 MB.',
 
             'status.required' => 'Status is required.',
             'status.in' => 'Invalid status.',
@@ -142,7 +108,7 @@ class FinalReportForm extends Form
 
     public function update(): FinalReport
     {
-        if (!$this->finalReport) {
+        if (! $this->finalReport) {
             throw new \RuntimeException(
                 'No final report loaded. Call setFinalReport() before update().'
             );

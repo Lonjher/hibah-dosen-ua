@@ -3,7 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\FinalReport;
-use App\Models\Output;
+use App\Models\Outcome;
 use App\Models\ProgressReport;
 use App\Models\Proposal;
 use App\Models\User;
@@ -17,7 +17,7 @@ class NewSubmissionNotification extends Notification implements ShouldQueue
     use Queueable;
 
     public function __construct(
-        public Proposal|ProgressReport|FinalReport|Output $model,
+        public Proposal|ProgressReport|FinalReport|Outcome $model,
         public string $type,
     ) {}
 
@@ -31,7 +31,7 @@ class NewSubmissionNotification extends Notification implements ShouldQueue
         [$title, $url] = $this->meta($notifiable);
 
         return (new MailMessage)
-            ->subject('[SIM-LITABMAS] ' . $title)
+            ->subject('[HIBAH DOSEN] ' . $title)
             ->markdown('emails.notifications.new-submission', [
                 'title'         => $title,
                 'url'           => $url,

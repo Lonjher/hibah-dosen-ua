@@ -25,14 +25,14 @@ class OutcomeForm extends Form
             'proposal_id'  => ['required', 'exists:proposals,id'],
             'journal_name' => ['required', 'string', 'max:255'],
             'journal_link' => ['required', 'url', 'max:255'],
-            'edition'     => ['required', 'string', 'max:255'],
-            'volume'      => ['required', 'string', 'max:255'],
-            'level'       => [
+            'edition'      => ['required', 'string', 'max:255'],
+            'volume'       => ['required', 'string', 'max:255'],
+            'level'        => [
                 'required',
                 'string',
-                'in:Scopus,Sinta 1,Sinta 2,Sinta 3,Sinta 4,Sinta 5,Sinta 6',
+                'in:International,Reputable International Journal,Sinta 1,Sinta 2,Sinta 3,Sinta 4,Sinta 5',
             ],
-            'status'      => [
+            'status'       => [
                 'required',
                 'string',
                 'in:pending,revised,accepted,rejected',
@@ -53,17 +53,17 @@ class OutcomeForm extends Form
             'journal_link.url'      => 'Journal link must be a valid URL.',
             'journal_link.max'      => 'Journal link must not exceed 255 characters.',
 
-            'edition.required'     => 'Edition is required.',
-            'edition.max'          => 'Edition must not exceed 255 characters.',
+            'edition.required'      => 'Edition is required.',
+            'edition.max'           => 'Edition must not exceed 255 characters.',
 
-            'volume.required'      => 'Volume is required.',
-            'volume.max'           => 'Volume must not exceed 255 characters.',
+            'volume.required'       => 'Volume is required.',
+            'volume.max'            => 'Volume must not exceed 255 characters.',
 
-            'level.required'       => 'Level is required.',
-            'level.in'             => 'Level must be one of: Scopus or Sinta 1–6.',
+            'level.required'        => 'Level is required.',
+            'level.in'              => 'Level must be one of: International, Reputable International Journal, or Sinta 1–5.',
 
-            'status.required'      => 'Status is required.',
-            'status.in'            => 'Invalid status.',
+            'status.required'       => 'Status is required.',
+            'status.in'             => 'Invalid status.',
         ];
     }
 
@@ -71,14 +71,14 @@ class OutcomeForm extends Form
 
     public function setOutcome(Outcome $outcome): void
     {
-        $this->outcome       = $outcome;
-        $this->proposal_id   = $outcome->proposal_id;
-        $this->journal_name  = $outcome->journal_name;
-        $this->journal_link  = $outcome->journal_link;
-        $this->edition       = $outcome->edition;
-        $this->volume        = $outcome->volume;
-        $this->level         = $outcome->level;
-        $this->status        = $outcome->status;
+        $this->outcome      = $outcome;
+        $this->proposal_id  = $outcome->proposal_id;
+        $this->journal_name = $outcome->journal_name;
+        $this->journal_link = $outcome->journal_link;
+        $this->edition      = $outcome->edition;
+        $this->volume       = $outcome->volume;
+        $this->level        = $outcome->level;
+        $this->status       = $outcome->status;
     }
 
     // ═══════════════ Actions ═══════════════

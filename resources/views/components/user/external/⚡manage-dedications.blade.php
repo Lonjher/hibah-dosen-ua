@@ -14,6 +14,7 @@ new #[Title('External Community Service')] class extends Component {
     public string $statusFilter = '';
     public string $roleFilter = '';
     public string $verificationFilter = '';
+    public $isResearch = false;
 
     public function updatingSearch(): void
     {
@@ -137,8 +138,11 @@ new #[Title('External Community Service')] class extends Component {
             ->when($this->verificationFilter === 'unverified', fn($q) => $q->where('is_verified', false))
             ->orderByDesc('start_date')
             ->paginate(10);
+        $theme = $this->isResearch
+            ? ['icon' => 'beaker', 'color' => 'emerald', 'label' => 'Research']
+            : ['icon' => 'gift', 'color' => 'rose', 'label' => 'Community Service'];
 
-        return ['items' => $items];
+        return ['items' => $items, 'theme' => $theme];
     }
 };
 ?>
@@ -149,8 +153,11 @@ new #[Title('External Community Service')] class extends Component {
             p-2.5 sm:p-3 lg:p-4">
     <div class="max-w-7xl mx-auto space-y-3">
 
-        <x-dashboard-header icon="gift" title="External Community Service"
-            leading="Record your community service activities funded by external sources." />
+        <x-dashboard-header
+            :icon="$theme['icon']"
+            :color="$theme['color']"
+            title="External Community Service"
+            leading="Manage your external community service proposals." />
 
         <div
             class="bg-white dark:bg-zinc-900 rounded-2xl

@@ -26,7 +26,7 @@
                 {{-- Error (token invalid) --}}
                 @if (session('error'))
                     <div
-                        class="rounded-lg border border-rose-200 dark:border-rose-900/50
+                        class="rounded-full border border-rose-200 dark:border-rose-900/50
                 bg-rose-50 dark:bg-rose-950/30 px-3 py-2.5">
                         <div class="flex items-start gap-2.5">
                             <flux:icon.exclamation-triangle
@@ -45,7 +45,7 @@
                 {{-- Session status --}}
                 @if (session('status'))
                     <div
-                        class="rounded-lg border border-emerald-200 dark:border-emerald-900/50
+                        class="rounded-full border border-emerald-200 dark:border-emerald-900/50
                                 bg-emerald-50 dark:bg-emerald-950/30 px-3 py-2.5">
                         <div class="flex items-start gap-2.5">
                             <flux:icon.check-circle
@@ -69,17 +69,12 @@
                     <flux:input name="email" :label="__('Email')" type="email" required autofocus
                         autocomplete="email" icon="envelope" placeholder="nama@email.com" :value="old('email')" />
 
-                    @error('email')
-                        <p class="flex items-center gap-1 text-[11px] text-rose-600 dark:text-rose-400 -mt-2">
-                            <flux:icon.exclamation-circle class="size-3 shrink-0" />
-                            {{ $message }}
-                        </p>
-                    @enderror
-
-                    <flux:button variant="primary" type="submit" size="sm" class="w-full"
-                        data-test="email-password-reset-link-button">
-                        {{ __('Kirim Link Reset') }}
-                    </flux:button>
+                    <div class="w-full flex justify-center items-center">
+                        <flux:button variant="primary" type="submit" class="w-lg"
+                            data-test="email-password-reset-link-button">
+                            {{ __('Send Reset Link') }}
+                        </flux:button>
+                    </div>
                 </form>
 
                 {{-- Back to login --}}
@@ -87,7 +82,7 @@
                     <a href="{{ route('login') }}" wire:navigate
                         class="text-[11px] text-slate-500 dark:text-zinc-400
                               hover:text-emerald-600 dark:hover:text-emerald-400 transition">
-                        ← {{ __('Kembali ke Login') }}
+                        ← {{ __('Back to Login') }}
                     </a>
                 </div>
             </div>
