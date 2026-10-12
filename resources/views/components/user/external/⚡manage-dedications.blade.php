@@ -181,30 +181,30 @@ new #[Title('External Community Service')] class extends Component {
 
                     {{-- ─────── FILTER: VERIFICATION ─────── --}}
                     <div class="shrink-0">
-                        <x-select wire:model.live="verificationFilter" size="sm" color="rose" maxWidth="w-auto">
-                            <option value="">All Verification</option>
-                            <option value="verified">Verified</option>
-                            <option value="unverified">Unverified</option>
-                        </x-select>
+                        <flux:select wire:model.live="verificationFilter" color="rose" maxWidth="w-auto">
+                            <flux:select.option>All Verification</flux:select.option>
+                            <flux:select.option value="verified">Verified</flux:select.option>
+                            <flux:select.option value="unverified">Unverified</flux:select.option>
+                        </flux:select>
                     </div>
 
                     {{-- ─────── FILTER: STATUS ─────── --}}
                     <div class="shrink-0">
-                        <x-select wire:model.live="statusFilter" size="sm" color="rose" maxWidth="w-auto">
-                            <option value="">All Status</option>
-                            <option value="ongoing">Ongoing</option>
-                            <option value="completed">Completed</option>
-                            <option value="cancelled">Cancelled</option>
-                        </x-select>
+                        <flux:select wire:model.live="statusFilter" color="rose" maxWidth="w-auto">
+                            <flux:select.option>All Status</flux:select.option>
+                            <flux:select.option value="ongoing">Ongoing</flux:select.option>
+                            <flux:select.option value="completed">Completed</flux:select.option>
+                            <flux:select.option value="cancelled">Cancelled</flux:select.option>
+                        </flux:select>
                     </div>
 
                     {{-- ─────── FILTER: ROLE ─────── --}}
                     <div class="shrink-0">
-                        <x-select wire:model.live="roleFilter" size="sm" color="rose" maxWidth="w-auto">
-                            <option value="">All Roles</option>
-                            <option value="leader">Leader</option>
-                            <option value="member">Member</option>
-                        </x-select>
+                        <flux:select wire:model.live="roleFilter" color="rose" maxWidth="w-auto">
+                            <flux:select.option>All Roles</flux:select.option>
+                            <flux:select.option value="leader">Leader</flux:select.option>
+                            <flux:select.option value="member">Member</flux:select.option>
+                        </flux:select>
                     </div>
 
                     {{-- ─────── NEW BUTTON (mobile: kanan baris 1, desktop: kanan) ─────── --}}

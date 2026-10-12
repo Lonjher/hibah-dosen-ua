@@ -19,16 +19,16 @@ class ProposalFactory extends Factory
     {
         return [
             'research_scheme_id' => ResearchScheme::factory(),
-            'user_id' => User::factory()->user(),
-            'reviewer_id' => null,
-            'title' => fake()->sentence(6),
-            'summary' => fake()->paragraph(6),
-            'keywords' => implode(', ', fake()->words(4)),
-            'is_research' => true,
-            'file_path' => 'proposals/dummy-' . fake()->uuid() . '.pdf',
-            'rab_path' => 'rab/dummy-' . fake()->uuid() . '.pdf',
-            'status' => 'pending',
-            'period_id' => Period::factory(),
+            'user_id'            => User::factory()->user(),
+            'reviewer_id'        => null,
+            'title'              => fake()->sentence(6),
+            'summary'            => fake()->paragraph(6),
+            'keywords'           => implode(', ', fake()->words(4)),
+            'is_research'        => true,
+            'file_path'          => 'proposals/dummy-' . fake()->uuid() . '.pdf',
+            'rab_path'           => 'rab/dummy-' . fake()->uuid() . '.xlsx',
+            'status'             => Proposal::STATUS_SUBMITTED,
+            'period_id'          => Period::factory(),
         ];
     }
 
@@ -46,41 +46,90 @@ class ProposalFactory extends Factory
 
     // ═══════════════ STATUS ═══════════════
 
-    public function pending(): static
-    {
-        return $this->state(fn() => ['status' => 'pending', 'reviewer_id' => null]);
-    }
-
+    /**
+     * User baru upload, belum diverifikasi admin.
+     */
     public function submitted(): static
     {
-        return $this->state(fn() => ['status' => 'submitted', 'reviewer_id' => null]);
+        return $this->state(fn() => [
+            'status'      => Proposal::STATUS_SUBMITTED,
+            'reviewer_id' => null,
+        ]);
     }
 
+    /**
+     * Admin minta revisi.
+     */
+    public function adminRevision(): static
+    {
+        return $this->state(fn() => [
+            'status'      => Proposal::STATUS_ADMIN_REVISION,
+            'reviewer_id' => null,
+        ]);
+    }
+
+    /**
+     * Admin sudah approve, siap di-assign reviewer.
+     */
+    public function adminApproved(): static
+    {
+        return $this->state(fn() => [
+            'status'      => Proposal::STATUS_ADMIN_APPROVED,
+            'reviewer_id' => null,
+        ]);
+    }
+
+    /**
+     * Sudah di-assign reviewer, sedang direview.
+     */
     public function underReview(): static
     {
         return $this->state(fn() => [
-            'status' => 'under_review',
+            'status'      => Proposal::STATUS_UNDER_REVIEW,
             'reviewer_id' => User::factory()->reviewer(),
         ]);
     }
 
-    public function revised(): static
+    /**
+     * Reviewer minta revisi.
+     */
+    public function reviewerRevision(): static
     {
-        return $this->state(fn() => ['status' => 'revised']);
+        return $this->state(fn() => [
+            'status'      => Proposal::STATUS_REVIEWER_REVISION,
+            'reviewer_id' => User::factory()->reviewer(),
+        ]);
     }
 
+    /**
+     * Reviewer sudah approve semua notes, menunggu keputusan final admin.
+     */
+    public function reviewerApproved(): static
+    {
+        return $this->state(fn() => [
+            'status'      => Proposal::STATUS_REVIEWER_APPROVED,
+            'reviewer_id' => User::factory()->reviewer(),
+        ]);
+    }
+
+    /**
+     * Final — Diterima.
+     */
     public function accepted(): static
     {
         return $this->state(fn() => [
-            'status' => 'accepted',
+            'status'      => Proposal::STATUS_ACCEPTED,
             'reviewer_id' => User::factory()->reviewer(),
         ]);
     }
 
+    /**
+     * Final — Ditolak.
+     */
     public function rejected(): static
     {
         return $this->state(fn() => [
-            'status' => 'rejected',
+            'status'      => Proposal::STATUS_REJECTED,
             'reviewer_id' => User::factory()->reviewer(),
         ]);
     }
@@ -93,10 +142,10 @@ class ProposalFactory extends Factory
     public function createdIn(int $year): static
     {
         $date = \Carbon\Carbon::create(
-            year: $year,
-            month: rand(1, 12),
-            day: rand(1, 28),
-            hour: rand(8, 17),
+            year:   $year,
+            month:  rand(1, 12),
+            day:    rand(1, 28),
+            hour:   rand(8, 17),
             minute: rand(0, 59),
             second: rand(0, 59),
         );

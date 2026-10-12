@@ -196,17 +196,11 @@ new class extends Component {
 
                         {{-- Gender --}}
                         <div>
-                            <x-select
-                                wire:model="form.gender"
-                                label="Gender"
-                                required
-                                size="lg"
-                                color="blue"
-                                class="rounded-full">
-                                <option value="">— Select —</option>
-                                <option value="laki-laki">Male</option>
-                                <option value="perempuan">Female</option>
-                            </x-select>
+                            <flux:select wire:model="form.gender" label="Gender" required color="blue" size="lg">
+                                <flux:select.option>— Select —</flux:select.option>
+                                <flux:select.option value="laki-laki">Male</flux:select.option>
+                                <flux:select.option value="perempuan">Female</flux:select.option>
+                            </flux:select>
                             @error('form.gender')
                                 <p class="mt-1 flex items-center gap-1 text-[10.5px] text-rose-600">
                                     <flux:icon.exclamation-circle class="size-3 shrink-0" />

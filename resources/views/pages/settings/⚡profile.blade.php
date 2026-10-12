@@ -562,7 +562,7 @@ new #[Title('Profile settings')] class extends Component {
                             icon="calendar" />
 
                         {{-- Gender --}}
-                        <flux:select wire:model="form.gender" :label="__('Gender')" required>
+                        <flux:select wire:model="form.gender" :label="__('Gender')" required size="lg">
                             <flux:select.option value="">{{ __('Select Gender') }}</flux:select.option>
                             <flux:select.option value="laki-laki">{{ __('Male') }}</flux:select.option>
                             <flux:select.option value="perempuan">{{ __('Female') }}</flux:select.option>

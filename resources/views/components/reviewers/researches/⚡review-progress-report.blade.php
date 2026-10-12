@@ -164,18 +164,18 @@ new #[Title('Review Progress Reports')] class extends Component {
                         </svg>
                     </div>
 
-                    <x-select wire:model.live="typeFilter" size="sm" color="violet" maxWidth="w-auto">
-                        <option value="all">All Types</option>
-                        <option value="research">Research</option>
-                        <option value="dedication">Community Service</option>
-                    </x-select>
+                    <flux:select wire:model.live="typeFilter" color="violet" maxWidth="w-auto">
+                        <flux:select.option>All Types</flux:select.option>
+                        <flux:select.option value="research">Research</flux:select.option>
+                        <flux:select.option value="dedication">Community Service</flux:select.option>
+                    </flux:select>
 
-                    <x-select wire:model.live="statusFilter" size="sm" color="violet" maxWidth="w-auto">
-                        <option value="all">All Status</option>
-                        <option value="under_review">Under Review</option>
-                        <option value="revised">Needs Revision</option>
-                        <option value="accepted">Accepted</option>
-                    </x-select>
+                    <flux:select wire:model.live="statusFilter" color="violet" maxWidth="w-auto">
+                        <flux:select.option>All Status</flux:select.option>
+                        <flux:select.option value="under_review">Under Review</flux:select.option>
+                        <flux:select.option value="revised">Needs Revision</flux:select.option>
+                        <flux:select.option value="accepted">Accepted</flux:select.option>
+                    </flux:select>
                 </div>
                 {{-- Row 2: Search --}}
                 <div class="order-5 sm:order-4

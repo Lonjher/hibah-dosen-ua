@@ -354,16 +354,12 @@ new class extends Component {
                         dark:bg-zinc-900/75
                         shadow-sm shadow-slate-200/50 dark:shadow-zinc-950/50">
                 <flux:icon.calendar-days class="size-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                <select wire:model.live="periodFilter"
-                    class="text-[11px] font-medium bg-transparent border-0
-                           text-slate-700 dark:text-zinc-200
-                           focus:outline-none focus:ring-0 cursor-pointer
-                           pr-4 py-0 pl-0">
-                    <option value="all">Semua Periode</option>
+                <flux:select wire:model.live="periodFilter">
+                    <flux:select.option>Semua Periode</flux:select.option>
                     @foreach ($periods as $p)
-                        <option value="{{ $p->id }}">{{ $p->periode }}</option>
+                        <flux:select.option value="{{ $p->id }}">{{ $p->periode }}</flux:select.option>
                     @endforeach
-                </select>
+                </flux:select>
             </div>
 
             <div wire:loading wire:target="periodFilter"

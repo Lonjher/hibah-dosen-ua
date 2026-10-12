@@ -34,6 +34,6 @@ $iconClasses = Flux::classes()
     </flux:menu.item>
 
     <flux:menu :keep-open="$keepOpen" class="[:where(&)]:min-w-[8rem] [:where(&)]:max-w-[min(16rem,calc(100vw-1rem))]">
-        {{ $slot }}
-    </flux:menu>
+    {{ $slot }}
+</flux:menu>
 </ui-submenu>

@@ -33,10 +33,6 @@ new class extends Component {
     // ── Student form toggle ──
     public bool $showStudentForm = false;
 
-    /* ============================================================
-     |  LOAD
-     ============================================================ */
-
     #[On('open-edit-proposal')]
     public function load(int $id): void
     {
@@ -47,8 +43,8 @@ new class extends Component {
             return;
         }
 
-        if (! in_array($proposal->status, ['pending', 'revised'], true)) {
-            Flux::toast("Proposal dengan status '{$proposal->status}' tidak dapat diedit.", variant: 'danger');
+        if (! $proposal->canUserResubmit()) {
+            Flux::toast("Proposal dengan status '{$proposal->statusMeta()['label']}' tidak dapat diedit.", variant: 'danger');
             return;
         }
 
@@ -73,10 +69,6 @@ new class extends Component {
 
         $this->dispatch('show-edit-proposal');
     }
-
-    /* ============================================================
-     |  STEP NAVIGATION
-     ============================================================ */
 
     public function nextStep(): void
     {
@@ -129,10 +121,6 @@ new class extends Component {
         }
     }
 
-    /* ============================================================
-     |  BUDGET ITEMS
-     ============================================================ */
-
     public function addBudgetItem(): void
     {
         if (! $this->form->proposal) {
@@ -173,10 +161,6 @@ new class extends Component {
 
         Flux::toast('Item anggaran dihapus.', variant: 'success');
     }
-
-    /* ============================================================
-     |  PROPOSAL MEMBER (DOSEN)
-     ============================================================ */
 
     public function updatedMemberSearch(): void
     {
@@ -237,10 +221,6 @@ new class extends Component {
 
         Flux::toast('Anggota dosen dihapus.', variant: 'success');
     }
-
-    /* ============================================================
-     |  PROPOSAL STUDENT (MAHASISWA)
-     ============================================================ */
 
     public function addStudent(): void
     {
@@ -312,10 +292,6 @@ new class extends Component {
         }
     }
 
-    /* ============================================================
-     |  SAVE (final)
-     ============================================================ */
-
     public function save(): void
     {
         if (! $this->form->proposal) {
@@ -355,7 +331,8 @@ new class extends Component {
 
                 $this->form->rab_path = $newRabPath;
             }
-
+            // ── Update status ke SUBMITTED atau UNDER_REVIEW ──
+            $this->form->status = $this->form->proposal->nextStatusOnResubmit();
             $this->form->update();
 
             Flux::toast('Proposal berhasil diperbarui.', variant: 'success');
@@ -388,10 +365,6 @@ new class extends Component {
         $this->resetErrorBag();
         $this->resetValidation();
     }
-
-    /* ============================================================
-     |  RENDER DATA
-     ============================================================ */
 
     public function with(): array
     {

@@ -20,47 +20,81 @@ $iconClasses = Flux::classes()
     ->add('me-2 shrink-0')
     ->add('min-w-0')
     ->add('text-zinc-400 dark:text-zinc-500')
-    ->add('transition-colors duration-100')
+    // Icon transition: warna + scale + rotate halus saat hover
+    ->add('transition-all duration-200 ease-out')
     ->add('group-data-active/menu-item:text-current')
+    ->add('group-data-active/menu-item:scale-110')
+    ->add('group-data-active/menu-item:-rotate-3')
     ->add($iconVariant === 'outline' ? 'size-4' : 'size-3.5')
     ;
 
 $trailingIconClasses = Flux::classes()
     ->add('ms-auto shrink-0 text-zinc-400 dark:text-zinc-500')
-    ->add('transition-colors duration-100')
+    ->add('transition-all duration-200 ease-out')
     ->add('group-data-active/menu-item:text-current')
+    // Trailing icon bergeser ke kanan saat hover (indikasi "masuk")
+    ->add('group-data-active/menu-item:translate-x-0.5')
     ->add($iconVariant === 'outline' ? 'size-4' : 'size-3')
     ;
 
 $classes = Flux::classes()
-    ->add('group/menu-item flex items-center w-full select-none')
-    ->add('px-2 py-1 rounded-md')
+    ->add('group/menu-item relative flex items-center w-full select-none')
+    ->add('px-2 py-1 rounded-xl')
     ->add('text-start text-[11px] font-medium leading-tight')
     ->add('cursor-pointer focus:outline-hidden')
-    ->add('transition-colors duration-100')
-    ->add('[&[disabled]]:opacity-50 [&[disabled]]:pointer-events-none')
+    // Base transition: semua properti (bg, ring, shadow, scale)
+    ->add('transition-all duration-200 ease-out')
+    ->add('will-change-transform')
+    // Scale halus saat hover (glass terasa "mengambang")
+    ->add('data-active:scale-[1.015] data-active:duration-150')
+    // Active/pressed state — sedikit mengecil
+    ->add('active:scale-[0.99]')
+    ->add('[&[disabled]]:opacity-50 [&[disabled]]:pointer-events-none [&[disabled]]:cursor-not-allowed')
     ->add(match ($variant) {
         'danger' => [
             'text-zinc-700 dark:text-zinc-200',
-            'data-active:bg-rose-50/80 data-active:text-rose-600',
-            'dark:data-active:bg-rose-900/30 dark:data-active:text-rose-400',
+
+            // ── Hover glass ──
+            'data-active:bg-rose-500/15 dark:data-active:bg-rose-400/15',
+            'data-active:backdrop-blur-xl data-active:backdrop-saturate-200',
+            'data-active:ring-1 data-active:ring-inset data-active:ring-rose-400/30',
+            'data-active:text-rose-700 dark:data-active:text-rose-200',
+
+            // ── Glow shadow bertransisi ──
+            'shadow-sm shadow-transparent',
+            'data-active:shadow-md data-active:shadow-rose-500/25',
+            'dark:data-active:shadow-rose-400/20',
+
             '**:data-flux-menu-item-icon:text-zinc-400 dark:**:data-flux-menu-item-icon:text-zinc-500',
             'data-active:**:data-flux-menu-item-icon:text-current',
         ],
         'default' => [
             'text-zinc-700 dark:text-zinc-200',
-            'data-active:bg-emerald-50/70 data-active:text-emerald-700',
-            'dark:data-active:bg-emerald-900/25 dark:data-active:text-emerald-300',
+
+            // ── Hover glass ──
+            'data-active:bg-white/50 dark:data-active:bg-white/10',
+            'data-active:backdrop-blur-xl data-active:backdrop-saturate-200',
+            'data-active:ring-1 data-active:ring-inset data-active:ring-white/60 dark:data-active:ring-white/15',
+            'data-active:text-emerald-700 dark:data-active:text-emerald-300',
+
+            // ── Glow shadow bertransisi ──
+            'shadow-sm shadow-transparent',
+            'data-active:shadow-md data-active:shadow-emerald-500/20',
+            'dark:data-active:shadow-emerald-400/15',
+
             '**:data-flux-menu-item-icon:text-zinc-400 dark:**:data-flux-menu-item-icon:text-zinc-500',
             'data-active:**:data-flux-menu-item-icon:text-current',
         ],
-    })
-    ;
+    });
 
 $suffixClasses = Flux::classes()
     ->add('ms-auto shrink-0 text-[9px] font-semibold tracking-wide')
     ->add('text-zinc-400 dark:text-zinc-500')
+    ->add('transition-all duration-200 ease-out')
+    // Suffix sedikit memudar + geser saat hover
     ->add('group-data-active/menu-item:text-current')
+    ->add('group-data-active/menu-item:translate-x-0.5')
+    ->add('group-data-active/menu-item:opacity-90')
     ;
 @endphp
 

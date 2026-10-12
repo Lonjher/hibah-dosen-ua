@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 
 /**
  * @property int $id
@@ -22,7 +23,7 @@ use Illuminate\Support\Carbon;
  * @property bool $is_research
  * @property string $file_path
  * @property string $rab_path
- * @property string $status // pending, revised, submitted, rejected, under_review, accepted
+ * @property string $status // submitted, admin_revision, admin_approved, under_review, reviewer_revision, reviewer_approved, accepted, rejected
  * @property int $period_id
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -44,6 +45,14 @@ use Illuminate\Support\Carbon;
 class Proposal extends Model
 {
     use HasFactory;
+    public const STATUS_SUBMITTED          = 'submitted';          // SBM
+    public const STATUS_ADMIN_REVISION     = 'admin_revision';     // ADR
+    public const STATUS_ADMIN_APPROVED     = 'admin_approved';     // ADA
+    public const STATUS_UNDER_REVIEW       = 'under_review';       // REV
+    public const STATUS_REVIEWER_REVISION  = 'reviewer_revision';  // RVR
+    public const STATUS_REVIEWER_APPROVED  = 'reviewer_approved';  // RVA
+    public const STATUS_ACCEPTED           = 'accepted';           // ACC
+    public const STATUS_REJECTED           = 'rejected';           // REJ
 
     protected function casts(): array
     {
@@ -52,7 +61,6 @@ class Proposal extends Model
         ];
     }
 
-    // === Relasi Biasa ===
     public function researchScheme(): BelongsTo
     {
         return $this->belongsTo(ResearchScheme::class);
@@ -124,7 +132,7 @@ class Proposal extends Model
      * Ambil semua anggota (user internal + mahasiswa) dalam satu collection.
      * Setiap item dinormalisasi ke array dengan struktur seragam.
      *
-     * @return \Illuminate\Support\Collection<int, array{
+     * @return Collection<int, array{
      *     id: int,
      *     type: 'user'|'student',
      *     name: string,
@@ -133,7 +141,7 @@ class Proposal extends Model
      *     source: Model
      * }>
      */
-    public function allMembers(): \Illuminate\Support\Collection
+    public function allMembers(): Collection
     {
         $users = $this->proposalMembers()
             ->with('user')
@@ -170,59 +178,205 @@ class Proposal extends Model
     /* ============================================================
      |  STATUS HELPERS
      ============================================================ */
-
-    public function isPending(): bool
-    {
-        return $this->status === 'pending';
-    }
-
-    public function isRevised(): bool
-    {
-        return $this->status === 'revised';
-    }
-
     public function isSubmitted(): bool
     {
-        return $this->status === 'submitted';
+        return $this->status === self::STATUS_SUBMITTED;
+    }
+
+    public function isAdminRevision(): bool
+    {
+        return $this->status === self::STATUS_ADMIN_REVISION;
+    }
+
+    public function isAdminApproved(): bool
+    {
+        return $this->status === self::STATUS_ADMIN_APPROVED;
     }
 
     public function isUnderReview(): bool
     {
-        return $this->status === 'under_review';
+        return $this->status === self::STATUS_UNDER_REVIEW;
+    }
+
+    public function isReviewerRevision(): bool
+    {
+        return $this->status === self::STATUS_REVIEWER_REVISION;
+    }
+
+    public function isReviewerApproved(): bool
+    {
+        return $this->status === self::STATUS_REVIEWER_APPROVED;
     }
 
     public function isAccepted(): bool
     {
-        return $this->status === 'accepted';
+        return $this->status === self::STATUS_ACCEPTED;
     }
 
     public function isRejected(): bool
     {
-        return $this->status === 'rejected';
+        return $this->status === self::STATUS_REJECTED;
+    }
+
+    /**
+     * Status final: tidak bisa diubah lagi.
+     */
+    public function isFinal(): bool
+    {
+        return in_array($this->status, [
+            self::STATUS_ACCEPTED,
+            self::STATUS_REJECTED,
+        ], true);
+    }
+
+    /**
+     * Status yang masih bisa diedit oleh user (pemilik / ketua).
+     * Hanya saat submitted atau admin_revision.
+     */
+    public function isEditableByUser(): bool
+    {
+        return in_array($this->status, [
+            self::STATUS_SUBMITTED,
+            self::STATUS_ADMIN_REVISION,
+        ], true);
+    }
+
+    /**
+     * Status yang masih bisa diedit/dihapus secara umum.
+     */
+    public function isMutable(): bool
+    {
+        return ! $this->isFinal();
     }
 
     /**
      * Cek apakah anggota masih bisa diedit.
-     * Bisa edit kalau status pending / revised.
      */
     public function canEditMembers(): bool
     {
-        return in_array($this->status, ['pending', 'revised']);
+        return $this->isEditableByUser();
     }
 
     /**
-     * @return array{label: string, class: string}
+     * Apakah statusnya sedang di tahap review (bukan final, bukan submitted).
+     */
+    public function isInReviewProcess(): bool
+    {
+        return in_array($this->status, [
+            self::STATUS_UNDER_REVIEW,
+            self::STATUS_REVIEWER_REVISION,
+            self::STATUS_REVIEWER_APPROVED,
+        ], true);
+    }
+
+    /**
+     * Semua status yang valid.
+     *
+     * @return array<int, string>
+     */
+    public static function statuses(): array
+    {
+        return [
+            self::STATUS_SUBMITTED,
+            self::STATUS_ADMIN_REVISION,
+            self::STATUS_ADMIN_APPROVED,
+            self::STATUS_UNDER_REVIEW,
+            self::STATUS_REVIEWER_REVISION,
+            self::STATUS_REVIEWER_APPROVED,
+            self::STATUS_ACCEPTED,
+            self::STATUS_REJECTED,
+        ];
+    }
+
+    /**
+     * @return array{label:string, full:string, class:string, code:string}
      */
     public function statusMeta(): array
     {
         return match ($this->status) {
-            'pending'      => ['label' => 'Pending',      'class' => 'bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-zinc-300'],
-            'submitted'    => ['label' => 'Submitted',    'class' => 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'],
-            'under_review' => ['label' => 'Under Review', 'class' => 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300'],
-            'revised'      => ['label' => 'Revised',      'class' => 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'],
-            'accepted'     => ['label' => 'Accepted',     'class' => 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'],
-            'rejected'     => ['label' => 'Rejected',     'class' => 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300'],
-            default        => ['label' => ucfirst((string) $this->status), 'class' => 'bg-slate-100 text-slate-600'],
+            self::STATUS_SUBMITTED => [
+                'label' => 'SBM',
+                'full'  => 'Submitted',
+                'class' => 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
+                'code'  => 'SBM',
+            ],
+            self::STATUS_ADMIN_REVISION => [
+                'label' => 'ADR',
+                'full'  => 'Admin Revision',
+                'class' => 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
+                'code'  => 'ADR',
+            ],
+            self::STATUS_ADMIN_APPROVED => [
+                'label' => 'ADA',
+                'full'  => 'Admin Approved',
+                'class' => 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300',
+                'code'  => 'ADA',
+            ],
+            self::STATUS_UNDER_REVIEW => [
+                'label' => 'REV',
+                'full'  => 'Under Review',
+                'class' => 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300',
+                'code'  => 'REV',
+            ],
+            self::STATUS_REVIEWER_REVISION => [
+                'label' => 'RVR',
+                'full'  => 'Reviewer Revision',
+                'class' => 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300',
+                'code'  => 'RVR',
+            ],
+            self::STATUS_REVIEWER_APPROVED => [
+                'label' => 'RVA',
+                'full'  => 'Reviewer Approved',
+                'class' => 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300',
+                'code'  => 'RVA',
+            ],
+            self::STATUS_ACCEPTED => [
+                'label' => 'ACC',
+                'full'  => 'Accepted',
+                'class' => 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
+                'code'  => 'ACC',
+            ],
+            self::STATUS_REJECTED => [
+                'label' => 'REJ',
+                'full'  => 'Rejected',
+                'class' => 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300',
+                'code'  => 'REJ',
+            ],
+            default => [
+                'label' => '—',
+                'full'  => ucfirst(str_replace('_', ' ', (string) $this->status)),
+                'class' => 'bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-zinc-300',
+                'code'  => '—',
+            ],
+        };
+    }
+
+    /**
+     * Cek apakah proposal bisa di-edit & re-upload oleh user.
+     *
+     * - SUBMITTED → user edit
+     * - ADMIN_REVISION → user edit → balik ke SUBMITTED
+     * - REVIEWER_REVISION → user edit → balik ke UNDER_REVIEW
+     */
+    public function canUserResubmit(): bool
+    {
+        return in_array($this->status, [
+            self::STATUS_SUBMITTED,
+            self::STATUS_ADMIN_REVISION,
+            self::STATUS_REVIEWER_REVISION,
+        ], true);
+    }
+
+    /**
+     * Status berikutnya saat user re-submit.
+     * Menentukan apakah balik ke SUBMITTED atau UNDER_REVIEW.
+     */
+    public function nextStatusOnResubmit(): string
+    {
+        return match ($this->status) {
+            self::STATUS_ADMIN_REVISION    => self::STATUS_SUBMITTED,
+            self::STATUS_REVIEWER_REVISION => self::STATUS_UNDER_REVIEW,
+            default                        => self::STATUS_SUBMITTED,
         };
     }
 }

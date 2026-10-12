@@ -176,25 +176,12 @@ new #[Title('Dashboard')] class extends Component {
 
         {{-- Period Filter --}}
         <div class="flex items-center gap-1.5 shrink-0">
-            <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full
-                        bg-white dark:bg-zinc-900
-                        border border-slate-200 dark:border-zinc-800
-                        shadow-sm shadow-slate-200/50 dark:shadow-zinc-950/50">
-                <flux:icon.calendar-days class="size-3 text-slate-400 dark:text-zinc-500 shrink-0" />
-
-                <select wire:model.live="periodFilter"
-                    class="text-[10.5px] font-medium bg-transparent border-0
-                           text-slate-700 dark:text-zinc-200
-                           focus:outline-none focus:ring-0 cursor-pointer
-                           pr-5 pl-0 py-0
-                           [&>option]:text-slate-700 dark:[&>option]:text-zinc-200
-                           [&>option]:bg-white dark:[&>option]:bg-zinc-900">
-                    <option value="all">Semua Periode</option>
-                    @foreach ($periods as $p)
-                        <option value="{{ $p->id }}">{{ $p->periode }}</option>
-                    @endforeach
-                </select>
-            </div>
+            <flux:select wire:model.live="periodFilter">
+                <flux:select.option>Semua Periode</flux:select.option>
+                @foreach ($periods as $p)
+                    <flux:select.option value="{{ $p->id }}">{{ $p->periode }}</flux:select.option>
+                @endforeach
+            </flux:select>
 
             <div wire:loading wire:target="periodFilter"
                 class="w-3.5 h-3.5 rounded-full bg-slate-100 dark:bg-zinc-800
@@ -296,15 +283,11 @@ new #[Title('Dashboard')] class extends Component {
                     </p>
                 </div>
 
-                <select x-model="chartType" @change="render()"
-                    class="text-[10px] rounded-full border-slate-200 dark:border-zinc-700
-                           bg-white dark:bg-zinc-800 text-slate-700 dark:text-zinc-200
-                           focus:border-emerald-500 focus:ring-emerald-500 py-0.5 px-2
-                           cursor-pointer shrink-0">
-                    <option value="line">Line</option>
-                    <option value="bar">Bar</option>
-                    <option value="candlestick">Candle</option>
-                </select>
+                <flux:select x-model="chartType" @change="render()">
+                    <flux:select.option value="line">Line</flux:select.option>
+                    <flux:select.option value="bar">Bar</flux:select.option>
+                    <flux:select.option value="candlestick">Candle</flux:select.option>
+                </flux:select>
             </div>
 
             <div x-ref="chartEl" style="min-height: 220px;"></div>
@@ -346,15 +329,11 @@ new #[Title('Dashboard')] class extends Component {
                     </p>
                 </div>
 
-                <select x-model="chartType" @change="render()"
-                    class="text-[10px] rounded-full border-slate-200 dark:border-zinc-700
-                           bg-white dark:bg-zinc-800 text-slate-700 dark:text-zinc-200
-                           focus:border-emerald-500 focus:ring-emerald-500 py-0.5 px-2
-                           cursor-pointer shrink-0">
-                    <option value="line">Line</option>
-                    <option value="bar">Bar</option>
-                    <option value="candlestick">Candle</option>
-                </select>
+                <flux:select x-model="chartType" @change="render()">
+                    <flux:select.option value="line">Line</flux:select.option>
+                    <flux:select.option value="bar">Bar</flux:select.option>
+                    <flux:select.option value="candlestick">Candle</flux:select.option>
+                </flux:select>
             </div>
 
             <div x-ref="chartEl" style="min-height: 220px;"></div>

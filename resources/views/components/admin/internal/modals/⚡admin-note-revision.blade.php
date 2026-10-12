@@ -59,7 +59,9 @@ new class extends Component {
         }
 
         $this->form->create();
-        $proposal->update(['status' => 'revised']);
+
+        // Set status ke ADMIN_REVISION
+        $proposal->update(['status' => Proposal::STATUS_ADMIN_REVISION]);
 
         Flux::toast('Proposal sent back for revision.', variant: 'success');
         $this->dispatch('proposal-revised');

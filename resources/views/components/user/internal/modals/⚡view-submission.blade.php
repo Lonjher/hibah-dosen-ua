@@ -171,7 +171,10 @@ new class extends Component {
     {
         if (! $this->guardLeader()) return;
 
-        if ($this->progressReport) {
+        if ($this->progressReport) return;
+
+        if (! $this->proposal->isAccepted()) {
+            Flux::toast('Progress Report hanya bisa diunggah setelah proposal di-accept.', variant: 'danger');
             return;
         }
 

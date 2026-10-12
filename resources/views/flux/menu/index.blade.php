@@ -2,19 +2,19 @@
 
 @php
     $classes = Flux::classes()
-        // ── Ukuran: fit konten, jangan ada minimum ──
+        // ── Ukuran: fit konten ──
         ->add('!w-max !min-w-0')
         ->add('!max-w-[min(18rem,calc(100vw-1rem))]')
 
-        // ── Reset native popover default ──
-        ->add('m-0 p-1')
+        // ── Reset native popover ──
+        ->add('m-0 p-1.5')
 
-        // ── Visual ──
-        ->add('rounded-lg')
-        ->add('border border-white/60 dark:border-zinc-700/60')
-        ->add('bg-white/80 dark:bg-zinc-800/80')
+        // ── Visual glass ──
+        ->add('rounded-2xl')
+        ->add('border border-white/50 dark:border-white/10')
+        ->add('bg-white/60 dark:bg-zinc-900/60')
         ->add('backdrop-blur-2xl backdrop-saturate-150')
-        ->add('shadow-lg shadow-slate-900/10 dark:shadow-black/50')
+        ->add('shadow-xl shadow-slate-900/10 dark:shadow-black/50')
         ->add('ring-1 ring-black/5 dark:ring-white/5')
 
         // ── Tipografi & Overflow ──

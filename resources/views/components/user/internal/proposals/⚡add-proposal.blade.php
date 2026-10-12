@@ -66,10 +66,6 @@ new class extends Component {
         }
     }
 
-    /* ============================================================
-     |  STEP NAVIGATION
-     ============================================================ */
-
     public function nextStep(): void
     {
         if ($this->step !== 1) {
@@ -105,10 +101,6 @@ new class extends Component {
             $this->resetValidation();
         }
     }
-
-    /* ============================================================
-     |  BUDGET ITEMS (Step 2, buffered)
-     ============================================================ */
 
     public function addBudgetItem(): void
     {
@@ -154,10 +146,6 @@ new class extends Component {
             Flux::toast('Item anggaran dihapus.', variant: 'success');
         }
     }
-
-    /* ============================================================
-     |  PROPOSAL MEMBER (Step 1, buffered)
-     ============================================================ */
 
     public function updatedMemberSearch(): void
     {
@@ -209,10 +197,6 @@ new class extends Component {
             Flux::toast('Anggota dosen dihapus.', variant: 'success');
         }
     }
-
-    /* ============================================================
-     |  PROPOSAL STUDENT (Step 1, buffered)
-     ============================================================ */
 
     public function addStudent(): void
     {
@@ -273,10 +257,6 @@ new class extends Component {
         }
     }
 
-    /* ============================================================
-     |  FINISH — commit semua ke DB
-     ============================================================ */
-
     public function finish(): void
     {
         // ── Validasi Step 2: RAB wajib ──
@@ -312,7 +292,7 @@ new class extends Component {
                 'keywords'           => $this->form->keywords,
                 'period_id'          => $this->form->period_id,
                 'is_research'        => $this->isResearch,
-                'status'             => 'pending',
+                'status'             => 'submitted',
                 'reviewer_id'        => null,
                 'file_path'          => $filePath,
                 'rab_path'           => $rabPath,
@@ -355,7 +335,7 @@ new class extends Component {
             throw $e;
         } catch (\Throwable $e) {
             report($e);
-            Flux::toast('Gagal menyimpan proposal. Silakan coba lagi.', variant: 'danger');
+            Flux::toast('Error: ' . $e->getMessage(), variant: 'danger');
         }
     }
 

@@ -33,6 +33,13 @@ new class extends Component {
         $this->dispatch('show-view-proposal');
     }
 
+    /* ============================================================
+     |  ACTIONS
+     ============================================================ */
+
+    /**
+     * Tambah reviewer note → status REVIEWER_REVISION.
+     */
     public function addNote(): void
     {
         abort_unless($this->canReviewNotes, 403);
@@ -40,12 +47,11 @@ new class extends Component {
         $this->form->validate();
         $this->form->create();
 
-        if ($this->proposal->status === 'accepted') {
-            Proposal::where('id', $this->proposal_id)->update(['status' => 'revised']);
-            Flux::toast('Note added. Proposal status reverted to Revised.', variant: 'success');
-        } else {
-            Flux::toast('Note added successfully.', variant: 'success');
-        }
+        // Reviewer beri catatan → status REVIEWER_REVISION
+        Proposal::where('id', $this->proposal_id)
+            ->update(['status' => Proposal::STATUS_REVIEWER_REVISION]);
+
+        Flux::toast('Note added. Status: Reviewer Revision.', variant: 'success');
 
         $this->form->reset('comment', 'recommendation');
         $this->form->is_approved   = false;
@@ -56,6 +62,9 @@ new class extends Component {
         $this->reload();
     }
 
+    /**
+     * Approve note → kalau semua approved, status REVIEWER_APPROVED.
+     */
     public function acceptNote(int $noteId): void
     {
         abort_unless($this->canReviewNotes, 403);
@@ -80,16 +89,21 @@ new class extends Component {
             ->exists();
 
         if (! $stillPending) {
-            Proposal::where('id', $this->proposal_id)->update(['status' => 'accepted']);
-            Flux::toast('All notes approved. Proposal accepted.', variant: 'success');
+            Proposal::where('id', $this->proposal_id)
+                ->update(['status' => Proposal::STATUS_REVIEWER_APPROVED]);
+            Flux::toast('All notes approved. Status: Reviewer Approved.', variant: 'success');
         } else {
-            Proposal::where('id', $this->proposal_id)->update(['status' => 'revised']);
+            Proposal::where('id', $this->proposal_id)
+                ->update(['status' => Proposal::STATUS_REVIEWER_REVISION]);
             Flux::toast('Note approved.', variant: 'success');
         }
 
         $this->reload();
     }
 
+    /**
+     * Mark note untuk revisi → status REVIEWER_REVISION.
+     */
     public function reviseNote(int $noteId): void
     {
         abort_unless($this->canReviewNotes, 403);
@@ -107,23 +121,26 @@ new class extends Component {
 
         $note->update(['is_approved' => false]);
 
-        Proposal::where('id', $this->proposal_id)->update(['status' => 'revised']);
+        Proposal::where('id', $this->proposal_id)
+            ->update(['status' => Proposal::STATUS_REVIEWER_REVISION]);
 
         Flux::toast('Note marked for revision.', variant: 'success');
         $this->reload();
     }
 
+    /**
+     * Finalize — set semua note jadi approved, status REVIEWER_APPROVED.
+     */
     public function finalize(): void
     {
         abort_unless($this->canReviewNotes, 403);
 
-        $pendingCount = ReviewerNote::where('noteable_id', $this->proposal_id)
+        $totalNotes = ReviewerNote::where('noteable_id', $this->proposal_id)
             ->where('noteable_type', 'proposal')
             ->where('reviewer_id', auth()->id())
-            ->where('is_approved', false)
             ->count();
 
-        if ($pendingCount === 0 && $this->proposal->reviewerNotes()->count() === 0) {
+        if ($totalNotes === 0) {
             Flux::toast('No notes to finalize.', variant: 'danger');
             return;
         }
@@ -134,11 +151,38 @@ new class extends Component {
             ->where('is_approved', false)
             ->update(['is_approved' => true]);
 
-        Proposal::where('id', $this->proposal_id)->update(['status' => 'accepted']);
+        Proposal::where('id', $this->proposal_id)
+            ->update(['status' => Proposal::STATUS_REVIEWER_APPROVED]);
 
-        Flux::toast('Proposal finalized. Status: Accepted.', variant: 'success');
+        Flux::toast('Proposal finalized. Status: Reviewer Approved.', variant: 'success');
         $this->reload();
     }
+
+    /**
+     * ⭐ NEW: Approve Directly — reviewer bisa langsung approve
+     * tanpa harus menambahkan note terlebih dahulu.
+     */
+    public function approveDirectly(): void
+    {
+        abort_unless($this->canReviewNotes, 403);
+
+        // Kalau ada note yang pending, auto-approve semuanya
+        ReviewerNote::where('noteable_id', $this->proposal_id)
+            ->where('noteable_type', 'proposal')
+            ->where('reviewer_id', auth()->id())
+            ->where('is_approved', false)
+            ->update(['is_approved' => true]);
+
+        Proposal::where('id', $this->proposal_id)
+            ->update(['status' => Proposal::STATUS_REVIEWER_APPROVED]);
+
+        Flux::toast('Proposal approved. Status: Reviewer Approved.', variant: 'success');
+        $this->reload();
+    }
+
+    /* ============================================================
+     |  HELPERS
+     ============================================================ */
 
     protected function reload(): void
     {
@@ -148,13 +192,18 @@ new class extends Component {
             'period',
             'reviewer',
             'budgetProposals',
-            'adminNotes' => fn ($q) => $q->latest()->with('admin'),
+            'proposalMembers.user',
+            'proposalStudents',
+            'adminNotes'    => fn ($q) => $q->latest()->with('admin'),
             'reviewerNotes' => fn ($q) => $q->latest()->with('reviewer'),
         ])->findOrFail($this->proposal_id);
 
         $this->canReviewNotes = auth()->user()->role?->role_code === 'REVIEWER'
             && $this->proposal->reviewer_id === auth()->id()
-            && $this->proposal->status !== 'rejected';
+            && in_array($this->proposal->status, [
+                Proposal::STATUS_UNDER_REVIEW,
+                Proposal::STATUS_REVIEWER_REVISION,
+            ], true);
     }
 
     public function with(): array
@@ -188,6 +237,7 @@ new class extends Component {
         showKeywords: false,
         showSummary: false,
         showBudget: false,
+        showMembers: true,
         showReviewerNotes: true,
         showAdminNotes: false,
         showAddNote: false,
@@ -220,7 +270,8 @@ new class extends Component {
                                 {{ $proposal->title }}
                             </h3>
                             <div class="flex items-center gap-1.5 mt-1 flex-wrap">
-                                <span class="text-[9.5px] font-semibold px-2 py-0.5 rounded-full {{ $meta['class'] }}">
+                                <span class="text-[9.5px] font-semibold px-2 py-0.5 rounded-full {{ $meta['class'] }}"
+                                      title="{{ $meta['full'] }}">
                                     {{ $meta['label'] }}
                                 </span>
                                 <span class="text-[9.5px] text-white/75">
@@ -244,6 +295,44 @@ new class extends Component {
                     </button>
                 </div>
             </div>
+
+            {{-- ══════════ BANNER: REVIEWER REVISION ══════════ --}}
+            @if ($proposal->isReviewerRevision())
+                <div class="shrink-0 px-4 pt-3">
+                    <div class="flex items-start gap-2 p-2.5 rounded-2xl
+                                bg-orange-50 dark:bg-orange-900/20
+                                border border-orange-200 dark:border-orange-800">
+                        <flux:icon.arrow-path class="size-3.5 text-orange-600 dark:text-orange-400 shrink-0 mt-0.5" />
+                        <div class="min-w-0">
+                            <p class="text-[10.5px] font-semibold text-orange-800 dark:text-orange-300">
+                                Menunggu Revisi User
+                            </p>
+                            <p class="text-[10px] leading-relaxed text-orange-700 dark:text-orange-400 mt-0.5">
+                                Anda sudah memberikan catatan revisi. User akan memperbaiki dan mengirim ulang. Setelah user re-submit, Anda dapat mereview kembali.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            {{-- ══════════ BANNER: REVIEWER APPROVED ══════════ --}}
+            @if ($proposal->isReviewerApproved())
+                <div class="shrink-0 px-4 pt-3">
+                    <div class="flex items-start gap-2 p-2.5 rounded-2xl
+                                bg-cyan-50 dark:bg-cyan-900/20
+                                border border-cyan-200 dark:border-cyan-800">
+                        <flux:icon.check-badge class="size-3.5 text-cyan-600 dark:text-cyan-400 shrink-0 mt-0.5" />
+                        <div class="min-w-0">
+                            <p class="text-[10.5px] font-semibold text-cyan-800 dark:text-cyan-300">
+                                Anda Sudah Approve
+                            </p>
+                            <p class="text-[10px] leading-relaxed text-cyan-700 dark:text-cyan-400 mt-0.5">
+                                Proposal sudah masuk ke Admin untuk keputusan final (Accept / Reject).
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            @endif
 
             {{-- ══════════ BODY ══════════ --}}
             <div class="flex-1 overflow-y-auto px-4 py-4 space-y-3">
@@ -342,6 +431,121 @@ new class extends Component {
                         <p class="text-[11px] text-slate-700 dark:text-zinc-300 leading-relaxed whitespace-pre-wrap">
                             {{ $proposal->summary }}
                         </p>
+                    </div>
+                </div>
+
+                {{-- ══════════ Members ══════════ --}}
+                <div class="rounded-2xl border border-slate-200 dark:border-zinc-700 overflow-hidden">
+                    <button type="button" @click="showMembers = !showMembers"
+                        class="w-full flex items-center justify-between gap-2 px-3 py-2.5
+                               bg-slate-50 dark:bg-zinc-800/40
+                               hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors">
+                        <span class="flex items-center gap-2">
+                            <flux:icon.user-group class="size-3.5 text-emerald-600 dark:text-emerald-400" />
+                            <span class="text-[11px] font-semibold text-slate-700 dark:text-zinc-300">
+                                Proposal Members
+                            </span>
+                            <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full
+                                         bg-emerald-100 text-emerald-700
+                                         dark:bg-emerald-900/40 dark:text-emerald-300">
+                                {{ 1 + $proposal->proposalMembers->count() + $proposal->proposalStudents->count() }}
+                            </span>
+                        </span>
+                        <flux:icon.chevron-down
+                            class="size-3.5 text-slate-500 dark:text-zinc-400 transition-transform duration-200"
+                            ::class="showMembers && 'rotate-180'" />
+                    </button>
+                    <div x-show="showMembers" x-collapse
+                        class="px-3 py-3 border-t border-slate-200 dark:border-zinc-700 space-y-2">
+
+                        {{-- Ketua --}}
+                        @if ($proposal->author)
+                            <div class="flex items-center gap-2 px-2.5 py-1.5 rounded-full
+                                        bg-emerald-50 dark:bg-emerald-900/20
+                                        border border-emerald-200 dark:border-emerald-800/60">
+                                <div class="w-6 h-6 rounded-full shrink-0
+                                            bg-emerald-200 dark:bg-emerald-800/50
+                                            flex items-center justify-center
+                                            text-[9px] font-bold
+                                            text-emerald-700 dark:text-emerald-300">
+                                    {{ strtoupper(substr($proposal->author->full_name, 0, 1)) }}
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-[10.5px] font-semibold truncate
+                                              text-slate-900 dark:text-zinc-100">
+                                        {{ $proposal->author->full_name }}
+                                    </p>
+                                    <p class="text-[9px] text-slate-500 dark:text-zinc-500 truncate">
+                                        NIDN: {{ $proposal->author->nidn ?? '—' }}
+                                    </p>
+                                </div>
+                                <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full
+                                             bg-emerald-200 text-emerald-800
+                                             dark:bg-emerald-800 dark:text-emerald-200 shrink-0">
+                                    Ketua
+                                </span>
+                            </div>
+                        @endif
+
+                        {{-- Anggota dosen --}}
+                        @foreach ($proposal->proposalMembers as $m)
+                            <div wire:key="pm-{{ $m->id }}"
+                                class="flex items-center gap-2 px-2.5 py-1.5 rounded-full
+                                       bg-white dark:bg-zinc-800
+                                       border border-slate-200 dark:border-zinc-700">
+                                <div class="w-6 h-6 rounded-full shrink-0
+                                            bg-blue-100 dark:bg-blue-900/40
+                                            flex items-center justify-center
+                                            text-[9px] font-bold
+                                            text-blue-700 dark:text-blue-300">
+                                    {{ strtoupper(substr($m->user?->full_name ?? '?', 0, 1)) }}
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-[10.5px] font-medium truncate
+                                              text-slate-900 dark:text-zinc-100">
+                                        {{ $m->user?->full_name ?? '—' }}
+                                    </p>
+                                    <p class="text-[9px] text-slate-500 dark:text-zinc-500 truncate">
+                                        NIDN: {{ $m->user?->nidn ?? '—' }}
+                                    </p>
+                                </div>
+                                <span class="text-[9px] font-semibold px-1.5 py-0.5 rounded-full
+                                             bg-blue-100 text-blue-700
+                                             dark:bg-blue-900/40 dark:text-blue-300 shrink-0">
+                                    Dosen
+                                </span>
+                            </div>
+                        @endforeach
+
+                        {{-- Anggota mahasiswa --}}
+                        @foreach ($proposal->proposalStudents as $s)
+                            <div wire:key="ps-{{ $s->id }}"
+                                class="flex items-center gap-2 px-2.5 py-1.5 rounded-full
+                                       bg-white dark:bg-zinc-800
+                                       border border-slate-200 dark:border-zinc-700">
+                                <div class="w-6 h-6 rounded-full shrink-0
+                                            bg-violet-100 dark:bg-violet-900/40
+                                            flex items-center justify-center
+                                            text-[9px] font-bold
+                                            text-violet-700 dark:text-violet-300">
+                                    {{ strtoupper(substr($s->name, 0, 1)) }}
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-[10.5px] font-medium truncate
+                                              text-slate-900 dark:text-zinc-100">
+                                        {{ $s->name }}
+                                    </p>
+                                    <p class="text-[9px] text-slate-500 dark:text-zinc-500 truncate">
+                                        NIM: {{ $s->nim }} · {{ $s->program_study }}
+                                    </p>
+                                </div>
+                                <span class="text-[9px] font-semibold px-1.5 py-0.5 rounded-full
+                                             bg-violet-100 text-violet-700
+                                             dark:bg-violet-900/40 dark:text-violet-300 shrink-0">
+                                    Mahasiswa
+                                </span>
+                            </div>
+                        @endforeach
                     </div>
                 </div>
 
@@ -664,9 +868,8 @@ new class extends Component {
                                                     border border-violet-200 dark:border-violet-800">
                                             <flux:icon.information-circle class="size-3.5 text-violet-600 dark:text-violet-400 shrink-0 mt-0.5" />
                                             <p class="text-[10px] text-violet-700 dark:text-violet-300 leading-snug">
-                                                New notes start as <strong>pending</strong>.
-                                                Click <strong>Accept</strong> to approve, or
-                                                <strong>Revise</strong> to request changes.
+                                                Menambahkan note akan mengubah status menjadi
+                                                <strong>RVR</strong> (Reviewer Revision).
                                             </p>
                                         </div>
 
@@ -722,25 +925,54 @@ new class extends Component {
                     Close
                 </button>
 
-                @if ($canReviewNotes && $proposal->reviewerNotes->count() > 0)
-                    <button type="button" wire:click="finalize"
-                        wire:confirm="Approve all notes and finalize proposal?"
-                        wire:loading.attr="disabled" wire:target="finalize"
-                        class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5
-                               px-3 py-1.5 text-[11px] font-medium rounded-full text-white
-                               bg-violet-600/90 hover:bg-violet-600
-                               shadow-sm shadow-violet-500/20 hover:shadow-sm hover:shadow-violet-500/30
-                               disabled:opacity-60 disabled:cursor-wait disabled:hover:scale-100
-                               hover:scale-[1.02] active:scale-[0.97]
-                               transition-all duration-150">
-                        <svg wire:loading wire:target="finalize" class="animate-spin size-3" viewBox="0 0 24 24" fill="none">
-                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" opacity=".25"/>
-                            <path d="M4 12a8 8 0 018-8" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
-                        </svg>
-                        <flux:icon.check-circle wire:loading.remove wire:target="finalize" class="size-3.5" />
-                        <span wire:loading.remove wire:target="finalize">Finalize (Approve All)</span>
-                        <span wire:loading wire:target="finalize">Processing...</span>
-                    </button>
+                @if ($canReviewNotes)
+                    <div class="flex flex-col-reverse sm:flex-row gap-1.5">
+
+                        {{-- Finalize — hanya kalau sudah ada notes --}}
+                        @if ($proposal->reviewerNotes->count() > 0)
+                            <button type="button" wire:click="finalize"
+                                wire:confirm="Approve all notes and finalize proposal?"
+                                wire:loading.attr="disabled" wire:target="finalize"
+                                class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5
+                                       px-3 py-1.5 text-[11px] font-medium rounded-full
+                                       text-violet-700 dark:text-violet-300
+                                       bg-white dark:bg-zinc-800
+                                       border border-violet-300 dark:border-violet-700
+                                       hover:bg-violet-50 dark:hover:bg-violet-900/30
+                                       shadow-sm shadow-zinc-200/40 hover:shadow-sm hover:shadow-violet-500/15
+                                       disabled:opacity-60 disabled:cursor-wait disabled:hover:scale-100
+                                       hover:scale-[1.02] active:scale-[0.97]
+                                       transition-all duration-150">
+                                <svg wire:loading wire:target="finalize" class="animate-spin size-3" viewBox="0 0 24 24" fill="none">
+                                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" opacity=".25"/>
+                                    <path d="M4 12a8 8 0 018-8" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+                                </svg>
+                                <flux:icon.check-circle wire:loading.remove wire:target="finalize" class="size-3.5" />
+                                <span wire:loading.remove wire:target="finalize">Finalize</span>
+                                <span wire:loading wire:target="finalize">Processing...</span>
+                            </button>
+                        @endif
+
+                        {{-- ⭐ Approve Directly --}}
+                        <button type="button" wire:click="approveDirectly"
+                            wire:confirm="Approve this proposal directly? Pastikan Anda sudah meninjau seluruh berkas."
+                            wire:loading.attr="disabled" wire:target="approveDirectly"
+                            class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5
+                                   px-3 py-1.5 text-[11px] font-medium rounded-full text-white
+                                   bg-emerald-600/90 hover:bg-emerald-600
+                                   shadow-sm shadow-emerald-500/20 hover:shadow-sm hover:shadow-emerald-500/30
+                                   disabled:opacity-60 disabled:cursor-wait disabled:hover:scale-100
+                                   hover:scale-[1.02] active:scale-[0.97]
+                                   transition-all duration-150">
+                            <svg wire:loading wire:target="approveDirectly" class="animate-spin size-3" viewBox="0 0 24 24" fill="none">
+                                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" opacity=".25"/>
+                                <path d="M4 12a8 8 0 018-8" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+                            </svg>
+                            <flux:icon.check-badge wire:loading.remove wire:target="approveDirectly" class="size-3.5" />
+                            <span wire:loading.remove wire:target="approveDirectly">Approve Directly</span>
+                            <span wire:loading wire:target="approveDirectly">Processing...</span>
+                        </button>
+                    </div>
                 @endif
             </div>
         @endif

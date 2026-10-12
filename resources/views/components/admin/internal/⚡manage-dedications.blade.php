@@ -225,12 +225,12 @@ new #[Title('Manage Dedications')] class extends Component {
                     </div>
 
                     {{-- ─────── PERIOD FILTER ─────── --}}
-                    <x-select wire:model.live="periodFilter">
-                        <option value="all">All Periods</option>
+                    <flux:select wire:model.live="periodFilter" color="rose">
+                        <flux:select.option>All Periods</flux:select.option>
                         @foreach ($periods as $p)
-                            <option value="{{ $p->id }}">{{ $p->periode }}</option>
+                            <flux:select.option value="{{ $p->id }}">{{ $p->periode }}</flux:select.option>
                         @endforeach
-                    </x-select>
+                    </flux:select>
 
                     {{-- ─────── LOADING SPINNER ─────── --}}
                     <div wire:loading wire:target="periodFilter"
@@ -247,15 +247,15 @@ new #[Title('Manage Dedications')] class extends Component {
 
                     {{-- ─────── STATUS FILTER ─────── --}}
                     <div class="shrink-0">
-                        <x-select wire:model.live="statusFilter" color="rose" maxWidth="w-auto">
-                            <option value="">All Status</option>
-                            <option value="pending">Pending</option>
-                            <option value="submitted">Submitted</option>
-                            <option value="under_review">Under Review</option>
-                            <option value="revised">Revised</option>
-                            <option value="accepted">Accepted</option>
-                            <option value="rejected">Rejected</option>
-                        </x-select>
+                        <flux:select wire:model.live="statusFilter" color="rose" maxWidth="w-auto">
+                            <flux:select.option>All Status</flux:select.option>
+                            <flux:select.option value="pending">Pending</flux:select.option>
+                            <flux:select.option value="submitted">Submitted</flux:select.option>
+                            <flux:select.option value="under_review">Under Review</flux:select.option>
+                            <flux:select.option value="revised">Revised</flux:select.option>
+                            <flux:select.option value="accepted">Accepted</flux:select.option>
+                            <flux:select.option value="rejected">Rejected</flux:select.option>
+                        </flux:select>
                     </div>
 
                     {{-- ─────── SEARCH ─────── --}}

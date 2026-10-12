@@ -23,8 +23,9 @@ new class extends Component {
             return;
         }
 
-        if ($proposal->status !== 'submitted') {
-            Flux::toast('Reviewer can only be assigned to submitted proposals.', variant: 'danger');
+        // Hanya bisa assign saat ADMIN_APPROVED atau ganti reviewer saat UNDER_REVIEW
+        if (! $proposal->isAdminApproved() && ! $proposal->isUnderReview()) {
+            Flux::toast('Reviewer hanya bisa di-assign saat status Admin Approved.', variant: 'danger');
             return;
         }
 
@@ -76,10 +77,10 @@ new class extends Component {
 
         $proposal->update([
             'reviewer_id' => $this->reviewer_id,
-            'status'      => 'under_review',
+            'status'      => Proposal::STATUS_UNDER_REVIEW,
         ]);
 
-        Flux::toast('Reviewer assigned. Status changed to Under Review.', variant: 'success');
+        Flux::toast('Reviewer assigned. Status: Under Review.', variant: 'success');
         $this->dispatch('reviewer-assigned');
         $this->dispatch('close-assign-reviewer-modal');
         $this->resetAll();

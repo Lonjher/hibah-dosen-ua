@@ -134,19 +134,14 @@ new #[Title('Community Service Proposals')] class extends Component {
         }
     }
 
-    /* ============================================================
-     |  PERMISSIONS
-     ============================================================ */
-
     public function canEdit(Proposal $proposal): bool
     {
-        return $this->isLeader($proposal)
-            && in_array($proposal->status, ['pending', 'revised'], true);
+        return $this->isLeader($proposal) && $proposal->canUserResubmit();
     }
 
-    public function canDelete(string $status): bool
+    public function canDelete(Proposal $proposal): bool
     {
-        return in_array($status, ['pending', 'revised'], true);
+        return $this->isLeader($proposal) && $proposal->canUserResubmit();
     }
 
     public function canAddProgressReport(Proposal $p): bool
@@ -377,32 +372,20 @@ new #[Title('Community Service Proposals')] class extends Component {
 
                     {{-- ROLE FILTER ── NEW --}}
                     <div class="shrink-0">
-                        <x-select wire:model.live="roleFilter" size="sm" color="{{ $theme['color'] }}" maxWidth="w-auto">
-                            <option value="all">All Roles</option>
-                            <option value="leader">Ketua</option>
-                            <option value="member">Anggota</option>
-                        </x-select>
+                        <flux:select wire:model.live="roleFilter" color="{{ $theme['color'] }}" maxWidth="w-auto">
+                            <flux:select.option value="all">All Roles</flux:select.option>
+                            <flux:select.option value="leader">Ketua</flux:select.option>
+                            <flux:select.option value="member">Anggota</flux:select.option>
+                        </flux:select>
                     </div>
 
                     {{-- PERIOD FILTER --}}
-                    <div class="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full
-                                bg-white dark:bg-zinc-900
-                                border border-slate-200 dark:border-zinc-800
-                                shadow-sm shadow-slate-200/50 dark:shadow-zinc-950/50">
-                        <flux:icon.calendar-days class="size-3 text-slate-400 dark:text-zinc-500 shrink-0" />
-                        <select wire:model.live="periodFilter"
-                            class="text-[10.5px] font-medium bg-transparent border-0
-                                   text-slate-700 dark:text-zinc-200
-                                   focus:outline-none focus:ring-0 cursor-pointer
-                                   pr-4 pl-0 py-0 max-w-[90px] sm:max-w-none
-                                   [&>option]:text-slate-700 dark:[&>option]:text-zinc-200
-                                   [&>option]:bg-white dark:[&>option]:bg-zinc-900">
-                            <option value="all">All Periods</option>
-                            @foreach ($periods as $p)
-                                <option value="{{ $p->id }}">{{ $p->periode }}</option>
-                            @endforeach
-                        </select>
-                    </div>
+                    <flux:select wire:model.live="periodFilter" color="{{ $theme['color'] }}">
+                        <flux:select.option value="all">All Periods</flux:select.option>
+                        @foreach ($periods as $p)
+                            <flux:select.option value="{{ $p->id }}">{{ $p->periode }}</flux:select.option>
+                        @endforeach
+                    </flux:select>
 
                     {{-- NEW BUTTON --}}
                     <div class="order-4 sm:order-5 ml-auto sm:ml-0 shrink-0">

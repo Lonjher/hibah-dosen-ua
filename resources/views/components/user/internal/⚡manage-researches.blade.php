@@ -34,10 +34,6 @@ new #[Title('Research Proposals')] class extends Component {
     public function updatingPeriodFilter(): void { $this->resetPage(); }
     public function updatingRoleFilter(): void { $this->resetPage(); }
 
-    /* ============================================================
-     |  ROLE HELPERS
-     ============================================================ */
-
     public function isLeader(Proposal $proposal): bool
     {
         return (int) $proposal->user_id === (int) auth()->id();
@@ -55,10 +51,6 @@ new #[Title('Research Proposals')] class extends Component {
             : ['label' => 'Anggota', 'class' => 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300'];
     }
 
-    /* ============================================================
-     |  DELETE FLOW
-     ============================================================ */
-
     public function confirmDelete(int $id): void
     {
         $proposal = $this->baseQuery()->find($id);
@@ -73,7 +65,7 @@ new #[Title('Research Proposals')] class extends Component {
             return;
         }
 
-        if (! $this->canDelete($proposal->status)) {
+        if (! $this->canDelete($proposal)) {
             Flux::toast('This proposal cannot be deleted.', variant: 'danger');
             return;
         }
@@ -117,7 +109,7 @@ new #[Title('Research Proposals')] class extends Component {
             return;
         }
 
-        if (! $this->canDelete($proposal->status)) {
+        if (! $this->canDelete($proposal)) {
             Flux::toast('This proposal cannot be deleted.', variant: 'danger');
             return;
         }
@@ -134,19 +126,14 @@ new #[Title('Research Proposals')] class extends Component {
         }
     }
 
-    /* ============================================================
-     |  PERMISSIONS
-     ============================================================ */
-
     public function canEdit(Proposal $proposal): bool
     {
-        return $this->isLeader($proposal)
-            && in_array($proposal->status, ['pending', 'revised'], true);
+        return $this->isLeader($proposal) && $proposal->canUserResubmit();
     }
 
-    public function canDelete(string $status): bool
+    public function canDelete(Proposal $proposal): bool
     {
-        return in_array($status, ['pending', 'revised'], true);
+        return $this->isLeader($proposal) && $proposal->canUserResubmit();
     }
 
     public function canAddProgressReport(Proposal $p): bool
@@ -170,10 +157,6 @@ new #[Title('Research Proposals')] class extends Component {
             && ! $p->outcome;
     }
 
-    /* ============================================================
-     |  BASE QUERY — user sebagai ketua ATAU anggota
-     ============================================================ */
-
     protected function baseQuery()
     {
         $userId = auth()->id();
@@ -185,10 +168,6 @@ new #[Title('Research Proposals')] class extends Component {
             })
             ->where('is_research', $this->isResearch);
     }
-
-    /* ============================================================
-     |  PERIOD HELPERS
-     ============================================================ */
 
     public function activeOpenPeriod(): ?Period
     {
@@ -208,10 +187,6 @@ new #[Title('Research Proposals')] class extends Component {
     {
         return $this->activeOpenPeriod() !== null;
     }
-
-    /* ============================================================
-     |  QUERY
-     ============================================================ */
 
     public function with(): array
     {
@@ -377,32 +352,20 @@ new #[Title('Research Proposals')] class extends Component {
 
                     {{-- ROLE FILTER ── NEW --}}
                     <div class="shrink-0">
-                        <x-select wire:model.live="roleFilter" size="sm" color="{{ $theme['color'] }}" maxWidth="w-auto">
-                            <option value="all">All Roles</option>
-                            <option value="leader">Ketua</option>
-                            <option value="member">Anggota</option>
-                        </x-select>
+                        <flux:select wire:model.live="roleFilter" color="{{ $theme['color'] }}" maxWidth="w-auto">
+                            <flux:select.option>All Roles</flux:select.option>
+                            <flux:select.option value="leader">Ketua</flux:select.option>
+                            <flux:select.option value="member">Anggota</flux:select.option>
+                        </flux:select>
                     </div>
 
                     {{-- PERIOD FILTER --}}
-                    <div class="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full
-                                bg-white dark:bg-zinc-900
-                                border border-slate-200 dark:border-zinc-800
-                                shadow-sm shadow-slate-200/50 dark:shadow-zinc-950/50">
-                        <flux:icon.calendar-days class="size-3 text-slate-400 dark:text-zinc-500 shrink-0" />
-                        <select wire:model.live="periodFilter"
-                            class="text-[10.5px] font-medium bg-transparent border-0
-                                   text-slate-700 dark:text-zinc-200
-                                   focus:outline-none focus:ring-0 cursor-pointer
-                                   pr-4 pl-0 py-0 max-w-[90px] sm:max-w-none
-                                   [&>option]:text-slate-700 dark:[&>option]:text-zinc-200
-                                   [&>option]:bg-white dark:[&>option]:bg-zinc-900">
-                            <option value="all">All Periods</option>
-                            @foreach ($periods as $p)
-                                <option value="{{ $p->id }}">{{ $p->periode }}</option>
-                            @endforeach
-                        </select>
-                    </div>
+                    <flux:select wire:model.live="periodFilter">
+                        <flux:select.option>All Periods</flux:select.option>
+                        @foreach ($periods as $p)
+                            <flux:select.option value="{{ $p->id }}">{{ $p->periode }}</flux:select.option>
+                        @endforeach
+                    </flux:select>
 
                     {{-- NEW BUTTON --}}
                     <div class="order-4 sm:order-5 ml-auto sm:ml-0 shrink-0">
@@ -575,7 +538,7 @@ new #[Title('Research Proposals')] class extends Component {
                                                        hover:scale-110 active:scale-95
                                                        opacity-60 group-hover:opacity-100 transition-all duration-150" />
 
-                                            <flux:menu class="!text-[11px]">
+                                            <flux:menu class="text-[11px]!">
                                                 @if ($this->canEdit($proposal))
                                                     <flux:menu.item icon="pencil-square" x-data
                                                         x-on:click="$dispatch('open-edit-proposal', { id: {{ $proposal->id }} })">
@@ -614,7 +577,7 @@ new #[Title('Research Proposals')] class extends Component {
                                                     </flux:menu.item>
                                                 @endif
 
-                                                @if ($isLeader && $this->canDelete($proposal->status))
+                                                @if ($isLeader && $this->canDelete($proposal))
                                                     <flux:menu.separator />
                                                     <flux:menu.item variant="danger" icon="trash"
                                                         wire:click="confirmDelete({{ $proposal->id }})">

@@ -41,26 +41,30 @@ new #[Title('Manage Researches')] class extends Component {
         $this->resetPage();
     }
 
-    /* ============================================================
-     |  ACTIONS
-     ============================================================ */
-
-    public function submit(int $id): void
+    public function approve(int $id): void
     {
         $proposal = Proposal::find($id);
 
-        if (!$proposal) {
+        if (! $proposal) {
             Flux::toast('Proposal not found.', variant: 'danger');
             return;
         }
 
-        if (!in_array($proposal->status, ['pending', 'revised', 'rejected'], true)) {
-            Flux::toast('Proposal cannot be submitted at this status.', variant: 'danger');
+        // ── Admin approve setelah SUBMITTED → ADMIN_APPROVED ──
+        if ($proposal->isSubmitted()) {
+            $proposal->update(['status' => Proposal::STATUS_ADMIN_APPROVED]);
+            Flux::toast('Proposal di-approve. Silakan assign reviewer.', variant: 'success');
             return;
         }
 
-        $proposal->update(['status' => 'submitted']);
-        Flux::toast('Proposal submitted successfully.', variant: 'success');
+        // ── Admin final accept setelah REVIEWER_APPROVED → ACCEPTED ──
+        if ($proposal->isReviewerApproved()) {
+            $proposal->update(['status' => Proposal::STATUS_ACCEPTED]);
+            Flux::toast('Proposal diterima (Accepted).', variant: 'success');
+            return;
+        }
+
+        Flux::toast('Proposal tidak dapat di-approve pada status ini.', variant: 'danger');
     }
 
     public function reject(int $id): void
@@ -80,10 +84,6 @@ new #[Title('Manage Researches')] class extends Component {
         $proposal->update(['status' => 'rejected']);
         Flux::toast('Proposal rejected.', variant: 'success');
     }
-
-    /* ============================================================
-     |  DELETE FLOW
-     ============================================================ */
 
     public function confirmDelete(int $id): void
     {
@@ -131,10 +131,6 @@ new #[Title('Manage Researches')] class extends Component {
         }
     }
 
-    /* ============================================================
-     |  QUERY
-     ============================================================ */
-
     public function with(): array
     {
         $selectedPeriod = $this->periodFilter === 'all' ? null : Period::find((int) $this->periodFilter);
@@ -177,7 +173,7 @@ new #[Title('Manage Researches')] class extends Component {
     <div class="max-w-7xl mx-auto space-y-3">
 
         {{-- ══════════ HEADER ══════════ --}}
-        <x-dashboard-header icon="document-text" title="Manage Researches"
+        <x-dashboard-header icon="beaker" title="Manage Researches"
             leading="Manage research proposals. Verify, revise, or reject proposals." />
 
         {{-- ══════════ MAIN CARD ══════════ --}}
@@ -199,7 +195,7 @@ new #[Title('Manage Researches')] class extends Component {
                         class="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full
                         bg-emerald-50 dark:bg-emerald-900/20
                         border border-emerald-100 dark:border-emerald-900/40">
-                        <flux:icon.document-text class="size-3 text-emerald-600 dark:text-emerald-400" />
+                        <flux:icon.beaker class="size-3 text-emerald-600 dark:text-emerald-400" />
                         <span class="text-[10.5px] font-semibold text-emerald-700 dark:text-emerald-300">
                             {{ $proposals->total() }}
                         </span>
@@ -209,12 +205,12 @@ new #[Title('Manage Researches')] class extends Component {
                     </div>
 
                     {{-- ─────── PERIOD FILTER ─────── --}}
-                    <x-select wire:model.live="periodFilter">
-                        <option value="all">All Periods</option>
+                    <flux:select wire:model.live="periodFilter">
+                        <flux:select.option value="all">All Periods</flux:select.option>
                         @foreach ($periods as $p)
-                            <option value="{{ $p->id }}">{{ $p->periode }}</option>
+                            <flux:select.option value="{{ $p->id }}">{{ $p->periode }}</flux:select.option>
                         @endforeach
-                    </x-select>
+                    </flux:select>
 
                     {{-- ─────── LOADING SPINNER ─────── --}}
                     <div wire:loading wire:target="periodFilter"
@@ -231,15 +227,17 @@ new #[Title('Manage Researches')] class extends Component {
 
                     {{-- ─────── STATUS FILTER ─────── --}}
                     <div class="shrink-0">
-                        <x-select wire:model.live="statusFilter" color="emerald" maxWidth="w-auto">
-                            <option value="">All Status</option>
-                            <option value="pending">Pending</option>
-                            <option value="submitted">Submitted</option>
-                            <option value="under_review">Under Review</option>
-                            <option value="revised">Revised</option>
-                            <option value="accepted">Accepted</option>
-                            <option value="rejected">Rejected</option>
-                        </x-select>
+                        <flux:select wire:model.live="statusFilter" ...>
+                            <flux:select.option>All Status</flux:select.option>
+                            <flux:select.option value="submitted">Submitted</flux:select.option>
+                            <flux:select.option value="admin_revision">Admin Revision</flux:select.option>
+                            <flux:select.option value="admin_approved">Admin Approved</flux:select.option>
+                            <flux:select.option value="under_review">Under Review</flux:select.option>
+                            <flux:select.option value="reviewer_revision">Reviewer Revision</flux:select.option>
+                            <flux:select.option value="reviewer_approved">Reviewer Approved</flux:select.option>
+                            <flux:select.option value="accepted">Accepted</flux:select.option>
+                            <flux:select.option value="rejected">Rejected</flux:select.option>
+                        </flux:select>
                     </div>
 
                     {{-- ─────── SEARCH (mobile: baris 2, desktop: kanan) ─────── --}}
@@ -256,7 +254,7 @@ new #[Title('Manage Researches')] class extends Component {
             </div>
 
             {{-- ─────── TABLE (RESPONSIVE) ─────── --}}
-            <div class="relative">
+            <div class="relativ">
 
                 {{-- Swipe hint --}}
                 <div x-data="{ showHint: true }" x-init="setTimeout(() => showHint = false, 3500)" x-show="showHint"
@@ -339,7 +337,7 @@ new #[Title('Manage Researches')] class extends Component {
                                                 flex items-center justify-center
                                                 ring-1 ring-white/40 dark:ring-zinc-800/40
                                                 group-hover:scale-105 transition-transform">
-                                                <flux:icon.document-text
+                                                <flux:icon.beaker
                                                     class="size-3 sm:size-3.5 text-emerald-600 dark:text-emerald-400" />
                                             </div>
                                             <div class="min-w-0">
@@ -462,124 +460,107 @@ new #[Title('Manage Researches')] class extends Component {
                                                opacity-60 group-hover:opacity-100 transition-all duration-150" />
 
                                             <flux:menu class="!text-[11px]">
-                                                {{-- ══════════ PENDING ══════════ --}}
-                                                @if ($proposal->status === 'pending')
-                                                    <flux:menu.item icon="check-circle"
-                                                        wire:click="submit({{ $proposal->id }})">
-                                                        Submit Proposal
-                                                    </flux:menu.item>
-                                                    <flux:menu.item icon="arrow-path" x-data
-                                                        x-on:click="$dispatch('open-admin-note-revision', { id: {{ $proposal->id }} })">
-                                                        Request Revision
-                                                    </flux:menu.item>
-                                                    <flux:menu.item variant="danger" icon="x-circle"
-                                                        wire:click="reject({{ $proposal->id }})">
-                                                        Reject Proposal
-                                                    </flux:menu.item>
-                                                @endif
+                                                    @if ($proposal->isSubmitted())
+                                                        <flux:menu.item icon="check-badge"
+                                                            wire:click="approve({{ $proposal->id }})"
+                                                            class="text-teal-600 dark:text-teal-400">
+                                                            Approve Proposal
+                                                        </flux:menu.item>
+                                                        <flux:menu.item icon="arrow-path" x-data
+                                                            x-on:click="$dispatch('open-admin-note-revision', { id: {{ $proposal->id }} })">
+                                                            Request Revision
+                                                        </flux:menu.item>
+                                                    @endif
 
-                                                {{-- ══════════ REVISED ══════════ --}}
-                                                @if ($proposal->status === 'revised')
-                                                    <flux:menu.item icon="check-circle"
-                                                        wire:click="submit({{ $proposal->id }})">
-                                                        Submit Proposal
-                                                    </flux:menu.item>
-                                                    <flux:menu.item icon="arrow-path" x-data
-                                                        x-on:click="$dispatch('open-admin-note-revision', { id: {{ $proposal->id }} })">
-                                                        Request Revision
-                                                    </flux:menu.item>
-                                                    <flux:menu.item variant="danger" icon="x-circle"
-                                                        wire:click="reject({{ $proposal->id }})">
-                                                        Reject Proposal
-                                                    </flux:menu.item>
-                                                @endif
+                                                    @if ($proposal->isAdminRevision())
+                                                        <flux:menu.item icon="arrow-path" x-data
+                                                            x-on:click="$dispatch('open-admin-note-revision', { id: {{ $proposal->id }} })">
+                                                            Update Revision Note
+                                                        </flux:menu.item>
+                                                        <flux:menu.item icon="check-badge"
+                                                            wire:click="approve({{ $proposal->id }})"
+                                                            class="text-teal-600 dark:text-teal-400">
+                                                            Approve Proposal
+                                                        </flux:menu.item>
+                                                    @endif
 
-                                                {{-- ══════════ SUBMITTED ══════════ --}}
-                                                @if ($proposal->status === 'submitted')
-                                                    <flux:menu.item icon="arrow-path" x-data
-                                                        x-on:click="$dispatch('open-admin-note-revision', { id: {{ $proposal->id }} })">
-                                                        Request Revision
-                                                    </flux:menu.item>
-                                                    <flux:menu.item variant="danger" icon="x-circle"
-                                                        wire:click="reject({{ $proposal->id }})">
-                                                        Reject Proposal
-                                                    </flux:menu.item>
-                                                    <flux:menu.item icon="user-plus" x-data
-                                                        x-on:click="$dispatch('open-assign-reviewer', { id: {{ $proposal->id }} })"
-                                                        class="text-violet-600 dark:text-violet-400">
-                                                        Assign Reviewer
-                                                    </flux:menu.item>
-                                                @endif
+                                                    @if ($proposal->isAdminApproved())
+                                                        <flux:menu.item icon="user-plus" x-data
+                                                            x-on:click="$dispatch('open-assign-reviewer', { id: {{ $proposal->id }} })"
+                                                            class="text-violet-600 dark:text-violet-400">
+                                                            Assign Reviewer
+                                                        </flux:menu.item>
+                                                        {{-- <flux:menu.separator />
+                                                        <flux:menu.item variant="danger" icon="x-circle"
+                                                            wire:click="reject({{ $proposal->id }})">
+                                                            Reject Proposal
+                                                        </flux:menu.item> --}}
+                                                    @endif
 
-                                                {{-- ══════════ REJECTED ══════════ --}}
-                                                @if ($proposal->status === 'rejected')
-                                                    <flux:menu.item icon="arrow-path" x-data
-                                                        x-on:click="$dispatch('open-admin-note-revision', { id: {{ $proposal->id }} })">
-                                                        Request Revision
-                                                    </flux:menu.item>
-                                                    <flux:menu.item icon="check-circle"
-                                                        wire:click="submit({{ $proposal->id }})">
-                                                        Submit Proposal
-                                                    </flux:menu.item>
-                                                @endif
+                                                    @if ($proposal->isUnderReview())
+                                                        <flux:menu.item icon="user-plus" x-data
+                                                            x-on:click="$dispatch('open-assign-reviewer', { id: {{ $proposal->id }} })">
+                                                            Change Reviewer
+                                                        </flux:menu.item>
+                                                        {{-- Berikan Tombol untuk Reviewer Approved --}}
+                                                    @endif
 
-                                                {{-- ══════════ VIEW SUBMISSIONS ══════════ --}}
-                                                @if ($proposal->progressReport || $proposal->finalReport || $proposal->outcome)
-                                                    <flux:menu.separator />
+                                                    @if ($proposal->isReviewerRevision())
+                                                        {{-- Berikan Tombol untuk Reviewer Approved --}}
+                                                    @endif
+
+                                                    @if ($proposal->isReviewerApproved())
+                                                        <flux:menu.item icon="check-circle"
+                                                            wire:click="approve({{ $proposal->id }})"
+                                                            class="text-emerald-600 dark:text-emerald-400">
+                                                            Final Accept
+                                                        </flux:menu.item>
+                                                        <flux:menu.item variant="danger" icon="x-circle"
+                                                            wire:click="reject({{ $proposal->id }})">
+                                                            Reject Proposal
+                                                        </flux:menu.item>
+                                                    @endif
+
+                                                    @if ($proposal->progressReport || $proposal->finalReport || $proposal->outcome)
+                                                        <flux:menu.separator />
+                                                        <flux:menu.item icon="eye" x-data
+                                                            x-on:click="$dispatch('open-view-submission', { proposalId: {{ $proposal->id }} })"
+                                                            class="text-slate-700 dark:text-zinc-300">
+                                                            View Submissions
+                                                        </flux:menu.item>
+                                                    @endif
+
+                                                    {{-- Admin Notes — hanya muncul kalau sudah pernah di-review admin --}}
+                                                    @if (!empty($proposal->adminNotes))
+                                                        <flux:menu.item icon="chat-bubble-left-right" x-data
+                                                            x-on:click="$dispatch('open-admin-notes', { id: {{ $proposal->id }}, type: 'proposal' })">
+                                                            Admin Notes
+                                                        </flux:menu.item>
+                                                    @endif
+
+                                                    {{-- Reviewer Notes — hanya muncul kalau sudah ada reviewer --}}
+                                                    @if (!empty($proposal->reviewerNotes))
+                                                        <flux:menu.item icon="clipboard-document-check" x-data
+                                                            x-on:click="$dispatch('open-reviewer-notes', { id: {{ $proposal->id }}, type: 'proposal' })"
+                                                            class="text-violet-600 dark:text-violet-400">
+                                                            Reviewer Notes
+                                                        </flux:menu.item>
+                                                    @endif
+
                                                     <flux:menu.item icon="eye" x-data
-                                                        x-on:click="$dispatch('open-view-submission', { proposalId: {{ $proposal->id }} })"
-                                                        class="text-slate-700 dark:text-zinc-300">
-                                                        View Submissions
+                                                        x-on:click="$dispatch('open-view-proposal', { id: {{ $proposal->id }} })">
+                                                        View Proposal
                                                     </flux:menu.item>
-                                                @endif
 
-                                                {{-- ══════════ UNDER REVIEW ══════════ --}}
-                                                @if ($proposal->status === 'under_review')
-                                                    <flux:menu.item icon="arrow-path" x-data
-                                                        x-on:click="$dispatch('open-admin-note-revision', { id: {{ $proposal->id }} })">
-                                                        Request Revision
-                                                    </flux:menu.item>
-                                                    <flux:menu.separator />
-                                                @endif
 
-                                                {{-- ══════════ ACCEPTED ══════════ --}}
-                                                @if ($proposal->status === 'accepted')
-                                                    <flux:menu.item variant="danger" icon="x-circle"
-                                                        wire:click="reject({{ $proposal->id }})">
-                                                        Reject Proposal
-                                                    </flux:menu.item>
-                                                @endif
-
-                                                {{-- ══════════ NOTES & VIEW ══════════ --}}
-                                                <flux:menu.separator />
-
-                                                @if (!in_array($proposal->status, ['pending']))
-                                                    <flux:menu.item icon="chat-bubble-left-right" x-data
-                                                        x-on:click="$dispatch('open-admin-notes', { id: {{ $proposal->id }}, type: 'proposal' })">
-                                                        Admin Notes
-                                                    </flux:menu.item>
-                                                @endif
-
-                                                @if (in_array($proposal->status, ['under_review', 'accepted', 'rejected']))
-                                                    <flux:menu.item icon="clipboard-document-check" x-data
-                                                        x-on:click="$dispatch('open-reviewer-notes', { id: {{ $proposal->id }}, type: 'proposal' })"
-                                                        class="text-violet-600 dark:text-violet-400">
-                                                        Reviewer Notes
-                                                    </flux:menu.item>
-                                                @endif
-
-                                                <flux:menu.item icon="eye" x-data
-                                                    x-on:click="$dispatch('open-view-proposal', { id: {{ $proposal->id }} })">
-                                                    View Proposal
-                                                </flux:menu.item>
-
-                                                <flux:menu.separator />
-
-                                                <flux:menu.item variant="danger" icon="trash"
-                                                    wire:click="confirmDelete({{ $proposal->id }})">
-                                                    Delete Proposal
-                                                </flux:menu.item>
-                                            </flux:menu>
+                                                    @if ($proposal->status === 'submitted')
+                                                        <flux:menu.separator />
+                                                        <flux:menu.item variant="danger" icon="trash"
+                                                            wire:click="confirmDelete({{ $proposal->id }})">
+                                                            Delete Proposal
+                                                        </flux:menu.item>
+                                                    @endif
+                                                </flux:menu>
                                         </flux:dropdown>
                                     </td>
                                 </tr>
@@ -591,7 +572,7 @@ new #[Title('Manage Researches')] class extends Component {
                                             <div
                                                 class="w-11 h-11 rounded-full bg-slate-100 dark:bg-zinc-800
                                                 flex items-center justify-center">
-                                                <flux:icon.document-text
+                                                <flux:icon.beaker
                                                     class="size-5 text-slate-400 dark:text-zinc-600" />
                                             </div>
                                             <div>

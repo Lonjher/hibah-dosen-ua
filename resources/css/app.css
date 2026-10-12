@@ -10,6 +10,9 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+[x-cloak] {
+    display: none !important;
+}
 @theme {
     /* ================= Font Families =================
        Manrope  → Heading (judul, display, headline, title, label)

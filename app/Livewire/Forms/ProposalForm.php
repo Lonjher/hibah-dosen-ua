@@ -23,7 +23,7 @@ class ProposalForm extends Form
     public ?string $file_path = null;
     public ?string $rab_path = null;
 
-    public string $status = 'pending';
+    public string $status = 'submitted';
     public ?int $period_id = null;
 
     /** @var TemporaryUploadedFile|null */

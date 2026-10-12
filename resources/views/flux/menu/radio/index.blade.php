@@ -27,16 +27,22 @@ $iconTrailingClasses = Flux::classes()
     ->add($iconVariant === 'outline' ? 'size-5' : null)
     ;
 
+// checkbox — ganti group name jadi menu-radio untuk radio
 $classes = Flux::classes()
-    ->add('group/menu-radio flex items-center px-2 py-1.5 w-full focus:outline-hidden')
-    ->add('rounded-md')
-    ->add('text-start text-sm font-medium')
+    ->add('group/menu-radio flex items-center px-2 py-1 w-full focus:outline-hidden')
+    ->add('rounded-lg')
+    ->add('text-start text-[11px] font-medium leading-tight')
+    ->add('transition-all duration-150')
     ->add('[[disabled]_&]:opacity-50 [&[disabled]]:opacity-50')
     ->add([
-        'text-zinc-800 data-active:bg-zinc-50 dark:text-white dark:data-active:bg-zinc-600',
-        '**:data-flux-menu-item-icon:text-zinc-400 dark:**:data-flux-menu-item-icon:text-white/60 [&[data-active]_[data-flux-menu-item-icon]]:text-current',
-    ])
-    ;
+        'text-zinc-700 dark:text-zinc-200',
+        'data-active:bg-white/50 dark:data-active:bg-white/10',
+        'data-active:backdrop-blur-xl data-active:backdrop-saturate-200',
+        'data-active:ring-1 data-active:ring-inset data-active:ring-white/60 dark:data-active:ring-white/15',
+        'data-active:text-emerald-700 dark:data-active:text-emerald-300',
+        '**:data-flux-menu-item-icon:text-zinc-400 dark:**:data-flux-menu-item-icon:text-zinc-500',
+        '[&[data-active]_[data-flux-menu-item-icon]]:text-current',
+    ]);
 @endphp
 
 <ui-menu-radio {{ $attributes->class($classes) }} data-flux-menu-item-has-icon data-flux-menu-radio>

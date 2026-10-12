@@ -13,19 +13,15 @@ class OutcomeFactory extends Factory
 {
     protected $model = Outcome::class;
 
-    /**
-     * Distribusi level yang realistis:
-     * Sinta 2-4 lebih banyak
-     */
     protected array $levelWeights = [
-        'Reputable International Journal'  => 1,
-        'International'  => 3,
-        'Sinta 1' => 4,
-        'Sinta 2' => 6,
-        'Sinta 3' => 7,
-        'Sinta 4' => 5,
-        'Sinta 5' => 3,
-        'Sinta 6' => 2,
+        'Reputable International Journal' => 1,
+        'International'                   => 3,
+        'Sinta 1'                         => 4,
+        'Sinta 2'                         => 6,
+        'Sinta 3'                         => 7,
+        'Sinta 4'                         => 5,
+        'Sinta 5'                         => 3,
+        'Sinta 6'                         => 2,
     ];
 
     public function definition(): array
@@ -57,9 +53,6 @@ class OutcomeFactory extends Factory
     public function accepted(): static { return $this->state(fn () => ['status' => 'accepted']); }
     public function rejected(): static { return $this->state(fn () => ['status' => 'rejected']); }
 
-    /**
-     * Pilih level dengan bobot
-     */
     protected function weightedRandomLevel(): string
     {
         $pool = [];
@@ -71,9 +64,6 @@ class OutcomeFactory extends Factory
         return $pool[array_rand($pool)];
     }
 
-    /**
-     * Force level spesifik
-     */
     public function level(string $level): static
     {
         return $this->state(fn () => ['level' => $level]);

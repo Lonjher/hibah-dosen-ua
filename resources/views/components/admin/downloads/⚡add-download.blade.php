@@ -186,17 +186,12 @@ new class extends Component {
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     {{-- Category --}}
                     <div>
-                        <x-select
-                            wire:model="form.category"
-                            label="Category"
-                            size="lg"
-                            color="violet"
-                            class="rounded-full">
-                            <option value="guideline">Guideline</option>
-                            <option value="template">Template</option>
-                            <option value="form">Form</option>
-                            <option value="general">General</option>
-                        </x-select>
+                        <flux:select wire:model="form.category" label="Category" color="violet">
+                            <flux:select.option value="guideline">Guideline</flux:select.option>
+                            <flux:select.option value="template">Template</flux:select.option>
+                            <flux:select.option value="form">Form</flux:select.option>
+                            <flux:select.option value="general">General</flux:select.option>
+                        </flux:select>
                         @error('form.category')
                             <p class="mt-1 flex items-center gap-1 text-[10px] text-rose-600">
                                 <flux:icon.exclamation-circle class="size-2.5 shrink-0" />

@@ -16,11 +16,12 @@ class FinalReportFactory extends Factory
     public function definition(): array
     {
         return [
+            // FinalReport hanya bisa dibuat untuk proposal ACCEPTED
             'proposal_id'      => Proposal::factory()->accepted(),
             'summary'          => fake()->paragraph(5),
             'keyword'          => implode(', ', fake()->words(3)),
             'report_path'      => 'final-reports/dummy-' . fake()->uuid() . '.pdf',
-            'sptb_path'  => 'final-reports/dummy-' . fake()->uuid() . '.docx',
+            'sptb_path'        => 'final-reports/dummy-' . fake()->uuid() . '.docx',
             'submission_proof' => 'final-reports/dummy-' . fake()->uuid() . '.jpg',
             'status'           => 'pending',
         ];

@@ -109,19 +109,12 @@ new class extends Component {
                                    focus:shadow-md focus:shadow-emerald-500/10
                                    transition-all duration-200" />
                     </div>
-                    <select wire:model.live="categoryFilter"
-                        class="text-[10.5px] font-medium rounded-full
-                               border border-slate-200 dark:border-zinc-700
-                               bg-white dark:bg-zinc-800
-                               text-slate-900 dark:text-zinc-100
-                               py-1.5 pl-3 pr-6 cursor-pointer
-                               focus:outline-none focus:ring-2 focus:ring-violet-500/25 focus:border-violet-500
-                               transition-all duration-200">
-                        <option value="">All</option>
+                    <flux:select wire:model.live="categoryFilter">
+                        <flux:select.option>All</flux:select.option>
                         @foreach ($this->categoryOptions as $value => $label)
-                            <option value="{{ $value }}">{{ $label }}</option>
+                            <flux:select.option value="{{ $value }}">{{ $label }}</flux:select.option>
                         @endforeach
-                    </select>
+                    </flux:select>
                 </div>
             @endif
         </div>

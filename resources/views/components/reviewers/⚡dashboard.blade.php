@@ -10,25 +10,69 @@ new #[Title('Dashboard')] class extends Component {
     {
         $userId = auth()->id();
 
+        /* ============================================================
+         |  PROPOSAL STATS
+         |  Reviewer hanya lihat proposal yang di-assign ke mereka.
+         |  Status yang relevan untuk reviewer:
+         |  - UNDER_REVIEW       : perlu direview
+         |  - REVIEWER_REVISION  : sudah direview, user sedang revisi
+         |  - REVIEWER_APPROVED  : sudah approve semua, tunggu admin
+         |  - ACCEPTED / REJECTED: final
+         ============================================================ */
+
         $proposalStats = [
-            'under_review' => Proposal::where('reviewer_id', $userId)->where('status', 'under_review')->count(),
-            'revised'      => Proposal::where('reviewer_id', $userId)->where('status', 'revised')->count(),
-            'accepted'     => Proposal::where('reviewer_id', $userId)->where('status', 'accepted')->count(),
-            'rejected'     => Proposal::where('reviewer_id', $userId)->where('status', 'rejected')->count(),
-            'research'     => Proposal::where('reviewer_id', $userId)->where('is_research', true)->count(),
-            'dedication'   => Proposal::where('reviewer_id', $userId)->where('is_research', false)->count(),
+            'under_review' => Proposal::where('reviewer_id', $userId)
+                ->where('status', Proposal::STATUS_UNDER_REVIEW)
+                ->count(),
+
+            'reviewer_revision' => Proposal::where('reviewer_id', $userId)
+                ->where('status', Proposal::STATUS_REVIEWER_REVISION)
+                ->count(),
+
+            'reviewer_approved' => Proposal::where('reviewer_id', $userId)
+                ->where('status', Proposal::STATUS_REVIEWER_APPROVED)
+                ->count(),
+
+            'accepted' => Proposal::where('reviewer_id', $userId)
+                ->where('status', Proposal::STATUS_ACCEPTED)
+                ->count(),
+
+            'rejected' => Proposal::where('reviewer_id', $userId)
+                ->where('status', Proposal::STATUS_REJECTED)
+                ->count(),
         ];
 
+        /* ============================================================
+         |  PROGRESS REPORT STATS
+         |  Status internal ProgressReport tetap 6 status lama:
+         |  pending, submitted, under_review, revised, accepted, rejected
+         ============================================================ */
+
         $progressStats = [
-            'under_review' => ProgressReport::where('reviewer_id', $userId)->where('status', 'under_review')->count(),
-            'revised'      => ProgressReport::where('reviewer_id', $userId)->where('status', 'revised')->count(),
-            'accepted'     => ProgressReport::where('reviewer_id', $userId)->where('status', 'accepted')->count(),
-            'rejected'     => ProgressReport::where('reviewer_id', $userId)->where('status', 'rejected')->count(),
+            'under_review' => ProgressReport::where('reviewer_id', $userId)
+                ->where('status', 'under_review')
+                ->count(),
+
+            'revised' => ProgressReport::where('reviewer_id', $userId)
+                ->where('status', 'revised')
+                ->count(),
+
+            'accepted' => ProgressReport::where('reviewer_id', $userId)
+                ->where('status', 'accepted')
+                ->count(),
+
+            'rejected' => ProgressReport::where('reviewer_id', $userId)
+                ->where('status', 'rejected')
+                ->count(),
         ];
+
+        /* ============================================================
+         |  PENDING ITEMS — yang perlu segera direview
+         ============================================================ */
 
         $pendingProposals = Proposal::with(['author', 'researchScheme'])
             ->where('reviewer_id', $userId)
-            ->where('status', 'under_review')
+            ->where('status', Proposal::STATUS_UNDER_REVIEW)
             ->latest()
             ->take(5)
             ->get();
@@ -55,7 +99,9 @@ new #[Title('Dashboard')] class extends Component {
     <x-dashboard-header icon="clipboard-document-check" title="Reviewer Dashboard"
         leading="Overview of your review tasks." />
 
-    {{-- ══════════ PROPOSAL STATS ══════════ --}}
+    {{-- ══════════════════════════════════════════════════════════ --}}
+    {{-- PROPOSAL STATS                                             --}}
+    {{-- ══════════════════════════════════════════════════════════ --}}
     <div>
         <div class="flex items-center gap-2 mb-2">
             <div class="w-6 h-6 rounded-full bg-violet-100 dark:bg-violet-900/40
@@ -67,13 +113,44 @@ new #[Title('Dashboard')] class extends Component {
             </h3>
         </div>
 
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-2">
+        <div class="grid grid-cols-2 lg:grid-cols-5 gap-2">
             @php
                 $cards = [
-                    ['label' => 'Under Review', 'value' => $proposalStats['under_review'], 'color' => 'violet', 'icon' => 'eye'],
-                    ['label' => 'Revision',     'value' => $proposalStats['revised'],      'color' => 'amber',  'icon' => 'arrow-path'],
-                    ['label' => 'Accepted',     'value' => $proposalStats['accepted'],     'color' => 'emerald','icon' => 'check-circle'],
-                    ['label' => 'Rejected',     'value' => $proposalStats['rejected'],     'color' => 'rose',   'icon' => 'x-circle'],
+                    [
+                        'label' => 'Under Review',
+                        'short' => 'REV',
+                        'value' => $proposalStats['under_review'],
+                        'color' => 'violet',
+                        'icon'  => 'eye',
+                    ],
+                    [
+                        'label' => 'Reviewer Revision',
+                        'short' => 'RVR',
+                        'value' => $proposalStats['reviewer_revision'],
+                        'color' => 'orange',
+                        'icon'  => 'arrow-path',
+                    ],
+                    [
+                        'label' => 'Reviewer Approved',
+                        'short' => 'RVA',
+                        'value' => $proposalStats['reviewer_approved'],
+                        'color' => 'cyan',
+                        'icon'  => 'check-badge',
+                    ],
+                    [
+                        'label' => 'Accepted',
+                        'short' => 'ACC',
+                        'value' => $proposalStats['accepted'],
+                        'color' => 'emerald',
+                        'icon'  => 'check-circle',
+                    ],
+                    [
+                        'label' => 'Rejected',
+                        'short' => 'REJ',
+                        'value' => $proposalStats['rejected'],
+                        'color' => 'rose',
+                        'icon'  => 'x-circle',
+                    ],
                 ];
             @endphp
 
@@ -89,57 +166,28 @@ new #[Title('Dashboard')] class extends Component {
                             <flux:icon :name="$card['icon']"
                                 class="size-3.5 text-{{ $card['color'] }}-600 dark:text-{{ $card['color'] }}-400" />
                         </div>
-                        <flux:icon.arrow-up-right class="size-3 text-slate-300 dark:text-zinc-600" />
+                        <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full
+                                     bg-{{ $card['color'] }}-100 text-{{ $card['color'] }}-700
+                                     dark:bg-{{ $card['color'] }}-900/40 dark:text-{{ $card['color'] }}-300"
+                              title="{{ $card['label'] }}">
+                            {{ $card['short'] }}
+                        </span>
                     </div>
-                    <p class="mt-2 text-xl font-bold text-slate-900 dark:text-white leading-none">
+                    <p class="mt-2 text-xl font-bold text-slate-900 dark:text-white leading-none tabular-nums">
                         {{ number_format($card['value']) }}
                     </p>
-                    <p class="text-[10px] text-slate-500 dark:text-zinc-400 mt-1 leading-tight truncate">
+                    <p class="text-[10px] text-slate-500 dark:text-zinc-400 mt-1 leading-tight truncate"
+                       title="{{ $card['label'] }}">
                         {{ $card['label'] }}
                     </p>
                 </div>
             @endforeach
         </div>
-
-        {{-- Research vs Dedication --}}
-        <div class="mt-2 grid grid-cols-2 gap-2">
-            <div class="rounded-full border border-emerald-200 dark:border-emerald-800
-                        bg-emerald-50 dark:bg-emerald-900/20
-                        pl-1.5 pr-3 py-1.5 flex items-center gap-2">
-                <div class="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-900/40
-                            flex items-center justify-center shrink-0">
-                    <flux:icon.beaker class="size-3.5 text-emerald-600 dark:text-emerald-400" />
-                </div>
-                <div class="flex-1 min-w-0">
-                    <p class="text-base font-bold text-emerald-700 dark:text-emerald-300 leading-none tabular-nums">
-                        {{ number_format($proposalStats['research']) }}
-                    </p>
-                    <p class="text-[9.5px] text-emerald-600 dark:text-emerald-400 mt-0.5 truncate leading-tight">
-                        Research
-                    </p>
-                </div>
-            </div>
-
-            <div class="rounded-full border border-rose-200 dark:border-rose-800
-                        bg-rose-50 dark:bg-rose-900/20
-                        pl-1.5 pr-3 py-1.5 flex items-center gap-2">
-                <div class="w-7 h-7 rounded-full bg-rose-100 dark:bg-rose-900/40
-                            flex items-center justify-center shrink-0">
-                    <flux:icon.heart class="size-3.5 text-rose-600 dark:text-rose-400" />
-                </div>
-                <div class="flex-1 min-w-0">
-                    <p class="text-base font-bold text-rose-700 dark:text-rose-300 leading-none tabular-nums">
-                        {{ number_format($proposalStats['dedication']) }}
-                    </p>
-                    <p class="text-[9.5px] text-rose-600 dark:text-rose-400 mt-0.5 truncate leading-tight">
-                        Community Service
-                    </p>
-                </div>
-            </div>
-        </div>
     </div>
 
-    {{-- ══════════ PROGRESS REPORT STATS ══════════ --}}
+    {{-- ══════════════════════════════════════════════════════════ --}}
+    {{-- PROGRESS REPORT STATS                                      --}}
+    {{-- ══════════════════════════════════════════════════════════ --}}
     <div>
         <div class="flex items-center gap-2 mb-2">
             <div class="w-6 h-6 rounded-full bg-violet-100 dark:bg-violet-900/40
@@ -154,10 +202,30 @@ new #[Title('Dashboard')] class extends Component {
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-2">
             @php
                 $progressCards = [
-                    ['label' => 'Under Review', 'value' => $progressStats['under_review'], 'color' => 'violet', 'icon' => 'eye'],
-                    ['label' => 'Revision',     'value' => $progressStats['revised'],      'color' => 'amber',  'icon' => 'arrow-path'],
-                    ['label' => 'Accepted',     'value' => $progressStats['accepted'],     'color' => 'emerald','icon' => 'check-circle'],
-                    ['label' => 'Rejected',     'value' => $progressStats['rejected'],     'color' => 'rose',   'icon' => 'x-circle'],
+                    [
+                        'label' => 'Under Review',
+                        'value' => $progressStats['under_review'],
+                        'color' => 'violet',
+                        'icon'  => 'eye',
+                    ],
+                    [
+                        'label' => 'Revision',
+                        'value' => $progressStats['revised'],
+                        'color' => 'amber',
+                        'icon'  => 'arrow-path',
+                    ],
+                    [
+                        'label' => 'Accepted',
+                        'value' => $progressStats['accepted'],
+                        'color' => 'emerald',
+                        'icon'  => 'check-circle',
+                    ],
+                    [
+                        'label' => 'Rejected',
+                        'value' => $progressStats['rejected'],
+                        'color' => 'rose',
+                        'icon'  => 'x-circle',
+                    ],
                 ];
             @endphp
 
@@ -186,10 +254,12 @@ new #[Title('Dashboard')] class extends Component {
         </div>
     </div>
 
-    {{-- ══════════ PENDING ITEMS ══════════ --}}
+    {{-- ══════════════════════════════════════════════════════════ --}}
+    {{-- PENDING ITEMS                                              --}}
+    {{-- ══════════════════════════════════════════════════════════ --}}
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
 
-        {{-- Pending Proposals --}}
+        {{-- ── Pending Proposals ── --}}
         <div class="rounded-2xl border border-slate-200 dark:border-zinc-800
                     bg-white dark:bg-zinc-900 shadow-sm overflow-hidden flex flex-col">
             <div class="px-3 py-2 border-b border-slate-200 dark:border-zinc-800
@@ -255,7 +325,7 @@ new #[Title('Dashboard')] class extends Component {
             </div>
         </div>
 
-        {{-- Pending Progress Reports --}}
+        {{-- ── Pending Progress Reports ── --}}
         <div class="rounded-2xl border border-slate-200 dark:border-zinc-800
                     bg-white dark:bg-zinc-900 shadow-sm overflow-hidden flex flex-col">
             <div class="px-3 py-2 border-b border-slate-200 dark:border-zinc-800

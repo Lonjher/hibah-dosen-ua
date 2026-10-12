@@ -152,17 +152,12 @@ new class extends Component {
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     {{-- Type --}}
                     <div>
-                        <x-select
-                            wire:model="form.type"
-                            label="Type"
-                            size="lg"
-                            color="sky"
-                            class="rounded-full">
-                            <option value="info">Info</option>
-                            <option value="success">Success</option>
-                            <option value="warning">Warning</option>
-                            <option value="danger">Important</option>
-                        </x-select>
+                        <flux:select wire:model="form.type" label="Type" color="sky">
+                            <flux:select.option value="info">Info</flux:select.option>
+                            <flux:select.option value="success">Success</flux:select.option>
+                            <flux:select.option value="warning">Warning</flux:select.option>
+                            <flux:select.option value="danger">Important</flux:select.option>
+                        </flux:select>
                         @error('form.type')
                             <p class="mt-1 flex items-center gap-1 text-[10px] text-rose-600">
                                 <flux:icon.exclamation-circle class="size-2.5 shrink-0" />

@@ -28,40 +28,23 @@ class ProgressReportFactory extends Factory
         ];
     }
 
-    public function pending(): static
-    {
-        return $this->state(fn () => ['status' => 'pending', 'reviewer_id' => null]);
-    }
-
-    public function submitted(): static
-    {
-        return $this->state(fn () => ['status' => 'submitted', 'reviewer_id' => null]);
-    }
-
-    public function underReview(): static
-    {
+    public function pending(): static     { return $this->state(fn () => ['status' => 'pending', 'reviewer_id' => null]); }
+    public function submitted(): static   { return $this->state(fn () => ['status' => 'submitted', 'reviewer_id' => null]); }
+    public function underReview(): static {
         return $this->state(fn () => [
             'status'      => 'under_review',
             'reviewer_id' => User::factory()->reviewer(),
         ]);
     }
-
-    public function revised(): static
-    {
-        return $this->state(fn () => ['status' => 'revised']);
-    }
-
-    public function accepted(): static
-    {
+    public function revised(): static     { return $this->state(fn () => ['status' => 'revised']); }
+    public function accepted(): static {
         return $this->state(fn () => [
             'status'      => 'accepted',
             'reviewer_id' => User::factory()->reviewer(),
             'reviewed_at' => now(),
         ]);
     }
-
-    public function rejected(): static
-    {
+    public function rejected(): static {
         return $this->state(fn () => [
             'status'      => 'rejected',
             'reviewer_id' => User::factory()->reviewer(),

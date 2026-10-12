@@ -184,27 +184,27 @@ new class extends Component {
                     {{-- Role + Status --}}
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                         <div>
-                            <x-select wire:model="form.role" label="Your Role"
+                            <flux:select wire:model="form.role" label="Your Role"
                                 required
                                 size="lg"
                                 color="blue">
-                                <option value="leader">Leader</option>
-                                <option value="member">Member</option>
-                            </x-select>
+                                <flux:select.option value="leader">Leader</flux:select.option>
+                                <flux:select.option value="member">Member</flux:select.option>
+                            </flux:select>
                             @error('form.role')
                                 <p class="mt-1 text-[10.5px] text-rose-600">{{ $message }}</p>
                             @enderror
                         </div>
 
                         <div>
-                            <x-select wire:model="form.status" label="Status"
+                            <flux:select wire:model="form.status" label="Status"
                                 required
                                 size="lg"
                                 color="blue">
-                                <option value="ongoing">Ongoing</option>
-                                <option value="completed">Completed</option>
-                                <option value="cancelled">Cancelled</option>
-                            </x-select>
+                                <flux:select.option value="ongoing">Ongoing</flux:select.option>
+                                <flux:select.option value="completed">Completed</flux:select.option>
+                                <flux:select.option value="cancelled">Cancelled</flux:select.option>
+                            </flux:select>
                             @error('form.status')
                                 <p class="mt-1 text-[10.5px] text-rose-600">{{ $message }}</p>
                             @enderror

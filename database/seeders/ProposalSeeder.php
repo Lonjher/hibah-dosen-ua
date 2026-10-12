@@ -9,6 +9,8 @@ use App\Models\Outcome;
 use App\Models\Period;
 use App\Models\ProgressReport;
 use App\Models\Proposal;
+use App\Models\ProposalMember;
+use App\Models\ProposalStudent;
 use App\Models\ResearchScheme;
 use App\Models\ReviewerNote;
 use App\Models\User;
@@ -54,12 +56,12 @@ class ProposalSeeder extends Seeder
             for ($i = 0; $i < $counts['research']; $i++) {
                 $this->createFullProposal(
                     isResearch: true,
-                    year: $year,
-                    scheme: $schemesResearch->random(),
-                    user: $users->random(),
-                    reviewer: $reviewers->random(),
-                    admin: $admins->random(),
-                    period: $periods->first(fn ($p) => str_contains($p->periode, (string) $year)) ?? $periods->first(),
+                    year:       $year,
+                    scheme:     $schemesResearch->random(),
+                    user:       $users->random(),
+                    reviewer:   $reviewers->random(),
+                    admin:      $admins->random(),
+                    period:     $periods->first(fn ($p) => str_contains($p->periode, (string) $year)) ?? $periods->first(),
                 );
                 $totalProposals++;
             }
@@ -68,12 +70,12 @@ class ProposalSeeder extends Seeder
             for ($i = 0; $i < $counts['dedication']; $i++) {
                 $this->createFullProposal(
                     isResearch: false,
-                    year: $year,
-                    scheme: $schemesDedication->random(),
-                    user: $users->random(),
-                    reviewer: $reviewers->random(),
-                    admin: $admins->random(),
-                    period: $periods->first(fn ($p) => str_contains($p->periode, (string) $year)) ?? $periods->first(),
+                    year:       $year,
+                    scheme:     $schemesDedication->random(),
+                    user:       $users->random(),
+                    reviewer:   $reviewers->random(),
+                    admin:      $admins->random(),
+                    period:     $periods->first(fn ($p) => str_contains($p->periode, (string) $year)) ?? $periods->first(),
                 );
                 $totalProposals++;
             }
@@ -85,10 +87,12 @@ class ProposalSeeder extends Seeder
         $this->command->info('   - Outcomes: '          . Outcome::count());
         $this->command->info('   - Reviewer Notes: '   . ReviewerNote::count());
         $this->command->info('   - Admin Notes: '      . AdminNote::count());
+        $this->command->info('   - Members: '          . ProposalMember::count());
+        $this->command->info('   - Students: '         . ProposalStudent::count());
     }
 
     /**
-     * Buat proposal lengkap dengan semua relasinya.
+     * Buat proposal lengkap dengan semua relasinya (sesuai alur status baru).
      */
     protected function createFullProposal(
         bool $isResearch,
@@ -101,10 +105,18 @@ class ProposalSeeder extends Seeder
     ): void {
         // ── 1. Tentukan status akhir ──
         $status = $this->randomStatus();
-        $hasReviewer = in_array($status, ['under_review', 'accepted', 'rejected']);
+
+        // Reviewer di-set hanya kalau status >= UNDER_REVIEW
+        $hasReviewer = in_array($status, [
+            Proposal::STATUS_UNDER_REVIEW,
+            Proposal::STATUS_REVIEWER_REVISION,
+            Proposal::STATUS_REVIEWER_APPROVED,
+            Proposal::STATUS_ACCEPTED,
+            Proposal::STATUS_REJECTED,
+        ], true);
 
         // ── 2. Buat proposal ──
-        $proposalFactory = Proposal::factory()
+        $proposal = Proposal::factory()
             ->createdIn($year)
             ->state([
                 'research_scheme_id' => $scheme->id,
@@ -113,21 +125,39 @@ class ProposalSeeder extends Seeder
                 'is_research'        => $isResearch,
                 'status'             => $status,
                 'period_id'          => $period->id,
+            ])
+            ->create();
+
+        // ── 3. Buat anggota (dosen + mahasiswa) ──
+        $otherUsers = User::where('id', '!=', $user->id)
+            ->whereHas('role', fn ($q) => $q->where('role_code', 'USER'))
+            ->inRandomOrder()
+            ->limit(rand(1, 3))
+            ->get();
+
+        foreach ($otherUsers as $memberUser) {
+            ProposalMember::factory()->create([
+                'proposal_id' => $proposal->id,
+                'user_id'     => $memberUser->id,
+                'role'        => 'member',
             ]);
+        }
 
-        $proposal = $proposalFactory->create();
+        ProposalStudent::factory()
+            ->count(rand(0, 3))
+            ->create(['proposal_id' => $proposal->id]);
 
-        // ── 3. Buat budget items ──
+        // ── 4. Buat budget items ──
         $budgetLimit = (int) $scheme->budget_limit;
-        $remaining = $budgetLimit;
-        $itemsCount = rand(3, 5);
+        $remaining   = $budgetLimit;
+        $itemsCount  = rand(3, 5);
 
         for ($i = 0; $i < $itemsCount; $i++) {
             if ($remaining <= 0) break;
 
             $maxAmount = (int) ($remaining / max(1, $itemsCount - $i));
-            $amount = rand(500_000, max(500_001, $maxAmount));
-            $amount = min($amount, $remaining);
+            $amount    = rand(500_000, max(500_001, $maxAmount));
+            $amount    = min($amount, $remaining);
 
             BudgetProposal::factory()->create([
                 'proposal_id' => $proposal->id,
@@ -137,25 +167,41 @@ class ProposalSeeder extends Seeder
             $remaining -= $amount;
         }
 
-        // ── 4. Notes untuk proposal ──
-        if ($hasReviewer) {
-            ReviewerNote::factory()
-                ->forProposal($proposal, $reviewer)
-                ->count(rand(1, 3))
-                ->state(fn () => ['is_approved' => $status === 'accepted' ? true : fake()->boolean(60)])
-                ->create();
-        }
+        // ── 5. Notes sesuai status ──
 
-        if (in_array($status, ['pending', 'revised', 'accepted', 'rejected']) && fake()->boolean(60)) {
+        // Admin Notes: muncul kalau sudah lewat SUBMITTED (artinya admin sudah pernah review)
+        if (in_array($status, [
+            Proposal::STATUS_ADMIN_REVISION,
+            Proposal::STATUS_ADMIN_APPROVED,
+            Proposal::STATUS_UNDER_REVIEW,
+            Proposal::STATUS_REVIEWER_REVISION,
+            Proposal::STATUS_REVIEWER_APPROVED,
+            Proposal::STATUS_ACCEPTED,
+            Proposal::STATUS_REJECTED,
+        ], true) && fake()->boolean(70)) {
             AdminNote::factory()
                 ->forProposal($proposal, $admin)
                 ->count(rand(1, 2))
                 ->create();
         }
 
-        // ── 5. Kalau accepted → buat ProgressReport ──
-        if ($status !== 'accepted') return;
-        if (! fake()->boolean(70)) return;
+        // Reviewer Notes: muncul kalau status sudah sampai reviewer
+        if ($hasReviewer && fake()->boolean(70)) {
+            $isApproved = in_array($status, [
+                Proposal::STATUS_REVIEWER_APPROVED,
+                Proposal::STATUS_ACCEPTED,
+            ], true);
+
+            ReviewerNote::factory()
+                ->forProposal($proposal, $reviewer)
+                ->count(rand(1, 3))
+                ->state(fn () => ['is_approved' => $isApproved])
+                ->create();
+        }
+
+        // ── 6. Kalau ACCEPTED → buat ProgressReport ──
+        if ($status !== Proposal::STATUS_ACCEPTED) return;
+        if (! fake()->boolean(80)) return;
 
         $this->createProgressReport($proposal, $reviewer, $admin);
     }
@@ -168,7 +214,7 @@ class ProposalSeeder extends Seeder
         User $reviewer,
         User $admin,
     ): void {
-        $status = $this->randomProgressStatus();
+        $status      = $this->randomProgressStatus();
         $hasReviewer = in_array($status, ['under_review', 'accepted', 'rejected']);
 
         $progressReport = ProgressReport::factory()
@@ -242,7 +288,7 @@ class ProposalSeeder extends Seeder
         if ($status !== 'accepted') return;
         if (! fake()->boolean(75)) return;
 
-        $Outcome = Outcome::factory()
+        $outcome = Outcome::factory()
             ->state([
                 'proposal_id' => $proposal->id,
                 'status'      => $this->randomOutcomeStatus(),
@@ -250,29 +296,45 @@ class ProposalSeeder extends Seeder
             ->create();
 
         $createdAt = $finalReport->created_at->copy()->addMonths(rand(2, 6));
-        $Outcome->update([
+        $outcome->update([
             'created_at' => $createdAt,
             'updated_at' => $createdAt,
         ]);
 
         if (fake()->boolean(50)) {
             AdminNote::factory()
-                ->forOutcome($Outcome, $admin)
+                ->forOutcome($outcome, $admin)
                 ->create();
         }
     }
 
-    // ═══════════════ Weighted Random Helpers ═══════════════
+    /* ============================================================
+     |  WEIGHTED RANDOM HELPERS
+     ============================================================ */
 
+    /**
+     * Distribusi status proposal.
+     *
+     * - SUBMITTED        : 20% (status awal)
+     * - ADMIN_REVISION   : 10% (dalam proses revisi admin)
+     * - ADMIN_APPROVED   : 10% (siap assign reviewer)
+     * - UNDER_REVIEW     : 10% (sedang direview)
+     * - REVIEWER_REVISION: 5%  (revisi dari reviewer)
+     * - REVIEWER_APPROVED: 10% (menunggu keputusan final admin)
+     * - ACCEPTED         : 25% (final)
+     * - REJECTED         : 10% (final)
+     */
     protected function randomStatus(): string
     {
         $pool = [
-            'pending'      => 15,
-            'submitted'    => 15,
-            'under_review' => 10,
-            'revised'      => 10,
-            'accepted'     => 40,
-            'rejected'     => 10,
+            Proposal::STATUS_SUBMITTED         => 20,
+            Proposal::STATUS_ADMIN_REVISION    => 10,
+            Proposal::STATUS_ADMIN_APPROVED    => 10,
+            Proposal::STATUS_UNDER_REVIEW      => 10,
+            Proposal::STATUS_REVIEWER_REVISION => 5,
+            Proposal::STATUS_REVIEWER_APPROVED => 10,
+            Proposal::STATUS_ACCEPTED          => 25,
+            Proposal::STATUS_REJECTED          => 10,
         ];
         return $this->weightedPick($pool);
     }
