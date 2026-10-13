@@ -62,6 +62,11 @@ class Download extends Model
         return $query->orderBy('sort_order')->orderBy('title');
     }
 
+    public function scopeReviewGuidelines($query)
+    {
+        return $query->active()->where('category', 'review_guideline');
+    }
+
     protected function fileSizeHuman(): Attribute
     {
         return Attribute::get(function () {
@@ -96,6 +101,11 @@ class Download extends Model
                 'icon' => 'book-open',
                 'color' => 'sky',
                 'label' => 'Pedoman',
+            ],
+            'review_guideline' => [
+                'icon'  => 'clipboard-document-check',
+                'color' => 'violet',
+                'label' => 'Review Guideline',
             ],
             'template' => [
                 'icon' => 'document-duplicate',

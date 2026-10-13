@@ -26,7 +26,7 @@ new #[Title('Dashboard')] class extends Component {
     }
 
     /* ============================================================
-     |  BASE QUERY — user sebagai Ketua ATAU Anggota
+     |  BASE QUERY — user as Leader OR Member
      ============================================================ */
 
     protected function baseProposalQuery(?Period $period = null)
@@ -60,17 +60,17 @@ new #[Title('Dashboard')] class extends Component {
             'research'            => (clone $proposalQuery)->where('is_research', true)->count(),
             'dedication'          => (clone $proposalQuery)->where('is_research', false)->count(),
 
-            // Status final
+            // Final statuses
             'accepted'            => (clone $proposalQuery)->where('status', Proposal::STATUS_ACCEPTED)->count(),
             'rejected'            => (clone $proposalQuery)->where('status', Proposal::STATUS_REJECTED)->count(),
 
-            // Status mid-process (butuh perhatian user)
+            // Needs user action
             'needs_user_action'   => (clone $proposalQuery)->whereIn('status', [
                 Proposal::STATUS_ADMIN_REVISION,
                 Proposal::STATUS_REVIEWER_REVISION,
             ])->count(),
 
-            // Status dalam proses (menunggu pihak lain)
+            // In process (waiting others)
             'in_process'          => (clone $proposalQuery)->whereIn('status', [
                 Proposal::STATUS_SUBMITTED,
                 Proposal::STATUS_ADMIN_APPROVED,
@@ -83,7 +83,24 @@ new #[Title('Dashboard')] class extends Component {
             'external_dedication' => (clone $externalQuery)->where('is_research', false)->count(),
         ];
 
+        /* ============================================================
+         |  ACTIVE PERIOD + CAN CREATE (business rule)
+         ============================================================ */
+
         $activePeriod = Period::where('is_active', true)->first();
+
+        $hasOpenPeriod = Period::query()
+            ->where('is_active', true)
+            ->whereDate('open_from', '<=', now())
+            ->whereDate('open_to', '>=', now())
+            ->exists();
+
+        // Check if user can create a new proposal (no blocking proposal)
+        $blockingResearch   = Proposal::blockingProposalFor($userId, true);
+        $blockingDedication = Proposal::blockingProposalFor($userId, false);
+
+        $canCreateResearch   = $hasOpenPeriod && $blockingResearch === null;
+        $canCreateDedication = $hasOpenPeriod && $blockingDedication === null;
 
         /* ============================================================
          |  RECENT PROPOSALS
@@ -96,10 +113,10 @@ new #[Title('Dashboard')] class extends Component {
             ->get();
 
         /* ============================================================
-         |  NEEDS ACTION — Proposal & Downstream yang butuh aksi user
+         |  NEEDS ACTION — Proposal + Downstream
          ============================================================ */
 
-        // 1) Proposal yang sedang di status *_revision
+        // 1) Proposal in revision status
         $proposalNeedsAction = (clone $proposalQuery)
             ->with(['progressReport', 'finalReport', 'outcome'])
             ->whereIn('status', [
@@ -108,10 +125,9 @@ new #[Title('Dashboard')] class extends Component {
             ])
             ->get()
             ->map(function ($p) {
-                $meta = $p->statusMeta();
                 $detail = $p->isAdminRevision()
-                    ? 'Revisi Proposal — Admin Note'
-                    : 'Revisi Proposal — Reviewer Note';
+                    ? 'Proposal Revision — Admin Note'
+                    : 'Proposal Revision — Reviewer Note';
 
                 return [
                     'proposal' => $p,
@@ -120,30 +136,18 @@ new #[Title('Dashboard')] class extends Component {
                 ];
             });
 
-        // 2) Proposal ACCEPTED yang butuh upload downstream
+        // 2) Proposal ACCEPTED that needs downstream upload
         $downstreamNeedsAction = (clone $proposalQuery)
             ->with(['progressReport', 'finalReport', 'outcome'])
             ->where('status', Proposal::STATUS_ACCEPTED)
             ->get()
             ->filter(function ($p) {
-                // Butuh upload progress report
                 if ($p->progressReport === null) return true;
-
-                // Progress report direvisi
                 if ($p->progressReport?->status === 'revised') return true;
-
-                // Progress report accepted, butuh final report
                 if ($p->progressReport?->status === 'accepted' && $p->finalReport === null) return true;
-
-                // Final report direvisi
                 if ($p->finalReport?->status === 'revised') return true;
-
-                // Final report accepted, butuh outcome
                 if ($p->finalReport?->status === 'accepted' && $p->outcome === null) return true;
-
-                // Outcome direvisi
                 if ($p->outcome?->status === 'revised') return true;
-
                 return false;
             })
             ->map(function ($p) {
@@ -170,7 +174,6 @@ new #[Title('Dashboard')] class extends Component {
                 ];
             });
 
-        // Gabung & limit
         $needsAction = $proposalNeedsAction
             ->concat($downstreamNeedsAction)
             ->take(5);
@@ -218,13 +221,20 @@ new #[Title('Dashboard')] class extends Component {
         ];
 
         return [
-            'myStats'         => $myStats,
-            'activePeriod'    => $activePeriod,
-            'recentProposals' => $recentProposals,
-            'needsAction'     => $needsAction,
-            'chartData'       => $chartData,
-            'periods'         => Period::orderByDesc('open_from')->orderByDesc('id')->get(),
-            'selectedPeriod'  => $period,
+            'myStats'             => $myStats,
+            'activePeriod'        => $activePeriod,
+            'hasOpenPeriod'       => $hasOpenPeriod,
+            'recentProposals'     => $recentProposals,
+            'needsAction'         => $needsAction,
+            'chartData'           => $chartData,
+            'periods'             => Period::orderByDesc('open_from')->orderByDesc('id')->get(),
+            'selectedPeriod'      => $period,
+
+            // Quick action business rule
+            'canCreateResearch'   => $canCreateResearch,
+            'canCreateDedication' => $canCreateDedication,
+            'blockingResearch'    => $blockingResearch,
+            'blockingDedication'  => $blockingDedication,
         ];
     }
 };
@@ -239,7 +249,7 @@ new #[Title('Dashboard')] class extends Component {
 
         <div class="flex items-center gap-1.5 shrink-0 sm:mt-1">
             <flux:select wire:model.live="periodFilter">
-                <flux:select.option>All Periods</flux:select.option>
+                <flux:select.option value="all">All Periods</flux:select.option>
                 @foreach ($periods as $p)
                     <flux:select.option value="{{ $p->id }}">{{ $p->periode }}</flux:select.option>
                 @endforeach
@@ -260,13 +270,12 @@ new #[Title('Dashboard')] class extends Component {
 
     {{-- ══════════ ACTIVE PERIOD BANNER ══════════ --}}
     @if ($activePeriod)
-        <div
-            class="rounded-2xl border border-emerald-200 dark:border-emerald-800
-                bg-gradient-to-r from-emerald-50 to-teal-50
-                dark:from-emerald-900/20 dark:to-teal-900/20 p-3
-                flex items-center gap-3">
-            <div
-                class="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center shrink-0">
+        <div class="rounded-2xl border border-emerald-200 dark:border-emerald-800
+                    bg-gradient-to-r from-emerald-50 to-teal-50
+                    dark:from-emerald-900/20 dark:to-teal-900/20 p-3
+                    flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/40
+                        flex items-center justify-center shrink-0">
                 <flux:icon.calendar-days class="size-4 text-emerald-600 dark:text-emerald-400" />
             </div>
             <div class="flex-1 min-w-0">
@@ -282,15 +291,98 @@ new #[Title('Dashboard')] class extends Component {
                     </span>
                 </p>
             </div>
-            <a href="{{ route('user.internal.manage-researches') }}" wire:navigate
-                class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full
-                   text-[10.5px] font-medium text-white
-                   bg-emerald-600/90 hover:bg-emerald-600
-                   shadow-sm shadow-emerald-500/20 hover:shadow-sm hover:shadow-emerald-500/30
-                   hover:scale-[1.02] active:scale-[0.97]
-                   transition-all duration-150">
-                New Proposal
-            </a>
+
+            {{-- Quick Create — Research --}}
+            @if ($canCreateResearch)
+                <a href="{{ route('user.internal.manage-researches') }}" wire:navigate
+                    class="hidden sm:inline-flex shrink-0 items-center gap-1.5 px-3 py-1.5 rounded-full
+                           text-[10.5px] font-medium text-white
+                           bg-emerald-600/90 hover:bg-emerald-600
+                           shadow-sm shadow-emerald-500/20 hover:shadow-sm hover:shadow-emerald-500/30
+                           hover:scale-[1.02] active:scale-[0.97]
+                           transition-all duration-150">
+                    <flux:icon.beaker class="size-3" />
+                    {{ __("New Research") }}
+                </a>
+            @else
+                <div class="hidden sm:block relative group shrink-0">
+                    <button type="button" disabled
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full
+                               text-[10.5px] font-medium text-white
+                               bg-slate-400/70 dark:bg-zinc-600/60
+                               cursor-not-allowed opacity-60">
+                        <flux:icon.beaker class="size-3" />
+                        {{ __("New Research") }}
+                    </button>
+
+                    <div class="pointer-events-none absolute top-full right-0 mt-2
+                                opacity-0 group-hover:opacity-100
+                                transition-opacity duration-200 z-[9999]
+                                w-64 p-2.5 rounded-full
+                                bg-slate-900 dark:bg-zinc-700 text-white text-[10px]
+                                shadow-xl">
+                        <p class="font-semibold">{{ __("Cannot create new proposal") }}</p>
+                        <p class="text-white/80 mt-1">
+                            @if ($blockingResearch)
+                                {{ __("You have an ongoing research proposal:") }}
+                                <span class="text-white/90 font-medium">"{{ Str::limit($blockingResearch->title, 50) }}"</span>.
+                                {{ __("Complete it first or wait until it's Rejected.") }}
+                            @else
+                                {{ __("No open period. Please check back later or contact the admin.") }}
+                            @endif
+                        </p>
+                        <div class="absolute bottom-full right-3
+                                    border-4 border-transparent
+                                    border-b-slate-900 dark:border-b-zinc-700"></div>
+                    </div>
+                </div>
+            @endif
+
+            {{-- Quick Create — Dedication --}}
+            @if ($canCreateDedication)
+                <a href="{{ route('user.internal.manage-dedications') }}" wire:navigate
+                    class="hidden sm:inline-flex shrink-0 items-center gap-1.5 px-3 py-1.5 rounded-full
+                           text-[10.5px] font-medium text-white
+                           bg-rose-600/90 hover:bg-rose-600
+                           shadow-sm shadow-rose-500/20 hover:shadow-sm hover:shadow-rose-500/30
+                           hover:scale-[1.02] active:scale-[0.97]
+                           transition-all duration-150">
+                    <flux:icon.heart class="size-3" />
+                    New Dedication
+                </a>
+            @else
+                <div class="hidden sm:block relative group shrink-0">
+                    <button type="button" disabled
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full
+                               text-[10.5px] font-medium text-white
+                               bg-slate-400/70 dark:bg-zinc-600/60
+                               cursor-not-allowed opacity-60">
+                        <flux:icon.heart class="size-3" />
+                        {{ __("New Dedication") }}
+                    </button>
+
+                    <div class="pointer-events-none absolute top-full right-0 mt-2
+                                opacity-0 group-hover:opacity-100
+                                transition-opacity duration-200 z-[9999]
+                                w-64 p-2.5 rounded-lg
+                                bg-slate-900 dark:bg-zinc-700 text-white text-[10px]
+                                shadow-xl">
+                        <p class="font-semibold">{{ __("Cannot create new proposal") }}</p>
+                        <p class="text-white/80 mt-1">
+                            @if ($blockingDedication)
+                                {{ __("You have an ongoing community service proposal:") }}
+                                <span class="text-white/90 font-medium">"{{ Str::limit($blockingDedication->title, 50) }}"</span>.
+                                {{ __("Complete it first or wait until it's Rejected.") }}
+                            @else
+                                {{ __("No open period. Please check back later or contact the admin.") }}
+                            @endif
+                        </p>
+                        <div class="absolute bottom-full right-3
+                                    border-4 border-transparent
+                                    border-b-slate-900 dark:border-b-zinc-700"></div>
+                    </div>
+                </div>
+            @endif
         </div>
     @endif
 
@@ -298,56 +390,24 @@ new #[Title('Dashboard')] class extends Component {
     <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-2">
         @php
             $cards = [
-                [
-                    'label' => 'Total Proposals',
-                    'value' => $myStats['total'],
-                    'color' => 'slate',
-                    'icon'  => 'document-text',
-                ],
-                [
-                    'label' => 'Research',
-                    'value' => $myStats['research'],
-                    'color' => 'emerald',
-                    'icon'  => 'beaker',
-                ],
-                [
-                    'label' => 'Community Service',
-                    'value' => $myStats['dedication'],
-                    'color' => 'rose',
-                    'icon'  => 'heart',
-                ],
-                [
-                    'label' => 'Accepted',
-                    'value' => $myStats['accepted'],
-                    'color' => 'violet',
-                    'icon'  => 'check-circle',
-                ],
-                [
-                    'label' => 'External Research',
-                    'value' => $myStats['external_research'],
-                    'color' => 'indigo',
-                    'icon'  => 'globe-alt',
-                ],
-                [
-                    'label' => 'External Community Service',
-                    'value' => $myStats['external_dedication'],
-                    'color' => 'amber',
-                    'icon'  => 'gift',
-                ],
+                ['label' => 'Total Proposals',           'value' => $myStats['total'],               'color' => 'slate',   'icon' => 'document-text'],
+                ['label' => 'Research',                  'value' => $myStats['research'],            'color' => 'emerald', 'icon' => 'beaker'],
+                ['label' => 'Community Service',         'value' => $myStats['dedication'],          'color' => 'rose',    'icon' => 'heart'],
+                ['label' => 'Accepted',                  'value' => $myStats['accepted'],            'color' => 'violet',  'icon' => 'check-circle'],
+                ['label' => 'External Research',         'value' => $myStats['external_research'],   'color' => 'indigo',  'icon' => 'globe-alt'],
+                ['label' => 'External Community Service','value' => $myStats['external_dedication'], 'color' => 'amber',   'icon' => 'gift'],
             ];
         @endphp
 
         @foreach ($cards as $card)
-            <div
-                class="rounded-xl border border-slate-200 dark:border-zinc-800
-                    bg-white dark:bg-zinc-900 p-3 shadow-sm
-                    hover:shadow-md hover:border-{{ $card['color'] }}-300
-                    dark:hover:border-{{ $card['color'] }}-700
-                    transition-all duration-200">
+            <div class="rounded-xl border border-slate-200 dark:border-zinc-800
+                        bg-white dark:bg-zinc-900 p-3 shadow-sm
+                        hover:shadow-md hover:border-{{ $card['color'] }}-300
+                        dark:hover:border-{{ $card['color'] }}-700
+                        transition-all duration-200">
                 <div class="flex items-center justify-between">
-                    <div
-                        class="w-7 h-7 rounded-lg bg-{{ $card['color'] }}-100 dark:bg-{{ $card['color'] }}-900/30
-                            flex items-center justify-center">
+                    <div class="w-7 h-7 rounded-lg bg-{{ $card['color'] }}-100 dark:bg-{{ $card['color'] }}-900/30
+                                flex items-center justify-center">
                         <flux:icon :name="$card['icon']"
                             class="size-3.5 text-{{ $card['color'] }}-600 dark:text-{{ $card['color'] }}-400" />
                     </div>
@@ -366,7 +426,6 @@ new #[Title('Dashboard')] class extends Component {
     {{-- ══════════ STATUS SUMMARY PILLS ══════════ --}}
     @if ($myStats['needs_user_action'] > 0 || $myStats['in_process'] > 0 || $myStats['rejected'] > 0)
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {{-- Needs User Action --}}
             @if ($myStats['needs_user_action'] > 0)
                 <div class="rounded-xl border border-amber-200 dark:border-amber-800
                             bg-amber-50 dark:bg-amber-900/20
@@ -386,7 +445,6 @@ new #[Title('Dashboard')] class extends Component {
                 </div>
             @endif
 
-            {{-- In Process --}}
             @if ($myStats['in_process'] > 0)
                 <div class="rounded-xl border border-blue-200 dark:border-blue-800
                             bg-blue-50 dark:bg-blue-900/20
@@ -406,7 +464,6 @@ new #[Title('Dashboard')] class extends Component {
                 </div>
             @endif
 
-            {{-- Rejected --}}
             @if ($myStats['rejected'] > 0)
                 <div class="rounded-xl border border-rose-200 dark:border-rose-800
                             bg-rose-50 dark:bg-rose-900/20
@@ -430,12 +487,10 @@ new #[Title('Dashboard')] class extends Component {
 
     {{-- ══════════ NEEDS ACTION ══════════ --}}
     @if ($needsAction->isNotEmpty())
-        <div
-            class="rounded-2xl border border-amber-200 dark:border-amber-800
+        <div class="rounded-2xl border border-amber-200 dark:border-amber-800
                     bg-amber-50 dark:bg-amber-900/20 overflow-hidden">
             <div class="px-3 py-2 border-b border-amber-200 dark:border-amber-800 flex items-center gap-2">
-                <div
-                    class="w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-900/40
+                <div class="w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-900/40
                             flex items-center justify-center shrink-0">
                     <flux:icon.exclamation-triangle class="size-3 text-amber-600 dark:text-amber-400" />
                 </div>
@@ -458,8 +513,7 @@ new #[Title('Dashboard')] class extends Component {
                     <div class="rounded-full bg-white dark:bg-zinc-900/60
                                 border border-amber-200/70 dark:border-amber-800/60
                                 pl-1 pr-1 py-1 flex items-center gap-2.5">
-                        <div
-                            class="w-7 h-7 rounded-full shrink-0
+                        <div class="w-7 h-7 rounded-full shrink-0
                                     {{ $proposal->is_research
                                         ? 'bg-gradient-to-br from-emerald-100 to-teal-50 dark:from-emerald-900/40 dark:to-teal-900/20'
                                         : 'bg-gradient-to-br from-rose-100 to-pink-50 dark:from-rose-900/40 dark:to-pink-900/20' }}
@@ -500,7 +554,7 @@ new #[Title('Dashboard')] class extends Component {
                                          bg-sky-100 text-sky-700
                                          dark:bg-sky-900/40 dark:text-sky-300">
                                 <flux:icon.user-group class="size-2.5" />
-                                Anggota
+                                Member
                             </span>
                         @endif
                     </div>
@@ -607,7 +661,7 @@ new #[Title('Dashboard')] class extends Component {
                                     <span class="text-[8.5px] font-bold px-1 py-0.5 rounded-full
                                                  bg-sky-100 text-sky-700
                                                  dark:bg-sky-900/40 dark:text-sky-300 shrink-0">
-                                        Anggota
+                                        Member
                                     </span>
                                 @endif
                             </div>
@@ -646,7 +700,7 @@ new #[Title('Dashboard')] class extends Component {
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
 
         {{-- Latest Information --}}
-        <div class="rounded-full border border-slate-200 dark:border-zinc-800
+        <div class="rounded-2xl border border-slate-200 dark:border-zinc-800
                     bg-white dark:bg-zinc-900 shadow-sm overflow-hidden flex flex-col">
             <div class="px-3 py-2 border-b border-slate-200 dark:border-zinc-800
                         bg-gradient-to-r from-sky-50/50 to-transparent
@@ -683,7 +737,7 @@ new #[Title('Dashboard')] class extends Component {
         </div>
 
         {{-- Downloads & Guides --}}
-        <div class="rounded-full border border-slate-200 dark:border-zinc-800
+        <div class="rounded-2xl border border-slate-200 dark:border-zinc-800
                     bg-white dark:bg-zinc-900 shadow-sm overflow-hidden flex flex-col">
             <div class="px-3 py-2 border-b border-slate-200 dark:border-zinc-800
                         bg-gradient-to-r from-emerald-50/50 to-transparent

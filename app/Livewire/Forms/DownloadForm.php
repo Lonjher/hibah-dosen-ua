@@ -29,7 +29,7 @@ class DownloadForm extends Form
         return [
             'title'       => ['required', 'string', 'max:180'],
             'description' => ['nullable', 'string', 'max:1000'],
-            'category'    => ['required', 'in:guideline,template,form,general'],
+            'category' => ['required', 'in:guideline,review_guideline,template,form,general'],
 
             'file' => $this->download
                 ? [

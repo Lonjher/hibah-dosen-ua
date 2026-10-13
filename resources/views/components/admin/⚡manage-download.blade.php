@@ -158,22 +158,23 @@ new #[Title('Manage Downloads')] class extends Component {
 
                     {{-- ─────── FILTER: CATEGORY ─────── --}}
                     <div class="shrink-0">
-                        <x-select wire:model.live="categoryFilter" size="sm" color="violet" maxWidth="w-auto">
-                            <option value="">All Categories</option>
-                            <option value="guideline">Guideline</option>
-                            <option value="template">Template</option>
-                            <option value="form">Form</option>
-                            <option value="general">General</option>
-                        </x-select>
+                        <flux:select wire:model.live="categoryFilter" color="violet" maxWidth="w-auto">
+                            <flux:select.option>All Categories</flux:select.option>
+                            <flux:select.option value="guideline">Guideline</flux:select.option>
+                            <flux:select.option value="review_guideline">Review Guideline</flux:select.option>
+                            <flux:select.option value="template">Template</flux:select.option>
+                            <flux:select.option value="form">Form</flux:select.option>
+                            <flux:select.option value="general">General</flux:select.option>
+                        </flux:select>
                     </div>
 
                     {{-- ─────── FILTER: STATUS ─────── --}}
                     <div class="shrink-0">
-                        <x-select wire:model.live="statusFilter" size="sm" color="violet" maxWidth="w-auto">
-                            <option value="">All Status</option>
-                            <option value="active">Active</option>
-                            <option value="inactive">Inactive</option>
-                        </x-select>
+                        <flux:select wire:model.live="statusFilter" color="violet" maxWidth="w-auto">
+                            <flux:select.option>All Status</flux:select.option>
+                            <flux:select.option value="active">Active</flux:select.option>
+                            <flux:select.option value="inactive">Inactive</flux:select.option>
+                        </flux:select>
                     </div>
 
                     {{-- ─────── NEW BUTTON ─────── --}}

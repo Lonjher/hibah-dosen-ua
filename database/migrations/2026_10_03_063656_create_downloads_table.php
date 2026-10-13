@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('title');
             $table->text('description')->nullable();
-            $table->enum('category', ['guideline', 'template', 'form', 'general'])->default('general');
+            $table->string('category');
             $table->string('file_path');
             $table->string('file_name');
             $table->unsignedBigInteger('file_size')->default(0);

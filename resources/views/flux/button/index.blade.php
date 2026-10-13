@@ -59,7 +59,7 @@ if ($loading && $type !== 'submit' && ! $isJsMethod) {
 }
 
 $classes = Flux::classes()
-    ->add('relative items-center font-medium justify-center whitespace-nowrap')
+    ->add('cursor-pointer relative items-center font-medium justify-center whitespace-nowrap')
     ->add('inline-flex')
 
     // ── Base transition ──

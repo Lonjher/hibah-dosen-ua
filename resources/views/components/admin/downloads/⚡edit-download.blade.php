@@ -227,6 +227,7 @@ new class extends Component {
                     <div>
                         <flux:select wire:model="form.category" label="Category" color="blue" class="rounded-full">
                             <flux:select.option value="guideline">Guideline</flux:select.option>
+                            <flux:select.option value="review_guideline">Review Guideline</flux:select.option>
                             <flux:select.option value="template">Template</flux:select.option>
                             <flux:select.option value="form">Form</flux:select.option>
                             <flux:select.option value="general">General</flux:select.option>
