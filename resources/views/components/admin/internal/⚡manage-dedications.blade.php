@@ -460,12 +460,12 @@ new #[Title('Manage Dedications')] class extends Component {
 
                                     {{-- ══════════ STATUS ══════════ --}}
                                     <td class="px-2 sm:px-3 py-2">
-                                        <span
-                                            class="inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded-full whitespace-nowrap
-                                             text-[9.5px] font-semibold
-                                             {{ $meta['class'] }}">
-                                            {{ $meta['label'] }}
-                                        </span>
+                                        <x-status-guide
+                                            variant="research"
+                                            :code="$meta['label']"
+                                            :full="$meta['full']"
+                                            :status-class="$meta['class']"
+                                        />
                                     </td>
 
                                     {{-- ══════════ ACTION ══════════ --}}
