@@ -202,9 +202,31 @@ new #[Title('Community Service Proposals')] class extends Component {
         return Period::query()->where('is_active', true)->first();
     }
 
-    public function canCreateProposal(): bool
+    public function hasOpenPeriod(): bool
     {
         return $this->activeOpenPeriod() !== null;
+    }
+
+    /**
+     * Return the proposal that's blocking the user from creating a new one.
+     */
+    public function getBlockingProposal(): ?Proposal
+    {
+        return Proposal::blockingProposalFor(auth()->id(), $this->isResearch);
+    }
+
+    /**
+     * User can create a new proposal ONLY IF:
+     * 1. There is an open period, AND
+     * 2. No blocking proposal exists.
+     */
+    public function canCreateProposal(): bool
+    {
+        if (! $this->hasOpenPeriod()) {
+            return false;
+        }
+
+        return $this->getBlockingProposal() === null;
     }
 
     /* ============================================================
@@ -237,7 +259,6 @@ new #[Title('Community Service Proposals')] class extends Component {
                 }),
             )
             ->when($this->statusFilter !== 'all', fn ($q) => $q->where('status', $this->statusFilter))
-            // ── Filter by role ──
             ->when($this->roleFilter === 'leader', fn ($q) => $q->where('user_id', $userId))
             ->when($this->roleFilter === 'member', fn ($q) => $q
                 ->where('user_id', '!=', $userId)
@@ -250,13 +271,15 @@ new #[Title('Community Service Proposals')] class extends Component {
             : ['icon' => 'heart', 'color' => 'rose', 'label' => 'Community Service'];
 
         return [
-            'proposals'      => $proposals,
-            'canCreate'      => $this->canCreateProposal(),
-            'openPeriod'     => $this->activeOpenPeriod(),
-            'activePeriod'   => $this->activePeriod(),
-            'periods'        => Period::orderByDesc('open_from')->orderByDesc('id')->get(),
-            'selectedPeriod' => $selectedPeriod,
-            'theme'          => $theme,
+            'proposals'        => $proposals,
+            'canCreate'        => $this->canCreateProposal(),
+            'hasOpenPeriod'    => $this->hasOpenPeriod(),
+            'blockingProposal' => $this->getBlockingProposal(),
+            'openPeriod'       => $this->activeOpenPeriod(),
+            'activePeriod'     => $this->activePeriod(),
+            'periods'          => Period::orderByDesc('open_from')->orderByDesc('id')->get(),
+            'selectedPeriod'   => $selectedPeriod,
+            'theme'            => $theme,
         ];
     }
 };
@@ -277,54 +300,88 @@ new #[Title('Community Service Proposals')] class extends Component {
         {{-- ══════════ PERIOD INFO BANNER ══════════ --}}
         @if ($activePeriod)
             @php
-                $isOpen = $canCreate;
-                $bannerColor = $isOpen ? 'emerald' : 'amber';
+                $isOpen = $hasOpenPeriod;
+                $hasBlocking = $blockingProposal !== null;
+
+                $bannerColor = ! $isOpen
+                    ? 'amber'
+                    : ($hasBlocking ? 'sky' : 'emerald');
+
+                $bannerIcon = ! $isOpen
+                    ? 'lock-closed'
+                    : ($hasBlocking ? 'information-circle' : 'calendar-days');
+
+                $bannerTitle = ! $isOpen
+                    ? 'Registration Closed'
+                    : ($hasBlocking ? 'Ongoing Proposal' : 'Registration Open');
             @endphp
 
-            <div class="rounded-2xl border border-{{ $bannerColor }}-200 dark:border-{{ $bannerColor }}-800/60
-                        bg-{{ $bannerColor }}-50/60 dark:bg-{{ $bannerColor }}-900/15
-                        px-3 py-2 flex items-center gap-2.5">
+            <div @class([
+                'rounded-2xl border px-3 py-2 flex items-center gap-2.5',
+                'border-amber-200 dark:border-amber-800/60 bg-amber-50/60 dark:bg-amber-900/15' => ! $isOpen,
+                'border-sky-200 dark:border-sky-800/60 bg-sky-50/60 dark:bg-sky-900/15'         => $isOpen && $hasBlocking,
+                'border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/60 dark:bg-emerald-900/15' => $isOpen && ! $hasBlocking,
+            ])>
 
-                <div class="w-7 h-7 rounded-md
-                            bg-{{ $bannerColor }}-100 dark:bg-{{ $bannerColor }}-900/40
-                            flex items-center justify-center shrink-0">
-                    <flux:icon :name="$isOpen ? 'calendar-days' : 'lock-closed'"
-                        class="size-3.5 text-{{ $bannerColor }}-600 dark:text-{{ $bannerColor }}-400" />
+                <div @class([
+                    'w-7 h-7 rounded-md flex items-center justify-center shrink-0',
+                    'bg-amber-100 dark:bg-amber-900/40' => ! $isOpen,
+                    'bg-sky-100 dark:bg-sky-900/40'     => $isOpen && $hasBlocking,
+                    'bg-emerald-100 dark:bg-emerald-900/40' => $isOpen && ! $hasBlocking,
+                ])>
+                    <flux:icon :name="$bannerIcon" @class([
+                        'size-3.5',
+                        'text-amber-600 dark:text-amber-400' => ! $isOpen,
+                        'text-sky-600 dark:text-sky-400'     => $isOpen && $hasBlocking,
+                        'text-emerald-600 dark:text-emerald-400' => $isOpen && ! $hasBlocking,
+                    ]) />
                 </div>
 
                 <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-1.5 flex-wrap">
-                        <p class="text-[10px] font-semibold uppercase tracking-wider
-                                  text-{{ $bannerColor }}-700 dark:text-{{ $bannerColor }}-300">
-                            {{ $isOpen ? 'Registration Open' : 'Registration Closed' }}
+                        <p @class([
+                            'text-[10px] font-semibold uppercase tracking-wider',
+                            'text-amber-700 dark:text-amber-300' => ! $isOpen,
+                            'text-sky-700 dark:text-sky-300'     => $isOpen && $hasBlocking,
+                            'text-emerald-700 dark:text-emerald-300' => $isOpen && ! $hasBlocking,
+                        ])>
+                            {{ $bannerTitle }}
                         </p>
                         <span class="text-[10px] font-semibold text-slate-900 dark:text-white">
                             · {{ $activePeriod->periode }}
                         </span>
                     </div>
                     <p class="text-[10px] text-slate-500 dark:text-zinc-400 mt-0.5 truncate">
-                        @if ($isOpen)
+                        @if (! $isOpen)
+                            @if ($activePeriod->open_from && $activePeriod->open_from->isFuture())
+                                Will open on
+                                <span class="font-semibold text-slate-700 dark:text-zinc-200">
+                                    {{ $activePeriod->open_from->format('d M Y') }}
+                                </span>
+                            @elseif ($activePeriod->open_to && $activePeriod->open_to->isPast())
+                                Closed on
+                                <span class="font-semibold text-slate-700 dark:text-zinc-200">
+                                    {{ $activePeriod->open_to->format('d M Y') }}
+                                </span>
+                            @endif
+                        @elseif ($hasBlocking)
+                            Complete
+                            <span class="font-semibold text-slate-700 dark:text-zinc-200">
+                                "{{ Str::limit($blockingProposal->title, 40) }}"
+                            </span>
+                            first. New submission opens after it's finalized.
+                        @else
                             Opens until
                             <span class="font-semibold text-slate-700 dark:text-zinc-200">
                                 {{ $activePeriod->open_to?->format('d M Y') ?? '—' }}
-                            </span>
-                        @elseif ($activePeriod->open_from && $activePeriod->open_from->isFuture())
-                            Will open on
-                            <span class="font-semibold text-slate-700 dark:text-zinc-200">
-                                {{ $activePeriod->open_from->format('d M Y') }}
-                            </span>
-                        @elseif ($activePeriod->open_to && $activePeriod->open_to->isPast())
-                            Closed on
-                            <span class="font-semibold text-slate-700 dark:text-zinc-200">
-                                {{ $activePeriod->open_to->format('d M Y') }}
                             </span>
                         @endif
                     </p>
                 </div>
 
-                @if ($isOpen)
+                @if ($isOpen && ! $hasBlocking)
                     <span class="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full
-                                 bg-{{ $bannerColor }}-500 text-white text-[9.5px] font-semibold shrink-0">
+                                 bg-emerald-500 text-white text-[9.5px] font-semibold shrink-0">
                         <span class="w-1 h-1 rounded-full bg-white animate-pulse"></span>
                         Open
                     </span>
@@ -396,16 +453,46 @@ new #[Title('Community Service Proposals')] class extends Component {
                     {{-- NEW BUTTON --}}
                     <div class="order-4 sm:order-5 ml-auto sm:ml-0 shrink-0">
                         @if ($canCreate)
-                            <flux:button variant="primary" x-data x-on:click="$dispatch('open-add-proposal')"
-                                class="!text-[10.5px]">
+                            <flux:button variant="primary" x-data x-on:click="$dispatch('open-add-proposal')">
                                 New
                             </flux:button>
                         @else
                             <div class="relative group">
-                                <flux:button icon="plus" disabled variant="primary" size="xs"
-                                    class="!text-[10.5px] cursor-not-allowed opacity-50">
+                                <flux:button disabled variant="primary"
+                                    class="opacity-50">
                                     New
                                 </flux:button>
+
+                                {{-- Tooltip --}}
+                                <div class="pointer-events-none absolute top-full right-0 mt-2
+                                            opacity-0 group-hover:opacity-100
+                                            transition-opacity duration-200
+                                            z-[9999]
+                                            w-64 p-2.5 rounded-full
+                                            bg-slate-900 dark:bg-zinc-700 text-white text-[10px]
+                                            shadow-xl">
+                                    @if (! $hasOpenPeriod)
+                                        <div class="space-y-1">
+                                            <p class="font-semibold">{{ __("Registration Closed") }}</p>
+                                            <p class="text-white/80">
+                                                {{ __("No open period. Please check back later or contact the admin.") }}
+                                            </p>
+                                        </div>
+                                    @elseif ($blockingProposal)
+                                        <div class="space-y-1">
+                                            <p class="font-semibold">{{ __("Ongoing Proposal") }}</p>
+                                            <p class="text-white/80 line-clamp-2">
+                                                "{{ Str::limit($blockingProposal->title, 60) }}"
+                                            </p>
+                                            <p class="text-white/70 mt-1">
+                                                {{ __("Complete it or wait until it's Rejected before creating a new one.") }}
+                                            </p>
+                                        </div>
+                                    @endif
+
+                                    {{-- Arrow --}}
+                                    <div class="absolute bottom-full right-3 border-4 border-transparent border-b-slate-900 dark:border-b-zinc-700"></div>
+                                </div>
                             </div>
                         @endif
                     </div>

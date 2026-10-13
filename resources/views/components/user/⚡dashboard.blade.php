@@ -238,19 +238,12 @@ new #[Title('Dashboard')] class extends Component {
             leading="Welcome! Here is a summary of your grants." />
 
         <div class="flex items-center gap-1.5 shrink-0 sm:mt-1">
-            <div
-                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full
-                        bg-white dark:bg-zinc-900
-                        border border-slate-200 dark:border-zinc-800
-                        shadow-sm shadow-slate-200/50 dark:shadow-zinc-950/50">
-                <flux:icon.calendar-days class="size-3 text-slate-400 dark:text-zinc-500 shrink-0" />
-                <flux:select wire:model.live="periodFilter">
-                    <flux:select.option>All Periods</flux:select.option>
-                    @foreach ($periods as $p)
-                        <flux:select.option value="{{ $p->id }}">{{ $p->periode }}</flux:select.option>
-                    @endforeach
-                </flux:select>
-            </div>
+            <flux:select wire:model.live="periodFilter">
+                <flux:select.option>All Periods</flux:select.option>
+                @foreach ($periods as $p)
+                    <flux:select.option value="{{ $p->id }}">{{ $p->periode }}</flux:select.option>
+                @endforeach
+            </flux:select>
 
             <div wire:loading wire:target="periodFilter"
                 class="w-3.5 h-3.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40

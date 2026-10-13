@@ -2,7 +2,6 @@
 
 use App\Models\Proposal;
 use App\Models\Period;
-use App\Models\ProposalMember;
 use Flux\Flux;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Title;
@@ -29,10 +28,26 @@ new #[Title('Research Proposals')] class extends Component {
         }
     }
 
-    public function updatingSearch(): void { $this->resetPage(); }
-    public function updatingStatusFilter(): void { $this->resetPage(); }
-    public function updatingPeriodFilter(): void { $this->resetPage(); }
-    public function updatingRoleFilter(): void { $this->resetPage(); }
+    public function updatingSearch(): void
+    {
+        $this->resetPage();
+    }
+    public function updatingStatusFilter(): void
+    {
+        $this->resetPage();
+    }
+    public function updatingPeriodFilter(): void
+    {
+        $this->resetPage();
+    }
+    public function updatingRoleFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    /* ============================================================
+     |  ROLE HELPERS
+     ============================================================ */
 
     public function isLeader(Proposal $proposal): bool
     {
@@ -41,45 +56,38 @@ new #[Title('Research Proposals')] class extends Component {
 
     public function isMember(Proposal $proposal): bool
     {
-        return ! $this->isLeader($proposal);
+        return !$this->isLeader($proposal);
     }
 
     public function roleMeta(Proposal $proposal): array
     {
-        return $this->isLeader($proposal)
-            ? ['label' => 'Ketua', 'class' => 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300']
-            : ['label' => 'Anggota', 'class' => 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300'];
+        return $this->isLeader($proposal) ? ['label' => 'Leader', 'class' => 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'] : ['label' => 'Member', 'class' => 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300'];
     }
+
+    /* ============================================================
+     |  DELETE FLOW
+     ============================================================ */
 
     public function confirmDelete(int $id): void
     {
         $proposal = $this->baseQuery()->find($id);
 
-        if (! $proposal) {
+        if (!$proposal) {
             Flux::toast('Proposal not found.', variant: 'danger');
             return;
         }
 
-        if (! $this->isLeader($proposal)) {
-            Flux::toast('Hanya ketua yang dapat menghapus proposal.', variant: 'danger');
+        if (!$this->isLeader($proposal)) {
+            Flux::toast('Only the leader can delete this proposal.', variant: 'danger');
             return;
         }
 
-        if (! $this->canDelete($proposal)) {
+        if (!$this->canDelete($proposal)) {
             Flux::toast('This proposal cannot be deleted.', variant: 'danger');
             return;
         }
 
-        $this->dispatch('confirm-delete',
-            title: 'Delete Proposal?',
-            message: 'You are about to delete:',
-            subject: $proposal->title,
-            note: 'This action cannot be undone.',
-            confirmLabel: 'Delete',
-            cancelLabel: 'Cancel',
-            action: 'deleteProposal',
-            payload: ['id' => $proposal->id],
-        );
+        $this->dispatch('confirm-delete', title: 'Delete Proposal?', message: 'You are about to delete:', subject: $proposal->title, note: 'This action cannot be undone.', confirmLabel: 'Delete', cancelLabel: 'Cancel', action: 'deleteProposal', payload: ['id' => $proposal->id]);
     }
 
     #[On('delete-confirmed')]
@@ -92,24 +100,24 @@ new #[Title('Research Proposals')] class extends Component {
 
     public function deleteProposal(?int $id): void
     {
-        if (! $id) {
+        if (!$id) {
             Flux::toast('Invalid proposal ID.', variant: 'danger');
             return;
         }
 
         $proposal = $this->baseQuery()->find($id);
 
-        if (! $proposal) {
+        if (!$proposal) {
             Flux::toast('Proposal not found.', variant: 'danger');
             return;
         }
 
-        if (! $this->isLeader($proposal)) {
-            Flux::toast('Hanya ketua yang dapat menghapus proposal.', variant: 'danger');
+        if (!$this->isLeader($proposal)) {
+            Flux::toast('Only the leader can delete this proposal.', variant: 'danger');
             return;
         }
 
-        if (! $this->canDelete($proposal)) {
+        if (!$this->canDelete($proposal)) {
             Flux::toast('This proposal cannot be deleted.', variant: 'danger');
             return;
         }
@@ -126,6 +134,10 @@ new #[Title('Research Proposals')] class extends Component {
         }
     }
 
+    /* ============================================================
+     |  PERMISSIONS
+     ============================================================ */
+
     public function canEdit(Proposal $proposal): bool
     {
         return $this->isLeader($proposal) && $proposal->canUserResubmit();
@@ -138,24 +150,22 @@ new #[Title('Research Proposals')] class extends Component {
 
     public function canAddProgressReport(Proposal $p): bool
     {
-        return $this->isLeader($p)
-            && $p->status === 'accepted'
-            && ! $p->progressReport;
+        return $this->isLeader($p) && $p->status === Proposal::STATUS_ACCEPTED && !$p->progressReport;
     }
 
     public function canAddFinalReport(Proposal $p): bool
     {
-        return $this->isLeader($p)
-            && $p->progressReport?->status === 'accepted'
-            && ! $p->finalReport;
+        return $this->isLeader($p) && $p->progressReport?->status === 'accepted' && !$p->finalReport;
     }
 
-    public function canAddoutcome(Proposal $p): bool
+    public function canAddOutcome(Proposal $p): bool
     {
-        return $this->isLeader($p)
-            && $p->finalReport?->status === 'accepted'
-            && ! $p->outcome;
+        return $this->isLeader($p) && $p->finalReport?->status === 'accepted' && !$p->outcome;
     }
+
+    /* ============================================================
+     |  BASE QUERY — user as leader OR member
+     ============================================================ */
 
     protected function baseQuery()
     {
@@ -163,19 +173,18 @@ new #[Title('Research Proposals')] class extends Component {
 
         return Proposal::query()
             ->where(function ($q) use ($userId) {
-                $q->where('user_id', $userId)
-                  ->orWhereHas('proposalMembers', fn ($q) => $q->where('user_id', $userId));
+                $q->where('user_id', $userId)->orWhereHas('proposalMembers', fn($q) => $q->where('user_id', $userId));
             })
             ->where('is_research', $this->isResearch);
     }
 
+    /* ============================================================
+     |  PERIOD HELPERS
+     ============================================================ */
+
     public function activeOpenPeriod(): ?Period
     {
-        return Period::query()
-            ->where('is_active', true)
-            ->whereDate('open_from', '<=', now())
-            ->whereDate('open_to', '>=', now())
-            ->first();
+        return Period::query()->where('is_active', true)->whereDate('open_from', '<=', now())->whereDate('open_to', '>=', now())->first();
     }
 
     public function activePeriod(): ?Period
@@ -183,10 +192,36 @@ new #[Title('Research Proposals')] class extends Component {
         return Period::query()->where('is_active', true)->first();
     }
 
-    public function canCreateProposal(): bool
+    public function hasOpenPeriod(): bool
     {
         return $this->activeOpenPeriod() !== null;
     }
+
+    /**
+     * Return the proposal that's blocking the user from creating a new one.
+     */
+    public function getBlockingProposal(): ?Proposal
+    {
+        return Proposal::blockingProposalFor(auth()->id(), $this->isResearch);
+    }
+
+    /**
+     * User can create a new proposal ONLY IF:
+     * 1. There is an open period, AND
+     * 2. No blocking proposal exists (all previous proposals are final).
+     */
+    public function canCreateProposal(): bool
+    {
+        if (!$this->hasOpenPeriod()) {
+            return false;
+        }
+
+        return $this->getBlockingProposal() === null;
+    }
+
+    /* ============================================================
+     |  QUERY
+     ============================================================ */
 
     public function with(): array
     {
@@ -194,174 +229,204 @@ new #[Title('Research Proposals')] class extends Component {
         $selectedPeriod = $this->periodFilter === 'all' ? null : Period::find((int) $this->periodFilter);
 
         $proposals = $this->baseQuery()
-            ->with([
-                'researchScheme',
-                'period',
-                'reviewer',
-                'progressReport',
-                'finalReport',
-                'outcome',
-                'adminNotes',
-                'reviewerNotes',
-                'proposalMembers',
-            ])
-            ->when($selectedPeriod, fn ($q) => $q->where('period_id', $selectedPeriod->id))
+            ->with(['researchScheme', 'period', 'reviewer', 'progressReport', 'finalReport', 'outcome', 'adminNotes', 'reviewerNotes', 'proposalMembers'])
+            ->when($selectedPeriod, fn($q) => $q->where('period_id', $selectedPeriod->id))
             ->when(
                 $this->search,
-                fn ($q) => $q->where(function ($q) {
-                    $q->where('title', 'like', "%{$this->search}%")
-                      ->orWhere('keywords', 'like', "%{$this->search}%");
+                fn($q) => $q->where(function ($q) {
+                    $q->where('title', 'like', "%{$this->search}%")->orWhere('keywords', 'like', "%{$this->search}%");
                 }),
             )
-            ->when($this->statusFilter !== 'all', fn ($q) => $q->where('status', $this->statusFilter))
-            // ── Filter by role ──
-            ->when($this->roleFilter === 'leader', fn ($q) => $q->where('user_id', $userId))
-            ->when($this->roleFilter === 'member', fn ($q) => $q
-                ->where('user_id', '!=', $userId)
-                ->whereHas('proposalMembers', fn ($q) => $q->where('user_id', $userId)))
+            ->when($this->statusFilter !== 'all', fn($q) => $q->where('status', $this->statusFilter))
+            ->when($this->roleFilter === 'leader', fn($q) => $q->where('user_id', $userId))
+            ->when($this->roleFilter === 'member', fn($q) => $q->where('user_id', '!=', $userId)->whereHas('proposalMembers', fn($q) => $q->where('user_id', $userId)))
             ->latest()
             ->paginate(10);
 
-        $theme = $this->isResearch
-            ? ['icon' => 'beaker', 'color' => 'emerald', 'label' => 'Research']
-            : ['icon' => 'heart', 'color' => 'rose', 'label' => 'Community Service'];
+        $theme = $this->isResearch ? ['icon' => 'beaker', 'color' => 'emerald', 'label' => 'Research'] : ['icon' => 'heart', 'color' => 'rose', 'label' => 'Community Service'];
 
         return [
-            'proposals'     => $proposals,
-            'canCreate'     => $this->canCreateProposal(),
-            'openPeriod'    => $this->activeOpenPeriod(),
-            'activePeriod'  => $this->activePeriod(),
-            'periods'       => Period::orderByDesc('open_from')->orderByDesc('id')->get(),
-            'selectedPeriod'=> $selectedPeriod,
-            'theme'         => $theme,
+            'proposals' => $proposals,
+            'canCreate' => $this->canCreateProposal(),
+            'hasOpenPeriod' => $this->hasOpenPeriod(),
+            'blockingProposal' => $this->getBlockingProposal(),
+            'openPeriod' => $this->activeOpenPeriod(),
+            'activePeriod' => $this->activePeriod(),
+            'periods' => Period::orderByDesc('open_from')->orderByDesc('id')->get(),
+            'selectedPeriod' => $selectedPeriod,
+            'theme' => $theme,
         ];
     }
 };
 ?>
 
-<div class="min-h-screen bg-linear-to-br from-slate-50 via-white to-slate-50
+<div
+    class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50
             dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950
             p-2.5 sm:p-3 lg:p-4">
     <div class="max-w-7xl mx-auto space-y-3">
 
         {{-- ══════════ HEADER ══════════ --}}
-        <x-dashboard-header :icon="$theme['icon']" title="Research Proposals"
+        <x-dashboard-header :icon="$theme['icon']" :color="$theme['color']" title="Research Proposals"
             leading="Manage your research proposals (as leader or member)." />
 
         {{-- ══════════ PERIOD INFO BANNER ══════════ --}}
         @if ($activePeriod)
             @php
-                $isOpen = $canCreate;
-                $bannerColor = $isOpen ? 'emerald' : 'amber';
+                $isOpen = $hasOpenPeriod;
+                $hasBlocking = $blockingProposal !== null;
+
+                $bannerColor = !$isOpen ? 'amber' : ($hasBlocking ? 'sky' : 'emerald');
+
+                $bannerIcon = !$isOpen ? 'lock-closed' : ($hasBlocking ? 'information-circle' : 'calendar-days');
+
+                $bannerTitle = !$isOpen
+                    ? 'Registration Closed'
+                    : ($hasBlocking
+                        ? 'Ongoing Proposal'
+                        : 'Registration Open');
             @endphp
 
-            <div class="rounded-full border border-{{ $bannerColor }}-200 dark:border-{{ $bannerColor }}-800/60
-                        bg-{{ $bannerColor }}-50/60 dark:bg-{{ $bannerColor }}-900/15
-                        px-3 py-2 flex items-center gap-2.5">
+            <div @class([
+                'rounded-2xl border px-3 py-2 flex items-center gap-2.5',
+                'border-amber-200 dark:border-amber-800/60 bg-amber-50/60 dark:bg-amber-900/15' => !$isOpen,
+                'border-sky-200 dark:border-sky-800/60 bg-sky-50/60 dark:bg-sky-900/15' =>
+                    $isOpen && $hasBlocking,
+                'border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/60 dark:bg-emerald-900/15' =>
+                    $isOpen && !$hasBlocking,
+            ])>
 
-                <div class="w-7 h-7 rounded-md
-                            bg-{{ $bannerColor }}-100 dark:bg-{{ $bannerColor }}-900/40
-                            flex items-center justify-center shrink-0">
-                    <flux:icon :name="$isOpen ? 'calendar-days' : 'lock-closed'"
-                        class="size-3.5 text-{{ $bannerColor }}-600 dark:text-{{ $bannerColor }}-400" />
+                <div @class([
+                    'w-7 h-7 rounded-md flex items-center justify-center shrink-0',
+                    'bg-amber-100 dark:bg-amber-900/40' => !$isOpen,
+                    'bg-sky-100 dark:bg-sky-900/40' => $isOpen && $hasBlocking,
+                    'bg-emerald-100 dark:bg-emerald-900/40' => $isOpen && !$hasBlocking,
+                ])>
+                    <flux:icon :name="$bannerIcon" @class([
+                        'size-3.5',
+                        'text-amber-600 dark:text-amber-400' => !$isOpen,
+                        'text-sky-600 dark:text-sky-400' => $isOpen && $hasBlocking,
+                        'text-emerald-600 dark:text-emerald-400' => $isOpen && !$hasBlocking,
+                    ]) />
                 </div>
 
                 <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-1.5 flex-wrap">
-                        <p class="text-[10px] font-semibold uppercase tracking-wider
-                                  text-{{ $bannerColor }}-700 dark:text-{{ $bannerColor }}-300">
-                            {{ $isOpen ? 'Registration Open' : 'Registration Closed' }}
+                        <p @class([
+                            'text-[10px] font-semibold uppercase tracking-wider',
+                            'text-amber-700 dark:text-amber-300' => !$isOpen,
+                            'text-sky-700 dark:text-sky-300' => $isOpen && $hasBlocking,
+                            'text-emerald-700 dark:text-emerald-300' => $isOpen && !$hasBlocking,
+                        ])>
+                            {{ $bannerTitle }}
                         </p>
                         <span class="text-[10px] font-semibold text-slate-900 dark:text-white">
                             · {{ $activePeriod->periode }}
                         </span>
                     </div>
                     <p class="text-[10px] text-slate-500 dark:text-zinc-400 mt-0.5 truncate">
-                        @if ($isOpen)
+                        @if (!$isOpen)
+                            @if ($activePeriod->open_from && $activePeriod->open_from->isFuture())
+                                Will open on
+                                <span class="font-semibold text-slate-700 dark:text-zinc-200">
+                                    {{ $activePeriod->open_from->format('d M Y') }}
+                                </span>
+                            @elseif ($activePeriod->open_to && $activePeriod->open_to->isPast())
+                                Closed on
+                                <span class="font-semibold text-slate-700 dark:text-zinc-200">
+                                    {{ $activePeriod->open_to->format('d M Y') }}
+                                </span>
+                            @endif
+                        @elseif ($hasBlocking)
+                            Complete
+                            <span class="font-semibold text-slate-700 dark:text-zinc-200">
+                                "{{ Str::limit($blockingProposal->title, 40) }}"
+                            </span>
+                            first. New submission opens after it's finalized.
+                        @else
                             Opens until
                             <span class="font-semibold text-slate-700 dark:text-zinc-200">
                                 {{ $activePeriod->open_to?->format('d M Y') ?? '—' }}
-                            </span>
-                        @elseif ($activePeriod->open_from && $activePeriod->open_from->isFuture())
-                            Will open on
-                            <span class="font-semibold text-slate-700 dark:text-zinc-200">
-                                {{ $activePeriod->open_from->format('d M Y') }}
-                            </span>
-                        @elseif ($activePeriod->open_to && $activePeriod->open_to->isPast())
-                            Closed on
-                            <span class="font-semibold text-slate-700 dark:text-zinc-200">
-                                {{ $activePeriod->open_to->format('d M Y') }}
                             </span>
                         @endif
                     </p>
                 </div>
 
-                @if ($isOpen)
-                    <span class="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full
-                                 bg-{{ $bannerColor }}-500 text-white text-[9.5px] font-semibold shrink-0">
+                @if ($isOpen && !$hasBlocking)
+                    <span
+                        class="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full
+                                 bg-emerald-500 text-white text-[9.5px] font-semibold shrink-0">
                         <span class="w-1 h-1 rounded-full bg-white animate-pulse"></span>
                         Open
                     </span>
                 @endif
             </div>
         @else
-            <div class="rounded-lg border border-rose-200 dark:border-rose-800/60
+            <div
+                class="rounded-2xl border border-rose-200 dark:border-rose-800/60
                         bg-rose-50/60 dark:bg-rose-900/15
                         px-3 py-2 flex items-center gap-2.5">
-                <div class="w-7 h-7 rounded-md bg-rose-100 dark:bg-rose-900/40
+                <div
+                    class="w-7 h-7 rounded-md bg-rose-100 dark:bg-rose-900/40
                             flex items-center justify-center shrink-0">
                     <flux:icon.exclamation-triangle class="size-3.5 text-rose-600 dark:text-rose-400" />
                 </div>
                 <div class="flex-1 min-w-0">
-                    <p class="text-[10px] font-semibold uppercase tracking-wider
+                    <p
+                        class="text-[10px] font-semibold uppercase tracking-wider
                               text-rose-700 dark:text-rose-300">
                         No Active Period
                     </p>
                     <p class="text-[10px] text-rose-600 dark:text-rose-400 mt-0.5">
-                        You cannot add proposals right now. Contact admin.
+                        You cannot add proposals right now. Please contact the admin.
                     </p>
                 </div>
             </div>
         @endif
 
         {{-- ══════════ MAIN CARD ══════════ --}}
-        <div class="bg-white dark:bg-zinc-900 rounded-2xl
+        <div
+            class="bg-white dark:bg-zinc-900 rounded-2xl
                     shadow-sm shadow-slate-200/50 dark:shadow-zinc-950/50
                     border border-slate-200 dark:border-zinc-800 overflow-hidden">
 
             {{-- ─────── TOOLBAR ─────── --}}
-            <div class="px-2 sm:px-3 py-2
+            <div
+                class="px-2 sm:px-3 py-2
                         border-b border-slate-200 dark:border-zinc-800
                         bg-slate-50/50 dark:bg-zinc-900/50">
                 <div class="flex flex-wrap items-center gap-1.5 min-w-0">
 
                     {{-- STAT PILL --}}
-                    <div class="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full
+                    <div
+                        class="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full
                                 bg-{{ $theme['color'] }}-50 dark:bg-{{ $theme['color'] }}-900/20
                                 border border-{{ $theme['color'] }}-100 dark:border-{{ $theme['color'] }}-900/40">
                         <flux:icon :name="$theme['icon']"
                             class="size-3 text-{{ $theme['color'] }}-600 dark:text-{{ $theme['color'] }}-400" />
-                        <span class="text-[10.5px] font-semibold
+                        <span
+                            class="text-[10.5px] font-semibold
                                      text-{{ $theme['color'] }}-700 dark:text-{{ $theme['color'] }}-300">
                             {{ $proposals->total() }}
                         </span>
-                        <span class="text-[10px] text-{{ $theme['color'] }}-600/70 dark:text-{{ $theme['color'] }}-400/70 hidden sm:inline">
+                        <span
+                            class="text-[10px] text-{{ $theme['color'] }}-600/70 dark:text-{{ $theme['color'] }}-400/70 hidden sm:inline">
                             proposals
                         </span>
                     </div>
 
-                    {{-- ROLE FILTER ── NEW --}}
+                    {{-- ROLE FILTER --}}
                     <div class="shrink-0">
                         <flux:select wire:model.live="roleFilter" color="{{ $theme['color'] }}" maxWidth="w-auto">
-                            <flux:select.option>All Roles</flux:select.option>
-                            <flux:select.option value="leader">Ketua</flux:select.option>
-                            <flux:select.option value="member">Anggota</flux:select.option>
+                            <flux:select.option value="all">All Roles</flux:select.option>
+                            <flux:select.option value="leader">Leader</flux:select.option>
+                            <flux:select.option value="member">Member</flux:select.option>
                         </flux:select>
                     </div>
 
                     {{-- PERIOD FILTER --}}
-                    <flux:select wire:model.live="periodFilter">
-                        <flux:select.option>All Periods</flux:select.option>
+                    <flux:select wire:model.live="periodFilter" color="{{ $theme['color'] }}">
+                        <flux:select.option value="all">All Periods</flux:select.option>
                         @foreach ($periods as $p)
                             <flux:select.option value="{{ $p->id }}">{{ $p->periode }}</flux:select.option>
                         @endforeach
@@ -370,25 +435,60 @@ new #[Title('Research Proposals')] class extends Component {
                     {{-- NEW BUTTON --}}
                     <div class="order-4 sm:order-5 ml-auto sm:ml-0 shrink-0">
                         @if ($canCreate)
-                            <flux:button variant="primary" x-data x-on:click="$dispatch('open-add-proposal')"
-                                class="!text-[10.5px]">
+                            <flux:button variant="primary" x-data x-on:click="$dispatch('open-add-proposal')">
                                 New
                             </flux:button>
                         @else
                             <div class="relative group">
-                                <flux:button icon="plus" disabled variant="primary" size="xs"
-                                    class="!text-[10.5px] cursor-not-allowed opacity-50">
+                                <flux:button disabled variant="primary"
+                                    class="opacity-50">
                                     New
                                 </flux:button>
+
+                                {{-- Tooltip --}}
+                                <div
+                                    class="pointer-events-none absolute top-full right-0 mt-2
+                                    opacity-0 group-hover:opacity-100
+                                    transition-opacity duration-200
+                                    z-9999
+                                    w-64 p-2.5 rounded-full
+                                    bg-slate-900 dark:bg-zinc-700 text-white text-[10px]
+                                    shadow-xl">
+                                    @if (!$hasOpenPeriod)
+                                        <div class="space-y-1">
+                                            <p class="font-semibold">{{ __("Registration Closed") }}</p>
+                                            <p class="text-white/80">
+                                                {{ __("No open period. Please check back later or contact the admin.") }}
+                                            </p>
+                                        </div>
+                                    @elseif ($blockingProposal)
+                                        <div class="space-y-1">
+                                            <p class="font-semibold">{{ __("Ongoing Proposal") }}</p>
+                                            <p class="text-white/80 line-clamp-2">
+                                                "{{ Str::limit($blockingProposal->title, 60) }}"
+                                            </p>
+                                            <p class="text-white/70 mt-1">
+                                                {{__("Complete it or wait until it's Rejected before creating a new one.")}}
+                                            </p>
+                                        </div>
+                                    @endif
+
+                                    {{-- Arrow --}}
+                                    <div
+                                        class="absolute bottom-full right-3
+                                        border-4 border-transparent
+                                        border-b-slate-900 dark:border-b-zinc-700">
+                                    </div>
+                                </div>
                             </div>
                         @endif
                     </div>
 
                     {{-- SEARCH --}}
-                    <div class="order-5 sm:order-4 w-full sm:w-auto sm:ml-auto
+                    <div
+                        class="order-5 sm:order-4 w-full sm:w-auto sm:ml-auto
                                 md:w-44 lg:w-56 min-w-0">
-                        <x-input-search name="search" id="search-proposal"
-                            wire:model.live.debounce.300ms="search"
+                        <x-input-search name="search" id="search-proposal" wire:model.live.debounce.300ms="search"
                             placeholder="Search proposals..." class="w-full !text-[10.5px]" />
                     </div>
                 </div>
@@ -397,8 +497,8 @@ new #[Title('Research Proposals')] class extends Component {
             {{-- ─────── TABLE ─────── --}}
             <div class="relative">
                 <div x-data="{ showHint: true }" x-init="setTimeout(() => showHint = false, 3500)" x-show="showHint"
-                    x-transition:leave="transition ease-in duration-500"
-                    x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                    x-transition:leave="transition ease-in duration-500" x-transition:leave-start="opacity-100"
+                    x-transition:leave-end="opacity-0"
                     class="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
                            z-20 md:hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full
                            bg-slate-900/85 dark:bg-zinc-700/90 backdrop-blur-sm
@@ -407,7 +507,8 @@ new #[Title('Research Proposals')] class extends Component {
                     Swipe to see more
                 </div>
 
-                <div class="overflow-x-auto overscroll-x-contain scroll-smooth
+                <div
+                    class="overflow-x-auto overscroll-x-contain scroll-smooth
                             [scrollbar-width:thin]
                             [&::-webkit-scrollbar]:h-1.5
                             [&::-webkit-scrollbar-thumb]:bg-slate-300
@@ -415,29 +516,36 @@ new #[Title('Research Proposals')] class extends Component {
                             dark:[&::-webkit-scrollbar-thumb]:bg-zinc-700">
                     <table class="w-full min-w-[620px] sm:min-w-[700px]">
                         <thead>
-                            <tr class="bg-slate-50/80 dark:bg-zinc-900/50
+                            <tr
+                                class="bg-slate-50/80 dark:bg-zinc-900/50
                                        border-b border-slate-200 dark:border-zinc-800">
-                                <th class="px-2 sm:px-3 py-1.5 text-left text-[9.5px] font-semibold uppercase tracking-wider
+                                <th
+                                    class="px-2 sm:px-3 py-1.5 text-left text-[9.5px] font-semibold uppercase tracking-wider
                                            text-slate-500 dark:text-zinc-400 whitespace-nowrap">
                                     Title & Scheme
                                 </th>
-                                <th class="px-2 sm:px-3 py-1.5 text-left text-[9.5px] font-semibold uppercase tracking-wider
+                                <th
+                                    class="px-2 sm:px-3 py-1.5 text-left text-[9.5px] font-semibold uppercase tracking-wider
                                            text-slate-500 dark:text-zinc-400 whitespace-nowrap">
                                     My Role
                                 </th>
-                                <th class="hidden md:table-cell px-2 sm:px-3 py-1.5 text-left text-[9.5px] font-semibold uppercase tracking-wider
+                                <th
+                                    class="hidden md:table-cell px-2 sm:px-3 py-1.5 text-left text-[9.5px] font-semibold uppercase tracking-wider
                                            text-slate-500 dark:text-zinc-400 whitespace-nowrap">
                                     Period
                                 </th>
-                                <th class="hidden md:table-cell px-2 sm:px-3 py-1.5 text-left text-[9.5px] font-semibold uppercase tracking-wider
+                                <th
+                                    class="hidden md:table-cell px-2 sm:px-3 py-1.5 text-left text-[9.5px] font-semibold uppercase tracking-wider
                                            text-slate-500 dark:text-zinc-400 whitespace-nowrap">
                                     Leader
                                 </th>
-                                <th class="px-2 sm:px-3 py-1.5 text-left text-[9.5px] font-semibold uppercase tracking-wider
+                                <th
+                                    class="px-2 sm:px-3 py-1.5 text-left text-[9.5px] font-semibold uppercase tracking-wider
                                            text-slate-500 dark:text-zinc-400 whitespace-nowrap">
                                     Status
                                 </th>
-                                <th class="px-2 sm:px-3 py-1.5 text-right text-[9.5px] font-semibold uppercase tracking-wider
+                                <th
+                                    class="px-2 sm:px-3 py-1.5 text-right text-[9.5px] font-semibold uppercase tracking-wider
                                            text-slate-500 dark:text-zinc-400 whitespace-nowrap">
                                     Actions
                                 </th>
@@ -459,7 +567,8 @@ new #[Title('Research Proposals')] class extends Component {
                                     {{-- TITLE & SCHEME --}}
                                     <td class="px-2 sm:px-3 py-2">
                                         <div class="flex items-start gap-2">
-                                            <div class="w-6 h-6 sm:w-7 sm:h-7 rounded-full shrink-0
+                                            <div
+                                                class="w-6 h-6 sm:w-7 sm:h-7 rounded-full shrink-0
                                                         bg-gradient-to-br
                                                         from-{{ $theme['color'] }}-100 to-{{ $theme['color'] }}-50
                                                         dark:from-{{ $theme['color'] }}-900/30 dark:to-{{ $theme['color'] }}-900/20
@@ -475,16 +584,18 @@ new #[Title('Research Proposals')] class extends Component {
                                                     title="{{ $proposal->title }}">
                                                     {{ Str::limit($proposal->title, 42) }}
                                                 </p>
-                                                <p class="mt-0.5 text-[9.5px] truncate text-slate-500 dark:text-zinc-500">
+                                                <p
+                                                    class="mt-0.5 text-[9.5px] truncate text-slate-500 dark:text-zinc-500">
                                                     {{ $proposal->researchScheme?->name ?? '—' }}
                                                 </p>
                                             </div>
                                         </div>
                                     </td>
 
-                                    {{-- MY ROLE ── NEW --}}
+                                    {{-- MY ROLE --}}
                                     <td class="px-2 sm:px-3 py-2">
-                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full
+                                        <span
+                                            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full
                                                      text-[9.5px] font-semibold whitespace-nowrap
                                                      {{ $role['class'] }}">
                                             <flux:icon :name="$isLeader ? 'star' : 'user-group'" class="size-2.5" />
@@ -503,30 +614,29 @@ new #[Title('Research Proposals')] class extends Component {
                                     <td class="hidden md:table-cell px-2 sm:px-3 py-2">
                                         @if ($proposal->author)
                                             <div class="flex items-center gap-2 min-w-0">
-                                                <div class="w-6 h-6 rounded-full shrink-0
+                                                <div
+                                                    class="w-6 h-6 rounded-full shrink-0
                                                             bg-emerald-100 text-emerald-700
                                                             dark:bg-emerald-900/40 dark:text-emerald-300
                                                             flex items-center justify-center
                                                             text-[9px] font-bold">
                                                     {{ strtoupper(substr($proposal->author->full_name, 0, 1)) }}
                                                 </div>
-                                                <span class="text-[10.5px] text-slate-700 dark:text-zinc-300 truncate max-w-[140px]">
+                                                <span
+                                                    class="text-[10.5px] text-slate-700 dark:text-zinc-300 truncate max-w-[140px]">
                                                     {{ $proposal->author->full_name }}
                                                 </span>
                                             </div>
                                         @else
-                                            <span class="text-[10.5px] text-slate-400 dark:text-zinc-500 italic">—</span>
+                                            <span
+                                                class="text-[10.5px] text-slate-400 dark:text-zinc-500 italic">—</span>
                                         @endif
                                     </td>
 
                                     {{-- STATUS --}}
                                     <td class="px-2 sm:px-3 py-2">
-                                        <x-status-guide
-                                            variant="research"
-                                            :code="$meta['label']"
-                                            :full="$meta['full']"
-                                            :status-class="$meta['class']"
-                                        />
+                                        <x-status-guide variant="research" :code="$meta['label']" :full="$meta['full']"
+                                            :status-class="$meta['class']" />
                                     </td>
 
                                     {{-- ACTIONS --}}
@@ -539,7 +649,7 @@ new #[Title('Research Proposals')] class extends Component {
                                                        hover:scale-110 active:scale-95
                                                        opacity-60 group-hover:opacity-100 transition-all duration-150" />
 
-                                            <flux:menu class="text-[11px]!">
+                                            <flux:menu class="!text-[11px]">
                                                 @if ($this->canEdit($proposal))
                                                     <flux:menu.item icon="pencil-square" x-data
                                                         x-on:click="$dispatch('open-edit-proposal', { id: {{ $proposal->id }} })">
@@ -557,7 +667,8 @@ new #[Title('Research Proposals')] class extends Component {
                                                         x-on:click="$dispatch('open-user-view-admin-notes', { id: {{ $proposal->id }}, type: 'proposal' })"
                                                         class="text-amber-600 dark:text-amber-400">
                                                         Admin Notes
-                                                        <span class="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded-full
+                                                        <span
+                                                            class="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded-full
                                                                      bg-amber-100 text-amber-700
                                                                      dark:bg-amber-900/40 dark:text-amber-300">
                                                             {{ $proposal->adminNotes->count() }}
@@ -570,7 +681,8 @@ new #[Title('Research Proposals')] class extends Component {
                                                         x-on:click="$dispatch('open-user-view-reviewer-notes', { id: {{ $proposal->id }}, type: 'proposal' })"
                                                         class="text-violet-600 dark:text-violet-400">
                                                         Reviewer Notes
-                                                        <span class="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded-full
+                                                        <span
+                                                            class="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded-full
                                                                      bg-violet-100 text-violet-700
                                                                      dark:bg-violet-900/40 dark:text-violet-300">
                                                             {{ $proposal->reviewerNotes->count() }}
@@ -593,7 +705,8 @@ new #[Title('Research Proposals')] class extends Component {
                                 <tr>
                                     <td colspan="6" class="px-4 py-10">
                                         <div class="flex flex-col items-center gap-2 text-center">
-                                            <div class="w-11 h-11 rounded-full bg-slate-100 dark:bg-zinc-800
+                                            <div
+                                                class="w-11 h-11 rounded-full bg-slate-100 dark:bg-zinc-800
                                                         flex items-center justify-center">
                                                 <flux:icon :name="$theme['icon']"
                                                     class="size-5 text-slate-400 dark:text-zinc-600" />
@@ -621,7 +734,8 @@ new #[Title('Research Proposals')] class extends Component {
 
             {{-- PAGINATION --}}
             @if ($proposals->hasPages())
-                <div class="px-2 sm:px-3 py-2 border-t border-slate-200 dark:border-zinc-800
+                <div
+                    class="px-2 sm:px-3 py-2 border-t border-slate-200 dark:border-zinc-800
                             bg-slate-50/50 dark:bg-zinc-900/50
                             overflow-x-auto">
                     {{ $proposals->links('vendor.pagination.tailwind') }}

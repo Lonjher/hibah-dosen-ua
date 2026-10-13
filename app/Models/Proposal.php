@@ -45,14 +45,14 @@ use Illuminate\Support\Collection;
 class Proposal extends Model
 {
     use HasFactory;
-    public const STATUS_SUBMITTED          = 'submitted';          // SBM
-    public const STATUS_ADMIN_REVISION     = 'admin_revision';     // ADR
-    public const STATUS_ADMIN_APPROVED     = 'admin_approved';     // ADA
-    public const STATUS_UNDER_REVIEW       = 'under_review';       // REV
-    public const STATUS_REVIEWER_REVISION  = 'reviewer_revision';  // RVR
-    public const STATUS_REVIEWER_APPROVED  = 'reviewer_approved';  // RVA
-    public const STATUS_ACCEPTED           = 'accepted';           // ACC
-    public const STATUS_REJECTED           = 'rejected';           // REJ
+    public const STATUS_SUBMITTED = 'submitted';          // SBM
+    public const STATUS_ADMIN_REVISION = 'admin_revision';     // ADR
+    public const STATUS_ADMIN_APPROVED = 'admin_approved';     // ADA
+    public const STATUS_UNDER_REVIEW = 'under_review';       // REV
+    public const STATUS_REVIEWER_REVISION = 'reviewer_revision';  // RVR
+    public const STATUS_REVIEWER_APPROVED = 'reviewer_approved';  // RVA
+    public const STATUS_ACCEPTED = 'accepted';           // ACC
+    public const STATUS_REJECTED = 'rejected';           // REJ
 
     protected function casts(): array
     {
@@ -146,24 +146,24 @@ class Proposal extends Model
         $users = $this->proposalMembers()
             ->with('user')
             ->get()
-            ->map(fn (ProposalMember $m) => [
-                'id'         => $m->id,
-                'type'       => 'user',
-                'name'       => $m->user?->full_name ?? '—',
+            ->map(fn(ProposalMember $m) => [
+                'id' => $m->id,
+                'type' => 'user',
+                'name' => $m->user?->full_name ?? '—',
                 'identifier' => $m->user?->nidn,
-                'role'       => $m->role,
-                'source'     => $m,
+                'role' => $m->role,
+                'source' => $m,
             ]);
 
         $students = $this->proposalStudents()
             ->get()
-            ->map(fn (ProposalStudent $s) => [
-                'id'         => $s->id,
-                'type'       => 'student',
-                'name'       => $s->name,
+            ->map(fn(ProposalStudent $s) => [
+                'id' => $s->id,
+                'type' => 'student',
+                'name' => $s->name,
                 'identifier' => $s->nim,
-                'role'       => $s->role,
-                'source'     => $s,
+                'role' => $s->role,
+                'source' => $s,
             ]);
 
         return $users->concat($students)->values();
@@ -246,7 +246,7 @@ class Proposal extends Model
      */
     public function isMutable(): bool
     {
-        return ! $this->isFinal();
+        return !$this->isFinal();
     }
 
     /**
@@ -296,57 +296,57 @@ class Proposal extends Model
         return match ($this->status) {
             self::STATUS_SUBMITTED => [
                 'label' => 'SBM',
-                'full'  => 'Submitted',
+                'full' => 'Submitted',
                 'class' => 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
-                'code'  => 'SBM',
+                'code' => 'SBM',
             ],
             self::STATUS_ADMIN_REVISION => [
                 'label' => 'ADR',
-                'full'  => 'Admin Revision',
+                'full' => 'Admin Revision',
                 'class' => 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
-                'code'  => 'ADR',
+                'code' => 'ADR',
             ],
             self::STATUS_ADMIN_APPROVED => [
                 'label' => 'ADA',
-                'full'  => 'Admin Approved',
+                'full' => 'Admin Approved',
                 'class' => 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300',
-                'code'  => 'ADA',
+                'code' => 'ADA',
             ],
             self::STATUS_UNDER_REVIEW => [
                 'label' => 'REV',
-                'full'  => 'Under Review',
+                'full' => 'Under Review',
                 'class' => 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300',
-                'code'  => 'REV',
+                'code' => 'REV',
             ],
             self::STATUS_REVIEWER_REVISION => [
                 'label' => 'RVR',
-                'full'  => 'Reviewer Revision',
+                'full' => 'Reviewer Revision',
                 'class' => 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300',
-                'code'  => 'RVR',
+                'code' => 'RVR',
             ],
             self::STATUS_REVIEWER_APPROVED => [
                 'label' => 'RVA',
-                'full'  => 'Reviewer Approved',
+                'full' => 'Reviewer Approved',
                 'class' => 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300',
-                'code'  => 'RVA',
+                'code' => 'RVA',
             ],
             self::STATUS_ACCEPTED => [
                 'label' => 'ACC',
-                'full'  => 'Accepted',
+                'full' => 'Accepted',
                 'class' => 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
-                'code'  => 'ACC',
+                'code' => 'ACC',
             ],
             self::STATUS_REJECTED => [
                 'label' => 'REJ',
-                'full'  => 'Rejected',
+                'full' => 'Rejected',
                 'class' => 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300',
-                'code'  => 'REJ',
+                'code' => 'REJ',
             ],
             default => [
                 'label' => '—',
-                'full'  => ucfirst(str_replace('_', ' ', (string) $this->status)),
+                'full' => ucfirst(str_replace('_', ' ', (string) $this->status)),
                 'class' => 'bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-zinc-300',
-                'code'  => '—',
+                'code' => '—',
             ],
         };
     }
@@ -374,9 +374,36 @@ class Proposal extends Model
     public function nextStatusOnResubmit(): string
     {
         return match ($this->status) {
-            self::STATUS_ADMIN_REVISION    => self::STATUS_SUBMITTED,
+            self::STATUS_ADMIN_REVISION => self::STATUS_SUBMITTED,
             self::STATUS_REVIEWER_REVISION => self::STATUS_UNDER_REVIEW,
-            default                        => self::STATUS_SUBMITTED,
+            default => self::STATUS_SUBMITTED,
         };
+    }
+    /**
+     * Cek apakah user masih memiliki proposal yang belum selesai.
+     *
+     * Proposal dianggap "belum selesai" jika:
+     * - Status BUKAN rejected (final), DAN
+     * - Belum punya outcome dengan status 'accepted'
+     */
+    public static function blockingProposalFor(int $userId, bool $isResearch): ?self
+    {
+        return self::query()
+            ->where('user_id', $userId)
+            ->where('is_research', $isResearch)
+            // Kecualikan yang sudah final rejected
+            ->where('status', '!=', self::STATUS_REJECTED)
+            // Kecualikan yang sudah punya outcome accepted
+            ->whereDoesntHave('outcome', fn($q) => $q->where('status', 'accepted'))
+            ->latest()
+            ->first();
+    }
+
+    /**
+     * Cek apakah user boleh membuat proposal baru.
+     */
+    public static function canUserCreateNew(int $userId, bool $isResearch): bool
+    {
+        return self::blockingProposalFor($userId, $isResearch) === null;
     }
 }
