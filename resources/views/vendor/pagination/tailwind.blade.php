@@ -8,6 +8,74 @@
            (\$el.closest('{$scrollTo}') || document.querySelector('{$scrollTo}')).scrollIntoView()
         JS
         : '';
+
+    // ══════════════════════════════════════════════════════════════
+    // Override $elements — maksimal 5 nomor + ellipsis
+    // ══════════════════════════════════════════════════════════════
+    $currentPage = $paginator->currentPage();
+    $lastPage    = $paginator->lastPage();
+    $maxVisible  = 5;
+
+    if ($lastPage <= $maxVisible) {
+        // Semua halaman muat → tampilkan semua
+        $visible = range(1, $lastPage);
+    } else {
+        // Selalu sisakan slot untuk halaman pertama & terakhir
+        $innerSlots = $maxVisible - 2;             // = 3 slot untuk halaman tengah
+        $half       = (int) floor($innerSlots / 2); // = 1
+
+        $start = $currentPage - $half;
+        $end   = $currentPage + $half;
+
+        // Clamp agar tidak keluar dari rentang [1, lastPage]
+        if ($start < 1) {
+            $end  += (1 - $start);
+            $start = 1;
+        }
+        if ($end > $lastPage) {
+            $start -= ($end - $lastPage);
+            $end    = $lastPage;
+        }
+        $start = max(1, $start);
+        $end   = min($lastPage, $end);
+
+        $visible = range($start, $end);
+
+        // Pastikan halaman 1 selalu muncul
+        if ($start > 1) {
+            array_unshift($visible, 1);
+        }
+        // Pastikan halaman terakhir selalu muncul
+        if ($end < $lastPage) {
+            $visible[] = $lastPage;
+        }
+
+        $visible = array_values(array_unique($visible));
+        sort($visible);
+    }
+
+    // ── Rebuild $elements dalam format Laravel ──
+    // Format: [ [1 => url], '...', [3 => url, 4 => url, 5 => url], '...', [21 => url] ]
+    // Blade Anda sudah handle format ini (is_string → dots, is_array → loop halaman)
+    $elements = [];
+    $prev     = null;
+    $group    = [];
+
+    foreach ($visible as $p) {
+        // Kalau ada gap > 1, tutup group dan sisipkan '...'
+        if ($prev !== null && ($p - $prev) > 1) {
+            if (! empty($group)) {
+                $elements[] = $group;
+                $group = [];
+            }
+            $elements[] = '...';
+        }
+        $group[$p] = $paginator->url($p);
+        $prev = $p;
+    }
+    if (! empty($group)) {
+        $elements[] = $group;
+    }
 @endphp
 
 @if ($paginator->hasPages())
