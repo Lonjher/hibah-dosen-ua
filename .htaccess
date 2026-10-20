@@ -1,0 +1,17 @@
+<IfModule mod_rewrite.c>
+  <IfModule mod_negotiation.c>
+    Options -MultiViews
+  </IfModule>
+
+  RewriteEngine On
+
+  # Untuk menangani permintaan URL yang langsung ke direktori public
+  RewriteRule ^$ public/ [L]
+
+  # Menangani semua permintaan lainnya, arahkan ke index.php
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^(.*)$ public/$1 [L]
+
+  php_value max_execution_time 500
+</IfModule>
