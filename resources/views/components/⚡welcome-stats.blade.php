@@ -348,19 +348,12 @@ new class extends Component {
             icon="M4 16 8 12l4 4 6-8" />
 
         <div class="flex items-center gap-2 shrink-0 sm:mt-1">
-            <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full
-                        bg-white/75 backdrop-blur-lg
-                        border border-white/90 dark:border-zinc-800
-                        dark:bg-zinc-900/75
-                        shadow-sm shadow-slate-200/50 dark:shadow-zinc-950/50">
-                <flux:icon.calendar-days class="size-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                <flux:select wire:model.live="periodFilter">
-                    <flux:select.option>Semua Periode</flux:select.option>
-                    @foreach ($periods as $p)
-                        <flux:select.option value="{{ $p->id }}">{{ $p->periode }}</flux:select.option>
-                    @endforeach
-                </flux:select>
-            </div>
+            <flux:select wire:model.live="periodFilter">
+                <flux:select.option>Semua Periode</flux:select.option>
+                @foreach ($periods as $p)
+                    <flux:select.option value="{{ $p->id }}">{{ $p->periode }}</flux:select.option>
+                @endforeach
+            </flux:select>
 
             <div wire:loading wire:target="periodFilter"
                 class="w-4 h-4 rounded-full bg-emerald-100 dark:bg-emerald-900/40

@@ -37,7 +37,6 @@ class UserSeeder extends Seeder
             'role_id'           => $superAdminRole,
         ]);
 
-        // 2. Admin
         User::create([
             'nidn'              => '0000000001',
             'full_name'         => 'Admin Hibah',
@@ -51,7 +50,7 @@ class UserSeeder extends Seeder
             'role_id'           => $adminRole,
         ]);
 
-        // 3. Reviewer
+        /**
         User::create([
             'nidn'              => '0000000002',
             'full_name'         => 'Reviewer Satu',
@@ -65,7 +64,6 @@ class UserSeeder extends Seeder
             'role_id'           => $reviewerRole,
         ]);
 
-        // 4. User (Dosen Pengusul)
         User::create([
             'nidn'              => '0000000003',
             'full_name'         => 'Dosen Pengusul',
@@ -78,14 +76,15 @@ class UserSeeder extends Seeder
             'raw_password'      => 'password',
             'role_id'           => $userRole,
         ]);
+        */
 
         // === Akun Random untuk Testing (via Factory) ===
         // Comment/uncomment sesuai kebutuhan
 
-        User::factory()->count(3)->admin()->create();
-        User::factory()->count(5)->reviewer()->create();
-        User::factory()->count(10)->user()->create();
+        // User::factory()->count(3)->admin()->create();
+        // User::factory()->count(5)->reviewer()->create();
+        // User::factory()->count(10)->user()->create();
 
-        $this->command->info('✅ Users seeded: 4 fixed + 18 random');
+        // $this->command->info('✅ Users seeded: 4 fixed + 18 random');
     }
 }
