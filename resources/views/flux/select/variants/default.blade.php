@@ -12,6 +12,7 @@
     'label' => null,
     'required' => false,
     'invalid' => null,
+    'icon' => null,
 ])
 
 @php
@@ -26,8 +27,11 @@
         'sm' => [
             'height' => 'py-0.5',
             'padding' => 'pl-2 pr-6',
+            'paddingL' => 'pl-6.5',
             'text' => 'text-[10px]',
             'chevron' => 'size-2.5 right-1.5',
+            'icon' => 'size-3',
+            'iconLeft' => 'left-1.5',
             'item_py' => 'py-1',
             'item_px' => 'px-2',
             'item_text' => 'text-[10px]',
@@ -38,8 +42,11 @@
         'md' => [
             'height' => 'py-1',
             'padding' => 'pl-2 pr-6',
+            'paddingL' => 'pl-7.5',
             'text' => 'text-[10.5px]',
             'chevron' => 'size-3 right-2',
+            'icon' => 'size-3.5',
+            'iconLeft' => 'left-2',
             'item_py' => 'py-1.5',
             'item_px' => 'px-2.5',
             'item_text' => 'text-[11px]',
@@ -50,8 +57,11 @@
         'lg' => [
             'height' => 'py-1.5',
             'padding' => 'pl-2.5 pr-7',
+            'paddingL' => 'pl-8',          // ⬅️ sebelumnya pl-9
             'text' => 'text-[11.5px]',
             'chevron' => 'size-3.5 right-2.5',
+            'icon' => 'size-4',
+            'iconLeft' => 'left-2.5',      // ⬅️ sebelumnya left-3
             'item_py' => 'py-1.5',
             'item_px' => 'px-3',
             'item_text' => 'text-[12px]',
@@ -113,7 +123,7 @@
     $layoutClass = $label ? 'flex-col gap-1' : '';
 
     $triggerClass = trim("
-    relative w-full {$s['padding']} {$s['height']} {$radius}
+    relative w-full " . ($icon ? $s['paddingL'] : $s['padding']) . " {$s['height']} {$radius}
     bg-white dark:bg-zinc-800
     text-slate-700 dark:text-zinc-200
     {$s['text']} font-body
@@ -343,6 +353,15 @@
     </select>
 
     <div class="relative w-full">
+        @if ($icon)
+            <flux:icon :name="$icon"
+                class="{{ $s['icon'] }} absolute {{ $s['iconLeft'] }} top-1/2 -translate-y-1/2 z-10
+                       text-slate-400 dark:text-zinc-500
+                       pointer-events-none
+                       group-focus-within:text-{{ $accent }}-500 dark:group-focus-within:text-{{ $accent }}-400
+                       transition-colors" />
+        @endif
+
         <button type="button" x-ref="trigger" @click="toggle()" :aria-expanded="open" aria-haspopup="listbox"
             class="{{ $triggerClass }}">
             <span x-text="displayLabel()" :class="!hasValue() && 'text-slate-400 dark:text-zinc-500'"

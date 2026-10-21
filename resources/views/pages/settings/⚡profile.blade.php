@@ -559,25 +559,29 @@ new #[Title('Profile settings')] class extends Component {
                 <form wire:submit="updateProfileInformation" class="p-4 sm:p-5 space-y-4">
                     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         {{-- Full name --}}
-                        <flux:input wire:model="form.full_name" :label="__('Full Name')" type="text" required
+                        <x-input wire:model="form.full_name" name="full_name" id="full_name"
+                            :label="__('Full Name')" type="text" required
                             autofocus autocomplete="name" icon="user" />
 
                         {{-- Email --}}
-                        <flux:input wire:model.live="form.email" :label="__('Email')" type="email" required
+                        <x-input wire:model.live="form.email" name="email" id="email"
+                            :label="__('Email')" type="email" required
                             autocomplete="email" icon="envelope" />
 
                         {{-- NIDN --}}
-                        <flux:input wire:model="form.nidn" :label="__('NIDN')" type="text"
+                        <x-input wire:model="form.nidn" name="nidn" id="nidn"
+                            :label="__('NIDN')" type="text"
                             inputmode="numeric" pattern="[0-9]*" maxlength="10"
                             placeholder="{{ __('National Lecturer Identification Number') }}"
                             autocomplete="off" icon="identification" />
 
                         {{-- Birthday --}}
-                        <flux:input wire:model="form.birthday" :label="__('Birthday')" type="date" required
+                        <x-input wire:model="form.birthday" name="birthday" id="birthday"
+                            :label="__('Birthday')" type="date" required
                             icon="calendar" />
 
                         {{-- Gender --}}
-                        <flux:select wire:model="form.gender" :label="__('Gender')" required size="lg">
+                        <flux:select wire:model="form.gender" :label="__('Gender')" required size="lg" icon="user-circle">
                             <flux:select.option value="">{{ __('Select Gender') }}</flux:select.option>
                             <flux:select.option value="laki-laki">{{ __('Male') }}</flux:select.option>
                             <flux:select.option value="perempuan">{{ __('Female') }}</flux:select.option>
@@ -585,14 +589,20 @@ new #[Title('Profile settings')] class extends Component {
 
                         {{-- Phone --}}
                         <div>
-                            <flux:input wire:model="form.phone_number" :label="__('Phone Number')" type="text"
+                            <x-input wire:model="form.phone_number" name="phone_number" id="phone_number"
+                                :label="__('Phone Number')" type="text"
                                 autocomplete="tel" icon="phone" />
                         </div>
 
                         {{-- Address (full width) --}}
                         <div class="sm:col-span-2">
-                            <flux:textarea wire:model="form.address" :label="__('Address')" rows="4" required
-                                size="sm" />
+                            <x-textarea
+                                wire:model="form.address"
+                                label="Address"
+                                required
+                                rows="5"
+                                placeholder="Street, City, Province..."
+                                class="rounded-2xl resize-none" />
                         </div>
                     </div>
 
@@ -641,18 +651,38 @@ new #[Title('Profile settings')] class extends Component {
 
                 <form wire:submit="updatePassword" class="p-4 sm:p-5">
                     <div class="space-y-4 max-w-lg">
-                        <flux:input wire:model="current_password" :label="__('Recent Password')" type="password"
-                            required autocomplete="current-password" viewable />
+                        <x-input
+                            wire:model="current_password"
+                            name="current_password"
+                            id="current_password"
+                            :label="__('Recent Password')"
+                            type="password"
+                            icon="lock-closed"
+                            required
+                            autocomplete="current-password"
+                            :hint="__('Masukkan password Anda saat ini untuk konfirmasi.')" />
 
-                        <flux:input wire:model="password" :label="__('New Password')" type="password" required
+                        <x-input
+                            wire:model="password"
+                            name="password"
+                            id="password"
+                            :label="__('New Password')"
+                            type="password"
+                            icon="key"
+                            required
                             autocomplete="new-password"
-                            passwordrules="{{ \Illuminate\Validation\Rules\Password::defaults()->toPasswordRulesString() }}"
-                            viewable />
+                            passwordrules="{{ \Illuminate\Validation\Rules\Password::defaults()->toPasswordRulesString() }}" />
 
-                        <flux:input wire:model="password_confirmation" :label="__('Password Confirmation')"
-                            type="password" required autocomplete="new-password"
-                            passwordrules="{{ \Illuminate\Validation\Rules\Password::defaults()->toPasswordRulesString() }}"
-                            viewable />
+                        <x-input
+                            wire:model="password_confirmation"
+                            name="password_confirmation"
+                            id="password_confirmation"
+                            :label="__('Password Confirmation')"
+                            type="password"
+                            icon="shield-check"
+                            required
+                            autocomplete="new-password"
+                            passwordrules="{{ \Illuminate\Validation\Rules\Password::defaults()->toPasswordRulesString() }}" />
                     </div>
 
                     <div class="mt-5 flex justify-end border-t border-slate-100 dark:border-zinc-800/70 pt-4 max-w-lg">
