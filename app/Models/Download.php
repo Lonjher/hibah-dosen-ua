@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Attributes\Guarded;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Spatie\Activitylog\Models\Concerns\HasActivity;
+use Spatie\Activitylog\Support\LogOptions;
 
 /**
  *@property int $id
@@ -29,6 +31,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Guarded(['id'])]
 class Download extends Model
 {
+    use HasActivity;
     protected $casts = [
         'is_active' => 'boolean',
         'show_on_welcome' => 'boolean',
@@ -36,6 +39,13 @@ class Download extends Model
         'file_size' => 'integer',
         'download_count' => 'integer',
     ];
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logAll()
+            ->logOnlyDirty();
+    }
 
     public function author(): BelongsTo
     {

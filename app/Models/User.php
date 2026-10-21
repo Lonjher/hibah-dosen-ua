@@ -16,6 +16,8 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use App\Models\ExternalProposal;
+use Spatie\Activitylog\Models\Concerns\HasActivity;
+use Spatie\Activitylog\Support\LogOptions;
 
 /**
  * @property int $id
@@ -54,6 +56,7 @@ use App\Models\ExternalProposal;
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable implements MustVerifyEmail
 {
+    use HasActivity;
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
@@ -65,6 +68,13 @@ class User extends Authenticatable implements MustVerifyEmail
             'password' => 'hashed',
             'email_verification_code_expires_at' => 'datetime',
         ];
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logAll()
+            ->logOnlyDirty();
     }
 
     public function initials(): string

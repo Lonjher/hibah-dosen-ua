@@ -19,14 +19,10 @@ Route::view('/', 'welcome')->name('home');
 Route::middleware(['auth', 'must.verify.email'])->group(function () {
     Route::view('dashboard', 'dashboard')->name('dashboard');
     Route::middleware('can:superadmin')->prefix('admin')->name('admin.')->group(function () {
-        Route::livewire('manage-admins', 'admin.manage-admins')
-            ->name('manage-admins');
-
-        Route::livewire('admins/add', 'admin.admins.add-admin')
-            ->name('admins.add');
-
-        Route::livewire('admins/edit', 'admin.admins.edit-admin')
-            ->name('admins.edit');
+        Route::livewire('manage-admins', 'admin.manage-admins')->name('manage-admins');
+        Route::livewire('admins/add', 'admin.admins.add-admin')->name('admins.add');
+        Route::livewire('admins/edit', 'admin.admins.edit-admin')->name('admins.edit');
+        Route::livewire('admin/log', 'admin.spatie.log-activity')->name('log-activity');
     });
     Route::middleware('can:superadminOrAdmin')->prefix('admin')->name('admin.')->group(function () {
         Route::livewire('manage-periods', 'admin.manage-periods')

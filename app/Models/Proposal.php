@@ -11,6 +11,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Spatie\Activitylog\Models\Concerns\HasActivity;
+use Spatie\Activitylog\Support\LogOptions;
 
 /**
  * @property int $id
@@ -44,7 +46,7 @@ use Illuminate\Support\Collection;
 #[Guarded(['id'])]
 class Proposal extends Model
 {
-    use HasFactory;
+    use HasFactory, HasActivity;
     public const STATUS_SUBMITTED = 'submitted';          // SBM
     public const STATUS_ADMIN_REVISION = 'admin_revision';     // ADR
     public const STATUS_ADMIN_APPROVED = 'admin_approved';     // ADA
@@ -59,6 +61,13 @@ class Proposal extends Model
         return [
             'is_research' => 'boolean',
         ];
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logAll()
+            ->logOnlyDirty();
     }
 
     public function researchScheme(): BelongsTo
