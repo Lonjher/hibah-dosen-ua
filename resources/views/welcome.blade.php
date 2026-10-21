@@ -8,9 +8,7 @@
         content="Integrated Grant Portal for Research & Community Service at Universitas Annuqayah (SIM-LITABMAS) — from proposal submission to final reporting in one workflow.">
 
     <title>{{ __('Welcome') }} - {{ config('app.name', 'SIM-LITABMAS') }}</title>
-
-    <link rel="icon" href="/favicon.ico" sizes="any">
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="icon" type="image/x-icon" href="{{ asset('images/logo.webp') }}">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
     <link rel="preconnect" href="https://fonts.bunny.net">

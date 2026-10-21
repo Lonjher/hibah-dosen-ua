@@ -397,11 +397,20 @@ new #[Title('Profile settings')] class extends Component {
                             <h3 class="text-sm font-semibold text-slate-900 dark:text-zinc-100 truncate">
                                 {{ $form->full_name ?: __('User') }}
                             </h3>
-                            <p class="mt-0.5 text-[11px] text-slate-500 dark:text-zinc-400 truncate">
-                                {{ $form->email ?: '—' }}
-                            </p>
+                            <div class="mt-0.5 flex items-center justify-center gap-1.5 text-[11px]
+                                    text-slate-500 dark:text-zinc-400
+                                    sm:justify-start min-w-0">
+                            <span class="truncate">{{ $form->email ?: '—' }}</span>
+
+                            @if ($form->nidn)
+                                <span class="shrink-0 w-0.5 h-0.5 rounded-full bg-current opacity-50"></span>
+                                <span class="shrink-0 text-slate-600 dark:text-zinc-300 text-[10px]">
+                                    NIDN&nbsp;{{ $form->nidn }}
+                                </span>
+                            @endif
+                        </div>
                             <p class="mt-0.5 text-[10px] text-slate-400 dark:text-zinc-500">
-                                {{ __('Member since :month', ['month' => $this->memberSince]) }}
+                                {{ __('Join since :month', ['month' => $this->memberSince]) }}
                             </p>
 
                             <div class="mt-1.5 flex flex-wrap items-center justify-center sm:justify-start gap-1.5">
@@ -557,6 +566,12 @@ new #[Title('Profile settings')] class extends Component {
                         <flux:input wire:model.live="form.email" :label="__('Email')" type="email" required
                             autocomplete="email" icon="envelope" />
 
+                        {{-- NIDN --}}
+                        <flux:input wire:model="form.nidn" :label="__('NIDN')" type="text"
+                            inputmode="numeric" pattern="[0-9]*" maxlength="10"
+                            placeholder="{{ __('National Lecturer Identification Number') }}"
+                            autocomplete="off" icon="identification" />
+
                         {{-- Birthday --}}
                         <flux:input wire:model="form.birthday" :label="__('Birthday')" type="date" required
                             icon="calendar" />
@@ -569,7 +584,7 @@ new #[Title('Profile settings')] class extends Component {
                         </flux:select>
 
                         {{-- Phone --}}
-                        <div class="sm:col-span-2">
+                        <div>
                             <flux:input wire:model="form.phone_number" :label="__('Phone Number')" type="text"
                                 autocomplete="tel" icon="phone" />
                         </div>
