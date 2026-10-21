@@ -1,66 +1,36 @@
 <?php
 
 use Livewire\Attributes\On;
+use Livewire\Attributes\Title;
 use Livewire\Component;
-use Livewire\WithPagination;
 use Spatie\Activitylog\Models\Activity;
 use Flux\Flux;
 
-new class extends Component {
-    use WithPagination;
-
+new #[Title('Activity Log')] class extends Component {
     public string $search = '';
     public string $logName = '';
     public string $event = '';
     public string $dateFrom = '';
     public string $dateTo = '';
 
-    public function updatedSearch(): void
-    {
-        $this->resetPage();
-    }
-    public function updatedLogName(): void
-    {
-        $this->resetPage();
-    }
-    public function updatedEvent(): void
-    {
-        $this->resetPage();
-    }
-    public function updatedDateFrom(): void
-    {
-        $this->resetPage();
-    }
-    public function updatedDateTo(): void
-    {
-        $this->resetPage();
-    }
-
     public function resetFilters(): void
     {
         $this->reset('search', 'logName', 'event', 'dateFrom', 'dateTo');
-        $this->resetPage();
     }
 
-    /**
-     * Handler terpusat untuk semua aksi hapus yang dikirim via x-confirm-delete.
-     * Event: delete-confirmed { action, payload }
-     */
     #[On('delete-confirmed')]
     public function handleDeleteConfirmed(string $action, array $payload = []): void
     {
         match ($action) {
-            'deleteLog' => $this->deleteLog($payload['id'] ?? null),
+            'deleteLog'     => $this->deleteLog($payload['id'] ?? null),
             'deleteAllLogs' => $this->deleteAllLogs(),
-            default => null,
+            default         => null,
         };
     }
 
     public function deleteLog(?int $id): void
     {
-        if (!$id) {
-            return;
-        }
+        if (!$id) return;
 
         $log = Activity::find($id);
         if (!$log) {
@@ -69,14 +39,21 @@ new class extends Component {
         }
 
         $log->delete();
-        $this->resetPage();
         Flux::toast('Log deleted.', variant: 'success');
     }
 
     public function deleteAllLogs(): void
     {
-        // Hapus hanya yang sedang tampil (sesuai filter aktif)
-        $query = Activity::query()
+        $query = $this->filteredQuery();
+        $count = $query->count();
+        $query->delete();
+
+        Flux::toast("{$count} log(s) deleted.", variant: 'success');
+    }
+
+    protected function filteredQuery()
+    {
+        return Activity::query()
             ->when($this->search, function ($q) {
                 $q->where(function ($sub) {
                     $sub->where('description', 'like', '%' . $this->search . '%')
@@ -88,33 +65,18 @@ new class extends Component {
             ->when($this->event, fn($q) => $q->where('event', $this->event))
             ->when($this->dateFrom, fn($q) => $q->whereDate('created_at', '>=', $this->dateFrom))
             ->when($this->dateTo, fn($q) => $q->whereDate('created_at', '<=', $this->dateTo));
-
-        $count = $query->count();
-        $query->delete();
-
-        $this->resetPage();
-        Flux::toast("{$count} log(s) deleted.", variant: 'success');
     }
 
     public function render()
     {
-        $logs = Activity::with(['causer', 'subject'])
-            ->when($this->search, function ($query) {
-                $query->where(function ($q) {
-                    $q->where('description', 'like', '%' . $this->search . '%')
-                        ->orWhereHas('causer', fn($c) => $c->where('full_name', 'like', '%' . $this->search . '%'))
-                        ->orWhereHas('subject', fn($s) => $s->where('title', 'like', '%' . $this->search . '%'));
-                });
-            })
-            ->when($this->logName, fn($q) => $q->where('log_name', $this->logName))
-            ->when($this->event, fn($q) => $q->where('event', $this->event))
-            ->when($this->dateFrom, fn($q) => $q->whereDate('created_at', '>=', $this->dateFrom))
-            ->when($this->dateTo, fn($q) => $q->whereDate('created_at', '<=', $this->dateTo))
+        $logs = $this->filteredQuery()
+            ->with(['causer', 'subject'])
             ->latest()
-            ->paginate(20);
+            ->limit(500)
+            ->get();
 
         $logNames = Activity::distinct()->pluck('log_name')->filter()->values();
-        $events = Activity::distinct()->pluck('event')->filter()->values();
+        $events   = Activity::distinct()->pluck('event')->filter()->values();
 
         return $this->view(['logs' => $logs, 'logNames' => $logNames, 'events' => $events]);
     }
@@ -128,7 +90,7 @@ new class extends Component {
     <div class="max-w-7xl mx-auto space-y-3">
 
         {{-- HEADER --}}
-        <x-dashboard-header icon="clock" title="Activity Logs"
+        <x-dashboard-header icon="command-line" title="Activity Logs"
             leading="Audit trail of every action performed by users across the system." />
 
         {{-- MAIN CARD --}}
@@ -146,14 +108,14 @@ new class extends Component {
                 <div class="flex flex-wrap items-center gap-1.5 min-w-0">
 
                     {{-- ─────── STATS BADGE ─────── --}}
-                    @if ($logs->total() > 0)
+                    @if ($logs->count() > 0)
                         <div
                             class="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full
                             bg-violet-50 dark:bg-violet-900/20
                             border border-violet-100 dark:border-violet-900/40">
                             <flux:icon.clock class="size-3 text-violet-600 dark:text-violet-400" />
                             <span class="text-[10.5px] font-semibold text-violet-700 dark:text-violet-300">
-                                {{ $logs->total() }}
+                                {{ $logs->count() }}
                             </span>
                             <span class="text-[10px] text-violet-600/70 dark:text-violet-400/70 hidden sm:inline">
                                 logs
@@ -242,13 +204,13 @@ new class extends Component {
                         [&::-webkit-calendar-picker-indicator]:hover:opacity-100" />
                     </div>
                     {{-- ─────── DELETE ALL ─────── --}}
-                    @if ($logs->total() > 0)
+                    @if ($logs->count() > 0)
                         <div class="shrink-0 order-4 sm:order-5">
                             <flux:button variant="danger" size="sm"
                                 x-data
                                 x-on:click="$dispatch('confirm-delete', {
                                     title: 'Delete all logs?',
-                                    message: 'This will permanently delete {{ $logs->total() }} log entries matching the current filter.',
+                                    message: 'This will permanently delete {{ $logs->count() }} log entries matching the current filter.',
                                     confirmLabel: 'Delete All',
                                     action: 'deleteAllLogs',
                                     payload: {}
@@ -555,21 +517,6 @@ new class extends Component {
                     </table>
                 </div>
             </div>
-
-            {{-- ─────── PAGINATION ─────── --}}
-            @if ($logs->hasPages())
-                <div
-                    class="px-2 sm:px-3 py-2 border-t border-slate-200 dark:border-zinc-800
-                    bg-slate-50/50 dark:bg-zinc-900/50
-                    overflow-x-auto
-                    [scrollbar-width:thin]
-                    [&::-webkit-scrollbar]:h-1
-                    [&::-webkit-scrollbar-thumb]:bg-slate-300
-                    [&::-webkit-scrollbar-thumb]:rounded-full
-                    dark:[&::-webkit-scrollbar-thumb]:bg-zinc-700">
-                    {{ $logs->links('vendor.pagination.tailwind') }}
-                </div>
-            @endif
         </div>
     </div>
     <livewire:admin.spatie.show-detail />

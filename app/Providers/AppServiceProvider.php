@@ -3,10 +3,20 @@
 namespace App\Providers;
 
 use App\Listeners\LogSuccessfulLogin;
+use App\Models\AdminNote;
+use App\Models\BudgetProposal;
+use App\Models\Download;
+use App\Models\ExternalProposal;
 use App\Models\FinalReport;
+use App\Models\Informations;
 use App\Models\Outcome;
+use App\Models\Period;
 use App\Models\ProgressReport;
 use App\Models\Proposal;
+use App\Models\ProposalMember;
+use App\Models\ProposalStudent;
+use App\Models\ResearchScheme;
+use App\Models\ReviewerNote;
 use App\Models\User;
 use App\Observers\FinalReportObserver;
 use App\Observers\OutcomeObserver;
@@ -48,11 +58,35 @@ class AppServiceProvider extends ServiceProvider
         OutCome::observe(OutcomeObserver::class);
 
         Relation::enforceMorphMap([
-            'user'            => User::class,
-            'proposal'        => Proposal::class,
-            'progress_report' => ProgressReport::class,
-            'final_report'    => FinalReport::class,
-            'outcome'          => Outcome::class,
+            // ── Core / Auth ──
+            'user'               => User::class,
+            'role'               => Role::class,
+
+            // ── Master Data ──
+            'period'             => Period::class,
+            'research_scheme'    => ResearchScheme::class,
+
+            // ── Proposal & Turunan ──
+            'proposal'           => Proposal::class,
+            'budget_proposal'    => BudgetProposal::class,
+            'proposal_member'    => ProposalMember::class,
+            'proposal_student'   => ProposalStudent::class,
+
+            // ── Laporan & Outcome ──
+            'progress_report'    => ProgressReport::class,
+            'final_report'       => FinalReport::class,
+            'outcome'            => Outcome::class,
+
+            // ── Catatan (polymorphic) ──
+            'admin_note'         => AdminNote::class,
+            'reviewer_note'      => ReviewerNote::class,
+
+            // ── Konten & Publikasi ──
+            'informations'       => Informations::class,
+            'download'           => Download::class,
+
+            // ── Penelitian Eksternal ──
+            'external_proposal'  => ExternalProposal::class,
         ]);
 
         $this->configureDefaults();
