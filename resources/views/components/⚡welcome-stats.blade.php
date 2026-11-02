@@ -343,7 +343,7 @@ new class extends Component {
 
     {{-- ══════════ Header + Period Filter ══════════ --}}
     <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-        <x-section-header label="Data & Metrik Kinerja" title="Statistik & Capaian Hibah Litabmas Universitas Annuqayah"
+        <x-section-header label="Data & Metrik Kinerja" title="Statistik & Capaian Hibah Universitas Annuqayah"
             description="Rekapitulasi berbasis publikasi resmi LPPM UA. Angka diperbarui sesuai pengumuman terbaru."
             icon="M4 16 8 12l4 4 6-8" />
 

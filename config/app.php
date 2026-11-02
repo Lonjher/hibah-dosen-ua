@@ -13,7 +13,8 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Laravel'),
+    'name' => env('APP_NAME', 'Siap Riset'),
+    'desc_name' => env('APP_DESC_NAME', 'Sistem Informasi dan Administrasi Pengabdian dan Riset'),
 
     /*
     |--------------------------------------------------------------------------
@@ -122,5 +123,4 @@ return [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
-
 ];

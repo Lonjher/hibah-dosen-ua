@@ -26,14 +26,8 @@
                         <img src="{{ asset('images/logo.webp') }}" alt="Logo" class="w-12" />
                     </div>
                     <div>
-                        <p
-                            class="font-heading text-base font-semibold leading-tight tracking-wide text-emerald-900 dark:text-emerald-100">
-                            HIBAH DOSEN
-                        </p>
-                        <p
-                            class="font-mono text-[10px] uppercase tracking-widest text-emerald-600/70 dark:text-emerald-400/70">
-                            Sistem Hibah Penelitian & Pengabdian
-                        </p>
+                        <p class="font-heading text-base font-semibold leading-tight tracking-wide text-emerald-900 dark:text-emerald-100">{{ config('app.name') }}</p>
+                        <p class="font-mono text-[10px] uppercase tracking-widest text-emerald-600/70 dark:text-emerald-400/70">{{ config('app.desc_name') }}</p>
                     </div>
                 </div>
 
@@ -64,11 +58,8 @@
                             <img src="{{ asset('images/logo.webp') }}" alt="Logo" class="w-6" />
                         </div>
                         <div>
-                            <p class="font-heading text-xs font-semibold text-emerald-900 dark:text-emerald-50">
-                                HIBAH DOSEN</p>
-                            <p class="font-mono text-[9px] uppercase tracking-widest text-emerald-600/70 dark:text-emerald-400/70">
-                                LPPM Annuqayah
-                            </p>
+                            <p class="font-heading text-xs font-semibold text-emerald-900 dark:text-emerald-50">{{ config('app.name') }}</p>
+                            <p class="font-mono text-[9px] uppercase tracking-widest text-emerald-600/70 dark:text-emerald-400/70">{{ config('app.desc_name') }}</p>
                         </div>
                     </div>
 

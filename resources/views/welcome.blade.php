@@ -5,9 +5,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description"
-        content="Integrated Grant Portal for Research & Community Service at Universitas Annuqayah (SIM-LITABMAS) — from proposal submission to final reporting in one workflow.">
+        content="Integrated Grant Portal for Research & Community Service at Universitas Annuqayah (SIAP RISET) — from proposal submission to final reporting in one workflow.">
 
-    <title>{{ __('Welcome') }} - {{ config('app.name', 'SIM-LITABMAS') }}</title>
+    <title>{{ __('Welcome') }} - {{ config('app.name', 'Siap Riset') }}</title>
     <link rel="icon" type="image/x-icon" href="{{ asset('images/logo.webp') }}">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
@@ -390,11 +390,8 @@
                     <img src="{{ asset('images/logo.webp') }}" alt="Logo" class="w-5">
                 </span>
                 <div class="flex flex-col justify-center">
-                    <span
-                        class="font-heading font-semibold text-slate-900 dark:text-white text-sm leading-tight tracking-tight">Hibah
-                        Dosen</span>
-                    <span class="text-[11px] text-slate-500 dark:text-zinc-400 leading-none">Universitas
-                        Annuqayah</span>
+                    <span class="font-heading font-semibold text-slate-900 dark:text-white text-sm leading-tight tracking-tight">{{ config('app.name', 'Siap Riset') }}</span>
+                    <span class="text-[11px] text-slate-500 dark:text-zinc-400 leading-none">{{ config('app.desc_name', 'Sistem Informasi dan Administrasi Pengabdian dan Riset') }}</span>
                 </div>
             </a>
 
@@ -407,12 +404,12 @@
                     Schemes</a>
                 <a href="#panduan" data-nav
                     class="nav-link px-3 py-1.5 rounded-full text-slate-600 hover:text-slate-900 hover:bg-slate-100 text-xs font-medium dark:text-zinc-300 dark:hover:text-white dark:hover:bg-zinc-800">Guides
-                    &amp; SOPs</a>
+                ; SOPs</a>
                 <a href="#statistik" data-nav
                     class="nav-link px-3 py-1.5 rounded-full text-slate-600 hover:text-slate-900 hover:bg-slate-100 text-xs font-medium dark:text-zinc-300 dark:hover:text-white dark:hover:bg-zinc-800">Statistics</a>
                 <a href="#alur" data-nav
                     class="nav-link px-3 py-1.5 rounded-full text-slate-600 hover:text-slate-900 hover:bg-slate-100 text-xs font-medium dark:text-zinc-300 dark:hover:text-white dark:hover:bg-zinc-800">Agenda
-                    &amp; Timeline</a>
+                ; Timeline</a>
                 <a href="#faq" data-nav
                     class="nav-link px-3 py-1.5 rounded-full text-slate-600 hover:text-slate-900 hover:bg-slate-100 text-xs font-medium dark:text-zinc-300 dark:hover:text-white dark:hover:bg-zinc-800">FAQ</a>
             </nav>
@@ -486,12 +483,12 @@
                 Schemes</a>
             <a href="#panduan" @click="mobileOpen=false"
                 class="rounded-lg px-3 py-2 text-xs font-medium text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 dark:text-zinc-200 dark:hover:bg-emerald-900/30 dark:hover:text-emerald-400 transition-colors">Guides
-                &amp; SOPs</a>
+            ; SOPs</a>
             <a href="#statistik" @click="mobileOpen=false"
                 class="rounded-lg px-3 py-2 text-xs font-medium text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 dark:text-zinc-200 dark:hover:bg-emerald-900/30 dark:hover:text-emerald-400 transition-colors">Statistics</a>
             <a href="#alur" @click="mobileOpen=false"
                 class="rounded-lg px-3 py-2 text-xs font-medium text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 dark:text-zinc-200 dark:hover:bg-emerald-900/30 dark:hover:text-emerald-400 transition-colors">Agenda
-                &amp; Timeline</a>
+            ; Timeline</a>
             <a href="#faq" @click="mobileOpen=false"
                 class="rounded-lg px-3 py-2 text-xs font-medium text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 dark:text-zinc-200 dark:hover:bg-emerald-900/30 dark:hover:text-emerald-400 transition-colors">FAQ</a>
         </div>
@@ -507,7 +504,7 @@
 
                         <h1 class="reveal-up font-heading font-bold tracking-tight text-left text-xl leading-[1.35] md:text-3xl md:leading-[1.35] text-slate-900 dark:text-white"
                             style="transition-delay: 80ms">
-                            Integrated <span class="gradient-text">Grant Portal</span> for Research &amp; Community
+                            Integrated <span class="gradient-text">Grant Portal</span> for Research; Community
                             Service at Universitas Annuqayah
                         </h1>
 
@@ -571,64 +568,7 @@
                             </a>
                         </div>
 
-                        <div class="reveal-up w-full mt-2.5 p-3 rounded-full bg-white/70 backdrop-blur-lg border border-white/80 shadow-sm grid grid-cols-3 gap-2 divide-x divide-slate-200/60 dark:bg-zinc-900/70 dark:border-zinc-800 dark:divide-zinc-800"
-                            style="transition-delay: 320ms">
-                            <div
-                                class="flex items-center gap-2 px-2 transition-transform duration-300 hover:-translate-y-0.5">
-                                <div
-                                    class="w-7 h-7 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0 dark:bg-emerald-900/50">
-                                    <svg viewBox="0 0 24 24" fill="none"
-                                        class="w-5 h-5 text-emerald-700 dark:text-emerald-400">
-                                        <path d="M4 6.5 12 3l8 3.5v5c0 4-2.5 7-8 9-5.5-2-8-5-8-9v-5Z"
-                                            stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
-                                    </svg>
-                                </div>
-                                <div class="flex flex-col min-w-0">
-                                    <span class="text-slate-900 dark:text-white font-bold truncate text-xs">14 Active
-                                        Schemes</span>
-                                    <span
-                                        class="text-slate-500 dark:text-zinc-400 font-medium truncate text-[10px]">Research
-                                        &amp; Community Service</span>
-                                </div>
-                            </div>
-                            <div
-                                class="flex items-center gap-2 px-2 transition-transform duration-300 hover:-translate-y-0.5">
-                                <div
-                                    class="w-7 h-7 rounded-xl bg-teal-100 flex items-center justify-center shrink-0 dark:bg-teal-900/50">
-                                    <svg viewBox="0 0 24 24" fill="none"
-                                        class="w-5 h-5 text-teal-700 dark:text-teal-400">
-                                        <path
-                                            d="M3.5 8h17M3.5 8a1.5 1.5 0 0 1 1.5-1.5h14A1.5 1.5 0 0 1 20.5 8v9A1.5 1.5 0 0 1 19 18.5H5A1.5 1.5 0 0 1 3.5 17V8Z M8 14h2"
-                                            stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
-                                            stroke-linejoin="round" />
-                                    </svg>
-                                </div>
-                                <div class="flex flex-col min-w-0">
-                                    <span class="text-slate-900 dark:text-white font-bold truncate text-xs">IDR 1.8
-                                        Billion</span>
-                                    <span class="text-slate-500 dark:text-zinc-400 font-medium truncate text-[10px]">UA
-                                        Grant Allocation</span>
-                                </div>
-                            </div>
-                            <div
-                                class="flex items-center gap-2 px-2 transition-transform duration-300 hover:-translate-y-0.5">
-                                <div
-                                    class="w-7 h-7 rounded-xl bg-cyan-100 flex items-center justify-center shrink-0 dark:bg-cyan-900/50">
-                                    <svg viewBox="0 0 24 24" fill="none"
-                                        class="w-5 h-5 text-cyan-700 dark:text-cyan-400">
-                                        <path d="M12 3.5 4.5 7v5c0 4.5 3 8 7.5 10 4.5-2 7.5-5.5 7.5-10V7L12 3.5Z"
-                                            stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
-                                    </svg>
-                                </div>
-                                <div class="flex flex-col min-w-0">
-                                    <span class="text-slate-900 dark:text-white font-bold truncate text-xs">120+
-                                        Reviewers</span>
-                                    <span
-                                        class="text-slate-500 dark:text-zinc-400 font-medium truncate text-[10px]">Nationally
-                                        Certified</span>
-                                </div>
-                            </div>
-                        </div>
+                        <livewire:hero-stats/>
                     </div>
 
                     {{-- Right Hero: Illustration --}}
@@ -726,7 +666,7 @@
                                     </svg>
                                     <span class="font-mono text-[10px] text-slate-400">SHA256: 7f8a92...e01d</span>
                                 </div>
-                                <span class="font-medium">Reviewer 1 &amp; 2 Verified</span>
+                                <span class="font-medium">Reviewer 1; 2 Verified</span>
                             </div>
                         </div>
 
@@ -764,7 +704,7 @@
                                 <path d="M12 3.5 4.5 7v5c0 4.5 3 8 7.5 10 4.5-2 7.5-5.5 7.5-10V7L12 3.5Z"
                                     stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
                             </svg>
-                            <span class="text-slate-700 dark:text-zinc-300 font-medium text-[10px]">BIMA &amp; BAN-PT
+                            <span class="text-slate-700 dark:text-zinc-300 font-medium text-[10px]">BIMA; BAN-PT
                                 Standards</span>
                         </div>
                     </div>
@@ -777,7 +717,7 @@
             {{-- ==================== FEATURES & SERVICES ==================== --}}
             <section id="skema" class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 scroll-mt-24">
                 <x-section-header label="Digital Ecosystem"
-                    title="Integrated Features &amp; Services of SIM-LITABMAS LPPM UA"
+                    title="Integrated Features; Services of SIAP RISET LPPM UA"
                     description="Comprehensive digital infrastructure — from proposal drafting, ethical oversight, reviewer assessment, to downstreaming of outputs."
                     icon="M4 5.5C4 4.67 4.67 4 5.5 4h5v16H5.5A1.5 1.5 0 0 1 4 18.5v-13Z M15 4h3.5c.83 0 1.5.67 1.5 1.5v13c0 .83-.67 1.5-1.5 1.5H15V4Z" />
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
@@ -864,7 +804,7 @@
 
             {{-- ==================== GUIDES & SOPs ==================== --}}
             <section id="panduan" class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 scroll-mt-24">
-                <x-section-header label="Reference Library" title="Guides &amp; Standard Operating Procedures (SOP)"
+                <x-section-header label="Reference Library" title="Guides; Standard Operating Procedures (SOP)"
                     description="Complete documentation for every role — from proposal drafting, review process, to disbursement and final reporting."
                     icon="M5 19.5A1.5 1.5 0 0 1 3.5 18V6A1.5 1.5 0 0 1 5 4.5h5L14 8v10a1.5 1.5 0 0 1-1.5 1.5H5Z M15 7.5h4.5a1 1 0 0 1 1 1v9.5" />
 
@@ -1091,7 +1031,7 @@
                     class="reveal-scale p-5 rounded-3xl bg-white/80 backdrop-blur-xl border border-white/90 shadow-md dark:bg-zinc-900/80 dark:border-zinc-800">
 
                     <x-section-header label="ANNUAL CYCLE"
-                        title="Stages &amp; Workflow of Research &amp; Community Service Grant Submission 2025"
+                        title="Stages; Workflow of Research; Community Service Grant Submission 2025"
                         description="Active Period: Stage 2 (Proposal Upload)"
                         icon="M4 5.5C4 4.67 4.67 4 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5v-13Z M15 4h3.5c.83 0 1.5.67 1.5 1.5v13c0 .83-.67 1.5-1.5 1.5H15V4Z" />
                     <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
@@ -1236,7 +1176,7 @@
                                 </svg>
                             </div>
                             <div>
-                                <h3 class="text-slate-900 dark:text-white font-bold text-sm">Help &amp; Support Center
+                                <h3 class="text-slate-900 dark:text-white font-bold text-sm">Help; Support Center
                                     LPPM</h3>
                                 <span class="text-slate-400 dark:text-zinc-500 font-normal text-[10px]">Library
                                     Building, 2nd Floor, East Wing</span>
@@ -1267,7 +1207,7 @@
                                         stroke-width="1.5" />
                                     <path d="M12 7v5l3 3" stroke="currentColor" stroke-width="1.5"
                                         stroke-linecap="round" />
-                                </svg> Monday - Thursday &amp; Saturday: 08.00 - 15.00 WIB
+                                </svg> Monday - Thursday; Saturday: 08.00 - 15.00 WIB
                             </div>
                         </div>
                         <a class="ripple-btn w-full mt-2 py-2 rounded-full bg-emerald-600 text-white font-medium text-center shadow-sm hover:bg-emerald-700 hover:-translate-y-0.5 hover:shadow-md transition-all duration-300 flex items-center justify-center gap-1.5 text-xs"
