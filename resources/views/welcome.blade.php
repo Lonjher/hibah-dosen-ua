@@ -403,13 +403,11 @@
                     class="nav-link px-3 py-1.5 rounded-full text-slate-600 hover:text-slate-900 hover:bg-slate-100 text-xs font-medium dark:text-zinc-300 dark:hover:text-white dark:hover:bg-zinc-800">Grant
                     Schemes</a>
                 <a href="#panduan" data-nav
-                    class="nav-link px-3 py-1.5 rounded-full text-slate-600 hover:text-slate-900 hover:bg-slate-100 text-xs font-medium dark:text-zinc-300 dark:hover:text-white dark:hover:bg-zinc-800">Guides
-                ; SOPs</a>
+                    class="nav-link px-3 py-1.5 rounded-full text-slate-600 hover:text-slate-900 hover:bg-slate-100 text-xs font-medium dark:text-zinc-300 dark:hover:text-white dark:hover:bg-zinc-800">Guides;SOPs</a>
                 <a href="#statistik" data-nav
                     class="nav-link px-3 py-1.5 rounded-full text-slate-600 hover:text-slate-900 hover:bg-slate-100 text-xs font-medium dark:text-zinc-300 dark:hover:text-white dark:hover:bg-zinc-800">Statistics</a>
                 <a href="#alur" data-nav
-                    class="nav-link px-3 py-1.5 rounded-full text-slate-600 hover:text-slate-900 hover:bg-slate-100 text-xs font-medium dark:text-zinc-300 dark:hover:text-white dark:hover:bg-zinc-800">Agenda
-                ; Timeline</a>
+                    class="nav-link px-3 py-1.5 rounded-full text-slate-600 hover:text-slate-900 hover:bg-slate-100 text-xs font-medium dark:text-zinc-300 dark:hover:text-white dark:hover:bg-zinc-800">Agenda;Timeline</a>
                 <a href="#faq" data-nav
                     class="nav-link px-3 py-1.5 rounded-full text-slate-600 hover:text-slate-900 hover:bg-slate-100 text-xs font-medium dark:text-zinc-300 dark:hover:text-white dark:hover:bg-zinc-800">FAQ</a>
             </nav>

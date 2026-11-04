@@ -178,14 +178,15 @@
                             <x-sidebar-link href="admin.external.manage-researches" title="Research" icon="globe-alt" />
                             <x-sidebar-link href="admin.external.manage-dedications" title="Community Service" icon="gift" />
                         </div>
-
-                        {{-- Group System --}}
-                        <div class="flex flex-col gap-0.5">
-                            <span class="px-2 py-1 font-body text-[9px] uppercase tracking-wider text-outline font-bold dark:text-zinc-500">
-                                Systems
-                            </span>
-                            <x-sidebar-link href="admin.log-activity" title="Log Activity" icon="command-line" />
-                        </div>
+                        @can('superadmin')
+                            {{-- Group System --}}
+                            <div class="flex flex-col gap-0.5">
+                                <span class="px-2 py-1 font-body text-[9px] uppercase tracking-wider text-outline font-bold dark:text-zinc-500">
+                                    Systems
+                                </span>
+                                <x-sidebar-link href="admin.log-activity" title="Log Activity" icon="command-line" />
+                            </div>
+                        @endcan
                     @endcan
 
                     @can('reviewer')
